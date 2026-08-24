@@ -1,5 +1,6 @@
 ---
 title: Thailändisches Grünes Curry
+tier_summary: "Mit frischen Aromaten"
 cuisine: Thailändisch
 meal_type: dinner
 methods: [stovetop]

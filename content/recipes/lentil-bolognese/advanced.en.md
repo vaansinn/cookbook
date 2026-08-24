@@ -1,5 +1,6 @@
 ---
 title: Lentil Bolognese with Spaghetti
+tier_summary: "Brunoise + mantecare technique"
 cuisine: Italian
 meal_type: dinner
 methods: [stovetop]

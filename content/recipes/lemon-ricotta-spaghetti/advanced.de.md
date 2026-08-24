@@ -1,5 +1,6 @@
 ---
 title: Zitronen-Ricotta-Spaghetti mit Spinat
+tier_summary: "Mantecare-Technik, seidige Sauce"
 cuisine: Italienisch
 meal_type: dinner
 methods: [stovetop]

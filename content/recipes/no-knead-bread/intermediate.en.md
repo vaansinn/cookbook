@@ -1,5 +1,6 @@
 ---
 title: No-Knead Bread
+tier_summary: "Shape + score technique"
 cuisine: American
 meal_type: side
 methods: [baking]

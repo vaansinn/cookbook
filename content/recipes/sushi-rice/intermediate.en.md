@@ -1,5 +1,6 @@
 ---
 title: Sushi Rice
+tier_summary: "Measure your own seasoning"
 cuisine: Japanese
 meal_type: side
 methods: [stovetop]

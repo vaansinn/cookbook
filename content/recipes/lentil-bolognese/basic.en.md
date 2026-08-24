@@ -1,5 +1,6 @@
 ---
 title: Lentil Bolognese with Spaghetti
+tier_summary: "Jar sauce, no fail"
 cuisine: Italian
 meal_type: dinner
 methods: [stovetop]

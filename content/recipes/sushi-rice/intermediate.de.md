@@ -1,5 +1,6 @@
 ---
 title: Sushi-Reis
+tier_summary: "Selbst gewürzt"
 cuisine: Japanisch
 meal_type: side
 methods: [stovetop]

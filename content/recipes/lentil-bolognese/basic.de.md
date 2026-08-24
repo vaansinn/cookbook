@@ -1,5 +1,6 @@
 ---
 title: Linsen-Bolognese mit Spaghetti
+tier_summary: "Glas-Sauce, kann nicht misslingen"
 cuisine: Italienisch
 meal_type: dinner
 methods: [stovetop]

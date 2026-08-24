@@ -5,6 +5,7 @@ import { useT } from "../i18n";
 import { fetchDish } from "../api/recipes";
 import { addRecipeToList } from "../api/groceries";
 import { getGlossary } from "../api/progress";
+import useFavoritesStore from "../store/useFavoritesStore";
 import { scaleIngredientText } from "../utils/scaleIngredient";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
@@ -37,10 +38,16 @@ export default function RecipePage() {
   const [listErrorCode, setListErrorCode] = useState(null);
   const [glossary, setGlossary] = useState([]);
   const [dishError, setDishError] = useState(false);
+  const favoriteSlugs = useFavoritesStore((s) => s.slugs);
+  const toggleFavorite = useFavoritesStore((s) => s.toggle);
+  const loadFavorites = useFavoritesStore((s) => s.load);
+  const favoritesLoaded = useFavoritesStore((s) => s.loaded);
 
   useEffect(() => {
     getGlossary(language).then(setGlossary).catch(() => {});
   }, [language]);
+
+  useEffect(() => { if (!favoritesLoaded) loadFavorites(); }, []);
 
   const loadDish = () => {
     setDish(null);
@@ -106,9 +113,23 @@ export default function RecipePage() {
             ? " · " + tier.tags.filter((tg) => tg.toLowerCase() !== (dish.cuisine || "").toLowerCase()).join(" · ")
             : ""}
         </div>
-        <h1 className="font-display text-3xl font-bold mt-1" style={{ color: "var(--ink)" }}>
-          {tier.title}
-        </h1>
+        <div className="flex items-start justify-between gap-3 mt-1">
+          <h1 className="font-display text-3xl font-bold" style={{ color: "var(--ink)" }}>
+            {tier.title}
+          </h1>
+          <button
+            onClick={() => toggleFavorite(slug)}
+            aria-label={favoriteSlugs.has(slug) ? t("favorite_remove") : t("favorite_add")}
+            aria-pressed={favoriteSlugs.has(slug)}
+            className="shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg mt-1"
+            style={{
+              borderColor: favoriteSlugs.has(slug) ? "var(--brand)" : "var(--line)",
+              color: favoriteSlugs.has(slug) ? "var(--brand)" : "var(--muted)",
+            }}
+          >
+            {favoriteSlugs.has(slug) ? "♥" : "♡"}
+          </button>
+        </div>
         <div className="text-sm font-semibold mt-1" style={{ color: "var(--muted)" }}>
           {t("serves")} {tier.serves} · ~{tier.time_min} {t("min_short")}
         </div>
@@ -142,6 +163,27 @@ export default function RecipePage() {
           })}
         </div>
         {!dish.tiers[level] && <p className="text-sm mt-2" style={{ color: "var(--muted)" }}>{t("tier_locked")}</p>}
+
+        <div className="grid grid-cols-3 gap-2 mt-3">
+          {TIER_ORDER.map((lvl) => {
+            const lvlTier = dish.tiers[lvl];
+            const active = lvl === level;
+            return (
+              <div
+                key={lvl}
+                className="rounded-xl px-2 py-1.5 text-center"
+                style={active ? { background: "var(--brand-soft)" } : undefined}
+              >
+                <p
+                  className="text-[10px] leading-tight"
+                  style={{ color: active ? "var(--brand)" : "var(--muted)", fontWeight: active ? 700 : 500 }}
+                >
+                  {lvlTier?.tier_summary || "—"}
+                </p>
+              </div>
+            );
+          })}
+        </div>
 
         {tier.nutrition && Object.keys(tier.nutrition).length > 0 && (
           <>

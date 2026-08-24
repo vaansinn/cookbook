@@ -1,5 +1,6 @@
 ---
 title: Guacamole
+tier_summary: "Aromaten zur Paste verarbeitet"
 cuisine: Mexikanisch
 meal_type: snack
 methods: [no-cook]

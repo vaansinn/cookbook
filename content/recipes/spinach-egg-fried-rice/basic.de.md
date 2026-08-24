@@ -1,5 +1,6 @@
 ---
 title: Spinat-Ei-Bratreis
+tier_summary: "Kühlschrank leeren, kann nicht misslingen"
 cuisine: Chinesisch
 meal_type: dinner
 methods: [stovetop]

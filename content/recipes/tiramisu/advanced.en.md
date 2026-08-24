@@ -1,5 +1,6 @@
 ---
 title: Tiramisu
+tier_summary: "Zabaglione, whipped by hand"
 cuisine: Italian
 meal_type: dessert
 methods: [no-bake, stovetop]

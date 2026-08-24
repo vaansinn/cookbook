@@ -1,5 +1,6 @@
 ---
 title: Kichererbsen-Tikka-Masala mit Reis
+tier_summary: "Gewürze angeröstet, echte Röstung"
 cuisine: Indisch
 meal_type: dinner
 methods: [stovetop]

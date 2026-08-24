@@ -1,5 +1,6 @@
 ---
 title: Spanish Potato-Chickpea Skillet with Feta
+tier_summary: "Saffron-bloom + sherry finish"
 cuisine: Spanish/Mediterranean
 meal_type: dinner
 methods: [stovetop]

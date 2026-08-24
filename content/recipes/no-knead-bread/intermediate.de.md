@@ -1,5 +1,6 @@
 ---
 title: No-Knead-Brot (Brot ohne Kneten)
+tier_summary: "Formen + Einschneiden"
 cuisine: Amerikanisch
 meal_type: side
 methods: [baking]

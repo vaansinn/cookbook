@@ -1,5 +1,6 @@
 ---
 title: Thai Green Curry
+tier_summary: "Jarred paste, no fail"
 cuisine: Thai
 meal_type: dinner
 methods: [stovetop]

@@ -1,5 +1,6 @@
 ---
 title: Guacamole
+tier_summary: "Tomate entkernt"
 cuisine: Mexikanisch
 meal_type: snack
 methods: [no-cook]

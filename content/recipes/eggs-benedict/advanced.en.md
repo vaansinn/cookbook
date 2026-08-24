@@ -1,5 +1,6 @@
 ---
 title: Eggs Benedict
+tier_summary: "Hollandaise from scratch"
 cuisine: American
 meal_type: breakfast
 methods: [stovetop]

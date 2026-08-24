@@ -1,5 +1,6 @@
 ---
 title: Banana Bread
+tier_summary: "Brown butter + toasted nuts"
 cuisine: American
 meal_type: dessert
 methods: [baking]

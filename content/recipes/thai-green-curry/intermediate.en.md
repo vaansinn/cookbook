@@ -1,5 +1,6 @@
 ---
 title: Thai Green Curry
+tier_summary: "Fresh aromatics added"
 cuisine: Thai
 meal_type: dinner
 methods: [stovetop]

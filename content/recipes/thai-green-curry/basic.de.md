@@ -1,5 +1,6 @@
 ---
 title: Thailändisches Grünes Curry
+tier_summary: "Currypaste aus dem Glas"
 cuisine: Thailändisch
 meal_type: dinner
 methods: [stovetop]

@@ -1,5 +1,6 @@
 ---
 title: No-Knead-Brot (Brot ohne Kneten)
+tier_summary: "Kein Kneten, nur warten"
 cuisine: Amerikanisch
 meal_type: side
 methods: [baking]

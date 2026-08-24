@@ -1,5 +1,6 @@
 ---
 title: Tiramisu
+tier_summary: "Real egg custard"
 cuisine: Italian
 meal_type: dessert
 methods: [no-bake]

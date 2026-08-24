@@ -1,5 +1,6 @@
 ---
 title: Lemon Ricotta Spaghetti
+tier_summary: "Mix and toss, no fail"
 cuisine: Italian
 meal_type: dinner
 methods: [stovetop]

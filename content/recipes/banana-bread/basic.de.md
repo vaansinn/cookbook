@@ -1,5 +1,6 @@
 ---
 title: Bananenbrot
+tier_summary: "Einfacher Teig, kann nicht misslingen"
 cuisine: Amerikanisch
 meal_type: dessert
 methods: [baking]

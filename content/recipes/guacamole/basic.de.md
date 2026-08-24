@@ -1,5 +1,6 @@
 ---
 title: Guacamole
+tier_summary: "Drei Zutaten, kann nicht misslingen"
 cuisine: Mexikanisch
 meal_type: snack
 methods: [no-cook]

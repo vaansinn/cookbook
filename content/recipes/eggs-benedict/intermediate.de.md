@@ -1,5 +1,6 @@
 ---
 title: Eggs Benedict
+tier_summary: "Eier selbst pochiert"
 cuisine: Amerikanisch
 meal_type: breakfast
 methods: [stovetop]

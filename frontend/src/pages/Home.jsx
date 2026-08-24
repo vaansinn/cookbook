@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useAuthStore from "../store/useAuthStore";
 import useSettingsStore from "../store/useSettingsStore";
+import useFavoritesStore from "../store/useFavoritesStore";
 import { useT } from "../i18n";
 import { fetchDishes, fetchFilters } from "../api/recipes";
 import LangSwitch from "../components/LangSwitch";
@@ -118,10 +119,16 @@ export default function Home() {
   const [q, setQ] = useState("");
   const [activeCuisine, setActiveCuisine] = useState(null);
   const [activeMealType, setActiveMealType] = useState(null);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const favoriteSlugs = useFavoritesStore((s) => s.slugs);
+  const toggleFavorite = useFavoritesStore((s) => s.toggle);
+  const loadFavorites = useFavoritesStore((s) => s.load);
 
   useEffect(() => {
     fetchFilters(language).then(setFilters).catch(() => {});
   }, [language]);
+
+  useEffect(() => { loadFavorites(); }, []);
 
   const loadDishes = () => {
     const params = { lang: language };
@@ -131,6 +138,8 @@ export default function Home() {
     setDishesError(false);
     fetchDishes(params).then(setDishes).catch(() => setDishesError(true));
   };
+
+  const visibleDishes = dishes ? (favoritesOnly ? dishes.filter((d) => favoriteSlugs.has(d.slug)) : dishes) : [];
 
   useEffect(() => {
     const handle = setTimeout(loadDishes, 200);
@@ -181,6 +190,19 @@ export default function Home() {
           />
         </div>
 
+        <button
+          onClick={() => setFavoritesOnly((v) => !v)}
+          aria-pressed={favoritesOnly}
+          className="inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 mt-4 font-display font-bold text-xs"
+          style={
+            favoritesOnly
+              ? { background: "var(--brand)", color: "var(--brand-ink)", boxShadow: "0 3px 0 var(--brand-dk)" }
+              : { background: "var(--card)", color: "var(--ink)", border: "2px solid var(--line)" }
+          }
+        >
+          <span aria-hidden="true">{favoritesOnly ? "♥" : "♡"}</span> {t("filter_favorites")}
+        </button>
+
         <FilterTileRow
           label={t("filter_meal_label")}
           allLabel={t("filter_all")}
@@ -207,16 +229,25 @@ export default function Home() {
             </div>
           )}
           {!dishesError && dishes === null && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
-          {!dishesError && dishes && dishes.length === 0 && <p style={{ color: "var(--muted)" }}>{t("no_dishes_found")}</p>}
-          {dishes && dishes.map((d) => (
-            <Link key={d.slug} to={`/dish/${d.slug}`} className="card flex gap-3 p-4 shadow-[0_3px_0_var(--line)]">
+          {!dishesError && dishes && visibleDishes.length === 0 && <p style={{ color: "var(--muted)" }}>{t("no_dishes_found")}</p>}
+          {dishes && visibleDishes.map((d) => (
+            <Link key={d.slug} to={`/dish/${d.slug}`} className="card relative flex gap-3 p-4 shadow-[0_3px_0_var(--line)]">
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(d.slug); }}
+                aria-label={favoriteSlugs.has(d.slug) ? t("favorite_remove") : t("favorite_add")}
+                aria-pressed={favoriteSlugs.has(d.slug)}
+                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center text-base"
+                style={{ color: favoriteSlugs.has(d.slug) ? "var(--brand)" : "var(--muted)" }}
+              >
+                {favoriteSlugs.has(d.slug) ? "♥" : "♡"}
+              </button>
               <div
                 className="w-14 h-14 rounded-full flex items-center justify-center text-2xl shrink-0"
                 style={{ background: "var(--basic-soft)" }}
               >
                 {DISH_EMOJI[d.slug] || "🍽️"}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 pr-6">
                 <div className="font-display font-semibold text-lg" style={{ color: "var(--ink)" }}>
                   {d.summary.title}
                 </div>

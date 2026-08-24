@@ -1,5 +1,6 @@
 ---
 title: Griechischer Salat
+tier_summary: "Salzen + Abtropfen"
 cuisine: Griechisch
 meal_type: lunch
 methods: [no-cook]

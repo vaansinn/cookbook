@@ -1,5 +1,6 @@
 ---
 title: Grilled Chicken Souvlaki
+tier_summary: "Quick marinade, no fail"
 cuisine: Greek
 meal_type: dinner
 methods: [grill]

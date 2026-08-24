@@ -1,5 +1,6 @@
 ---
 title: Tiramisu
+tier_summary: "Ohne Backen, kann nicht misslingen"
 cuisine: Italienisch
 meal_type: dessert
 methods: [no-bake]

@@ -1,5 +1,6 @@
 ---
 title: Lemon Ricotta Spaghetti with Spinach
+tier_summary: "Adds spinach + protein"
 cuisine: Italian
 meal_type: dinner
 methods: [stovetop]

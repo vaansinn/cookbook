@@ -1,5 +1,6 @@
 ---
 title: Eggs Benedict
+tier_summary: "Poach your own eggs"
 cuisine: American
 meal_type: breakfast
 methods: [stovetop]

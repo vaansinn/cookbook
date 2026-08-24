@@ -1,5 +1,6 @@
 ---
 title: Spanische Kartoffel-Kichererbsen-Pfanne mit Feta
+tier_summary: "Geräuchertes Paprika, frisches Ei"
 cuisine: Spanisch/Mediterran
 meal_type: dinner
 methods: [stovetop]

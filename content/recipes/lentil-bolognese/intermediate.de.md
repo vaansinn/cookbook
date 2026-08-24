@@ -1,5 +1,6 @@
 ---
 title: Linsen-Bolognese mit Spaghetti
+tier_summary: "Frisches Gemüse statt Glas"
 cuisine: Italienisch
 meal_type: dinner
 methods: [stovetop]

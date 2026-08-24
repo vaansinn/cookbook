@@ -1,5 +1,6 @@
 ---
 title: Gegrilltes Hähnchen-Souvlaki mit Tzatziki
+tier_summary: "+ Tzatziki selbstgemacht, Ruhezeit"
 cuisine: Griechisch
 meal_type: dinner
 methods: [grill]

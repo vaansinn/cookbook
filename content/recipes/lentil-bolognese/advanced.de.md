@@ -1,5 +1,6 @@
 ---
 title: Linsen-Bolognese mit Spaghetti
+tier_summary: "Brunoise + Mantecare-Technik"
 cuisine: Italienisch
 meal_type: dinner
 methods: [stovetop]

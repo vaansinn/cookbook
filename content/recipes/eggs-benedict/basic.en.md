@@ -1,5 +1,6 @@
 ---
 title: Eggs Benedict
+tier_summary: "Jarred hollandaise, no fail"
 cuisine: American
 meal_type: breakfast
 methods: [stovetop]

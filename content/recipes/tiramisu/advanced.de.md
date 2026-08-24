@@ -1,5 +1,6 @@
 ---
 title: Tiramisu
+tier_summary: "Zabaglione, von Hand geschlagen"
 cuisine: Italienisch
 meal_type: dessert
 methods: [no-bake, stovetop]

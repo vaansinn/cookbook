@@ -1,5 +1,6 @@
 ---
 title: Greek Salad
+tier_summary: "Salt + drain technique"
 cuisine: Greek
 meal_type: lunch
 methods: [no-cook]

@@ -1,5 +1,6 @@
 ---
 title: Sushi Rice
+tier_summary: "Precise timing + folding technique"
 cuisine: Japanese
 meal_type: side
 methods: [stovetop]

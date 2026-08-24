@@ -1,5 +1,6 @@
 ---
 title: Kichererbsen-Tikka-Masala mit Reis
+tier_summary: "Glas-Masala, kann nicht misslingen"
 cuisine: Indisch
 meal_type: dinner
 methods: [stovetop]

@@ -1,5 +1,6 @@
 ---
 title: Guacamole
+tier_summary: "Aromatics built into a paste"
 cuisine: Mexican
 meal_type: snack
 methods: [no-cook]

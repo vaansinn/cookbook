@@ -1,5 +1,6 @@
 ---
 title: Sushi-Reis
+tier_summary: "Präzises Timing + Falttechnik"
 cuisine: Japanisch
 meal_type: side
 methods: [stovetop]

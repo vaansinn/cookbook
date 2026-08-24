@@ -1,5 +1,6 @@
 ---
 title: Guacamole
+tier_summary: "Seed the tomato"
 cuisine: Mexican
 meal_type: snack
 methods: [no-cook]

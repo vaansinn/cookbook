@@ -1,5 +1,6 @@
 ---
 title: Sushi-Reis
+tier_summary: "Fertige Würzmischung"
 cuisine: Japanisch
 meal_type: side
 methods: [stovetop]

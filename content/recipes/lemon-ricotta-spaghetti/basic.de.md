@@ -1,5 +1,6 @@
 ---
 title: Zitronen-Ricotta-Spaghetti
+tier_summary: "Mischen und fertig"
 cuisine: Italienisch
 meal_type: dinner
 methods: [stovetop]

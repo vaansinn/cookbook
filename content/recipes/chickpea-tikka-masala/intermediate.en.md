@@ -1,5 +1,6 @@
 ---
 title: Chickpea Tikka Masala with Rice
+tier_summary: "Fresh spice blend"
 cuisine: Indian
 meal_type: dinner
 methods: [stovetop]

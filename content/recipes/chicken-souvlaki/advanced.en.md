@@ -1,5 +1,6 @@
 ---
 title: Grilled Chicken Souvlaki with Tzatziki
+tier_summary: "+ homemade tzatziki, resting technique"
 cuisine: Greek
 meal_type: dinner
 methods: [grill]

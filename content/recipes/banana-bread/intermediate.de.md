@@ -1,5 +1,6 @@
 ---
 title: Bananenbrot
+tier_summary: "Mit Crunch + Gewürz"
 cuisine: Amerikanisch
 meal_type: dessert
 methods: [baking]

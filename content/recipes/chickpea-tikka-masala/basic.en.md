@@ -1,5 +1,6 @@
 ---
 title: Chickpea Tikka Masala with Rice
+tier_summary: "Jarred masala, no fail"
 cuisine: Indian
 meal_type: dinner
 methods: [stovetop]

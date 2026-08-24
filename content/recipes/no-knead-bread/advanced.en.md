@@ -1,5 +1,6 @@
 ---
 title: No-Knead Bread
+tier_summary: "Autolyse + cold ferment"
 cuisine: American
 meal_type: side
 methods: [baking]

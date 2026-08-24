@@ -1,5 +1,6 @@
 ---
 title: Guacamole
+tier_summary: "Three ingredients, no fail"
 cuisine: Mexican
 meal_type: snack
 methods: [no-cook]

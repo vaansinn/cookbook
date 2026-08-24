@@ -159,7 +159,7 @@ def sync(db, Dish, RecipeTier, FoodItem, verbose=print):
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
         meta, body = parse_front_matter(text, path)
-        for required in ("title", "cuisine", "meal_type", "serves"):
+        for required in ("title", "cuisine", "meal_type", "serves", "tier_summary"):
             if required not in meta:
                 raise SyncError(f"{path}: missing required front-matter field '{required}'")
 
@@ -185,6 +185,7 @@ def sync(db, Dish, RecipeTier, FoodItem, verbose=print):
             db.session.add(tier)
 
         tier.title = meta["title"]
+        tier.tier_summary = meta["tier_summary"]
         tier.serves = meta["serves"]
         tier.time_min = meta.get("time_min")
         tier.equipment = meta.get("equipment", [])

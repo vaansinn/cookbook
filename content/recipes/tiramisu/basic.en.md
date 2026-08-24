@@ -1,5 +1,6 @@
 ---
 title: Tiramisu
+tier_summary: "No-bake, no fail"
 cuisine: Italian
 meal_type: dessert
 methods: [no-bake]

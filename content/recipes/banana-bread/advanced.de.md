@@ -1,5 +1,6 @@
 ---
 title: Bananenbrot
+tier_summary: "Braune Butter + geröstete Nüsse"
 cuisine: Amerikanisch
 meal_type: dessert
 methods: [baking]

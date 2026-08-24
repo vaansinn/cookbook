@@ -1,5 +1,6 @@
 ---
 title: Spinach & Egg Fried Rice
+tier_summary: "Wok hei + egg-yolk coating"
 cuisine: Chinese
 meal_type: dinner
 methods: [stovetop]

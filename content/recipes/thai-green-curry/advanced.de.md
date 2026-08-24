@@ -1,5 +1,6 @@
 ---
 title: Thailändisches Grünes Curry
+tier_summary: "Eigene Paste angeröstet"
 cuisine: Thailändisch
 meal_type: dinner
 methods: [stovetop]

@@ -1,5 +1,6 @@
 ---
 title: Thai Green Curry
+tier_summary: "Bloom your own paste"
 cuisine: Thai
 meal_type: dinner
 methods: [stovetop]

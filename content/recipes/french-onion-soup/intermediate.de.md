@@ -1,5 +1,6 @@
 ---
 title: Französische Zwiebelsuppe
+tier_summary: "Echt karamellisierte Zwiebeln"
 cuisine: Französisch
 meal_type: lunch
 methods: [stovetop, baking]

@@ -1,5 +1,6 @@
 ---
 title: Spinat-Ei-Bratreis
+tier_summary: "Kalter Reis, mit Extras"
 cuisine: Chinesisch
 meal_type: dinner
 methods: [stovetop]

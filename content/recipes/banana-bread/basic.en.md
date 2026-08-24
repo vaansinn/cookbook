@@ -1,5 +1,6 @@
 ---
 title: Banana Bread
+tier_summary: "Simple batter, no fail"
 cuisine: American
 meal_type: dessert
 methods: [baking]

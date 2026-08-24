@@ -1,5 +1,6 @@
 ---
 title: Tiramisu
+tier_summary: "Echte Eiercreme"
 cuisine: Italienisch
 meal_type: dessert
 methods: [no-bake]

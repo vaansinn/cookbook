@@ -1,5 +1,6 @@
 ---
 title: Spinach & Egg Fried Rice
+tier_summary: "Clean-out-the-fridge, no fail"
 cuisine: Chinese
 meal_type: dinner
 methods: [stovetop]

@@ -1,5 +1,6 @@
 ---
 title: Eggs Benedict
+tier_summary: "Hollandaise aus dem Glas"
 cuisine: Amerikanisch
 meal_type: breakfast
 methods: [stovetop]

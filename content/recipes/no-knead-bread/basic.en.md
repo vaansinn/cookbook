@@ -1,5 +1,6 @@
 ---
 title: No-Knead Bread
+tier_summary: "No kneading, just wait"
 cuisine: American
 meal_type: side
 methods: [baking]

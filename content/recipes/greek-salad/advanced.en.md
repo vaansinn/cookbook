@@ -1,5 +1,6 @@
 ---
 title: Greek Salad
+tier_summary: "Marinated feta and olives"
 cuisine: Greek
 meal_type: lunch
 methods: [no-cook]

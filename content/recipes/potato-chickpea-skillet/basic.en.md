@@ -1,5 +1,6 @@
 ---
 title: Spanish Potato-Chickpea Skillet with Feta
+tier_summary: "One jar, one pan"
 cuisine: Spanish/Mediterranean
 meal_type: dinner
 methods: [stovetop]

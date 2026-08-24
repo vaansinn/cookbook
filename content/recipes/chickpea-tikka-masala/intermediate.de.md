@@ -1,5 +1,6 @@
 ---
 title: Kichererbsen-Tikka-Masala mit Reis
+tier_summary: "Frische Gewürzmischung"
 cuisine: Indisch
 meal_type: dinner
 methods: [stovetop]

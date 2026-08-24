@@ -1,5 +1,6 @@
 ---
 title: Spinach & Egg Fried Rice
+tier_summary: "Cold rice, add-ins"
 cuisine: Chinese
 meal_type: dinner
 methods: [stovetop]

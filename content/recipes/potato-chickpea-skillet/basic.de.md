@@ -1,5 +1,6 @@
 ---
 title: Spanische Kartoffel-Kichererbsen-Pfanne mit Feta
+tier_summary: "Ein Glas, eine Pfanne"
 cuisine: Spanisch/Mediterran
 meal_type: dinner
 methods: [stovetop]

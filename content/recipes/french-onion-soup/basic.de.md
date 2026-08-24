@@ -1,5 +1,6 @@
 ---
 title: Französische Zwiebelsuppe
+tier_summary: "Schnelle Zwiebeln, kann nicht misslingen"
 cuisine: Französisch
 meal_type: lunch
 methods: [stovetop, baking]

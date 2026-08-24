@@ -1,5 +1,6 @@
 ---
 title: French Onion Soup
+tier_summary: "Quick onions, no fail"
 cuisine: French
 meal_type: lunch
 methods: [stovetop, baking]

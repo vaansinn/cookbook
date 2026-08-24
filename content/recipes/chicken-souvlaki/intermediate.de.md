@@ -1,5 +1,6 @@
 ---
 title: Gegrilltes Hähnchen-Souvlaki
+tier_summary: "Längere Marinade, mehr Geschmack"
 cuisine: Griechisch
 meal_type: dinner
 methods: [grill]

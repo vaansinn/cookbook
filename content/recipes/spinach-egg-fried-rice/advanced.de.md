@@ -1,5 +1,6 @@
 ---
 title: Spinat-Ei-Bratreis
+tier_summary: "Wok Hei + Eigelb-Überzug"
 cuisine: Chinesisch
 meal_type: dinner
 methods: [stovetop]

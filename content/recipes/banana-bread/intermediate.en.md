@@ -1,5 +1,6 @@
 ---
 title: Banana Bread
+tier_summary: "Adds crunch + spice"
 cuisine: American
 meal_type: dessert
 methods: [baking]

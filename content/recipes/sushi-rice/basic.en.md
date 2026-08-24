@@ -1,5 +1,6 @@
 ---
 title: Sushi Rice
+tier_summary: "Bottled seasoning, no fail"
 cuisine: Japanese
 meal_type: side
 methods: [stovetop]

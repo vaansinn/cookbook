@@ -1,5 +1,6 @@
 ---
 title: Lemon Ricotta Spaghetti with Spinach
+tier_summary: "Mantecare technique, silky sauce"
 cuisine: Italian
 meal_type: dinner
 methods: [stovetop]

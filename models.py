@@ -24,6 +24,7 @@ Table overview:
   glossary_entries  — technique/nutrition explainer pages, linked from recipe
                       steps and the nutrition panel by keyword match (see
                       content/glossary/*.md + scripts/sync_glossary.py)
+  favorites         — a user's heart-marked dishes (routes/favorites.py)
 """
 
 from app import db
@@ -86,13 +87,14 @@ class RecipeTier(db.Model):
     level   = db.Column(db.String(20), nullable=False)   # basic | intermediate | advanced
     lang    = db.Column(db.String(5),  nullable=False)   # en | de
 
-    title       = db.Column(db.String(160), nullable=False)
-    serves      = db.Column(db.Integer, default=2)
-    time_min    = db.Column(db.Integer)
-    equipment   = db.Column(db.JSON, default=list)
-    diet_flags  = db.Column(db.JSON, default=list)   # vegetarian, vegan, ...
-    allergens   = db.Column(db.JSON, default=list)   # gluten, dairy, ...
-    tags        = db.Column(db.JSON, default=list)
+    title        = db.Column(db.String(160), nullable=False)
+    tier_summary = db.Column(db.String(120))  # short "what's different at this level" line
+    serves       = db.Column(db.Integer, default=2)
+    time_min     = db.Column(db.Integer)
+    equipment    = db.Column(db.JSON, default=list)
+    diet_flags   = db.Column(db.JSON, default=list)   # vegetarian, vegan, ...
+    allergens    = db.Column(db.JSON, default=list)   # gluten, dairy, ...
+    tags         = db.Column(db.JSON, default=list)
 
     prep         = db.Column(db.JSON, default=list)  # list[str]
     ingredients  = db.Column(db.JSON, default=list)  # list[{qty, unit, text, food_slug|null}]
@@ -117,6 +119,7 @@ class RecipeTier(db.Model):
             "level": self.level,
             "lang": self.lang,
             "title": self.title,
+            "tier_summary": self.tier_summary,
             "serves": self.serves,
             "time_min": self.time_min,
             "equipment": self.equipment or [],
@@ -146,6 +149,16 @@ class FoodItem(db.Model):
 
     def to_dict(self):
         return {"slug": self.slug, "names": self.names or {}, "per_100g": self.per_100g}
+
+
+class Favorite(db.Model):
+    __tablename__ = "favorites"
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    dish_slug  = db.Column(db.String(80), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint("user_id", "dish_slug", name="uq_user_dish_favorite"),)
 
 
 def _invite_code():
