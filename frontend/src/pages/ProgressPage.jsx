@@ -13,9 +13,22 @@ export default function ProgressPage() {
   const t = useT();
   const language = useSettingsStore((s) => s.language);
   const [progress, setProgress] = useState(null);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => { getProgress(language).then(setProgress); }, [language]);
+  const load = () => {
+    setLoadError(false);
+    getProgress(language).then(setProgress).catch(() => setLoadError(true));
+  };
+  useEffect(load, [language]);
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen p-8" style={{ background: "var(--bg)" }}>
+        <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+        <button onClick={load} className="btn-ghost text-sm py-2 px-4 mt-3">{t("error_retry")}</button>
+      </div>
+    );
+  }
   if (!progress) {
     return <div className="min-h-screen p-8" style={{ background: "var(--bg)", color: "var(--muted)" }}>{t("loading")}</div>;
   }

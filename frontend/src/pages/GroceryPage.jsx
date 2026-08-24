@@ -21,6 +21,7 @@ export default function GroceryPage() {
   const language = useSettingsStore((s) => s.language);
 
   const [household, setHousehold] = useState(undefined); // undefined = loading, null = none
+  const [loadError, setLoadError] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState("");
 
@@ -34,13 +35,16 @@ export default function GroceryPage() {
   const [planLevel, setPlanLevel] = useState("basic");
 
   const loadAll = () => {
-    getHousehold().then((h) => {
-      setHousehold(h);
-      if (h) {
-        getGroceryList().then(setItems);
-        getPlan().then(setPlan);
-      }
-    });
+    setLoadError(false);
+    getHousehold()
+      .then((h) => {
+        setHousehold(h);
+        if (h) {
+          getGroceryList().then(setItems).catch(() => setLoadError(true));
+          getPlan().then(setPlan).catch(() => setLoadError(true));
+        }
+      })
+      .catch(() => setLoadError(true));
   };
 
   useEffect(() => { loadAll(); }, []);
@@ -80,6 +84,14 @@ export default function GroceryPage() {
   };
   const doBuildList = () => buildListFromPlan(language).then(setItems);
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen p-8" style={{ background: "var(--bg)" }}>
+        <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+        <button onClick={loadAll} className="btn-ghost text-sm py-2 px-4 mt-3">{t("error_retry")}</button>
+      </div>
+    );
+  }
   if (household === undefined) {
     return <div className="min-h-screen p-8" style={{ background: "var(--bg)", color: "var(--muted)" }}>{t("loading")}</div>;
   }

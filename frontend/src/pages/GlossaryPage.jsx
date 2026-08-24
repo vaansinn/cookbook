@@ -11,8 +11,13 @@ export function GlossaryList() {
   const t = useT();
   const language = useSettingsStore((s) => s.language);
   const [entries, setEntries] = useState(null);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => { getGlossary(language).then(setEntries); }, [language]);
+  const load = () => {
+    setLoadError(false);
+    getGlossary(language).then(setEntries).catch(() => setLoadError(true));
+  };
+  useEffect(load, [language]);
 
   const techniques = entries?.filter((e) => e.type === "technique") || [];
   const nutrition = entries?.filter((e) => e.type === "nutrition") || [];
@@ -25,7 +30,13 @@ export function GlossaryList() {
           <div className="flex gap-3"><LangSwitch /><ThemeSwitch /></div>
         </div>
 
-        {entries === null && <p className="mt-6 text-sm" style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+        {loadError && (
+          <div className="mt-6">
+            <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+            <button onClick={load} className="btn-ghost text-sm py-2 px-4 mt-2">{t("error_retry")}</button>
+          </div>
+        )}
+        {!loadError && entries === null && <p className="mt-6 text-sm" style={{ color: "var(--muted)" }}>{t("loading")}</p>}
 
         {techniques.length > 0 && (
           <>
@@ -59,8 +70,14 @@ export function GlossaryDetail() {
   const t = useT();
   const language = useSettingsStore((s) => s.language);
   const [entry, setEntry] = useState(null);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => { setEntry(null); getGlossaryEntry(slug, language).then(setEntry); }, [slug, language]);
+  const load = () => {
+    setEntry(null);
+    setLoadError(false);
+    getGlossaryEntry(slug, language).then(setEntry).catch(() => setLoadError(true));
+  };
+  useEffect(load, [slug, language]);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg)" }}>
@@ -69,7 +86,12 @@ export function GlossaryDetail() {
           <Link to="/glossary" className="text-sm font-bold" style={{ color: "var(--muted)" }}>← {t("glossary_back")}</Link>
           <div className="flex gap-3"><LangSwitch /><ThemeSwitch /></div>
         </div>
-        {!entry ? (
+        {loadError ? (
+          <div className="mt-6">
+            <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+            <button onClick={load} className="btn-ghost text-sm py-2 px-4 mt-2">{t("error_retry")}</button>
+          </div>
+        ) : !entry ? (
           <p className="mt-6 text-sm" style={{ color: "var(--muted)" }}>{t("loading")}</p>
         ) : (
           <>
