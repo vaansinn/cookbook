@@ -1,2 +1,2 @@
 web: gunicorn app:app
-release: flask db upgrade && flask sync-recipes
+release: flask db upgrade && flask sync-recipes && flask sync-glossary

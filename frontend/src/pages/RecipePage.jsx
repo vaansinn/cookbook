@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
 import { useT } from "../i18n";
 import { fetchDish } from "../api/recipes";
 import { addRecipeToList } from "../api/groceries";
+import { getGlossary } from "../api/progress";
 import { scaleIngredientText } from "../utils/scaleIngredient";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
+import GlossaryLinkedText from "../components/GlossaryLinkedText";
 
 const TIER_ORDER = ["basic", "intermediate", "advanced"];
 const TIER_ICON = { basic: "🌶️", intermediate: "🌶️🌶️", advanced: "🌶️🌶️🌶️" };
@@ -19,8 +21,17 @@ const TIER_CLASS = {
 export default function RecipePage() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const t = useT();
   const language = useSettingsStore((s) => s.language);
+  const [cookToast, setCookToast] = useState(location.state?.cooked ? location.state : null);
+
+  useEffect(() => {
+    if (!cookToast) return;
+    const handle = setTimeout(() => setCookToast(null), 4000);
+    window.history.replaceState({}, ""); // clear so a refresh doesn't re-show it
+    return () => clearTimeout(handle);
+  }, []);
 
   const [dish, setDish] = useState(null);
   const [level, setLevel] = useState(null);
@@ -28,6 +39,11 @@ export default function RecipePage() {
   const [doneSteps, setDoneSteps] = useState({});
   const [donePrep, setDonePrep] = useState({});
   const [addedToList, setAddedToList] = useState(false);
+  const [glossary, setGlossary] = useState([]);
+
+  useEffect(() => {
+    getGlossary(language).then(setGlossary);
+  }, [language]);
 
   useEffect(() => {
     setDish(null);
@@ -50,6 +66,20 @@ export default function RecipePage() {
 
   return (
     <div className="min-h-screen pb-16" style={{ background: "var(--bg)" }}>
+      {cookToast && (
+        <div className="max-w-2xl mx-auto px-6 pt-4">
+          <div className="rounded-2xl px-4 py-3 text-sm font-semibold text-white" style={{ background: "var(--basic)" }}>
+            {t("cooked_logged")}
+            {cookToast.newBadges?.length > 0 && (
+              <div className="mt-1">
+                {cookToast.newBadges.map((b) => (
+                  <div key={b}>🎉 {t("new_badge_earned", { badge: t("badge_" + b) })}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <div className="max-w-2xl mx-auto px-6 pt-6">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-sm font-bold" style={{ color: "var(--muted)" }}>
@@ -107,19 +137,19 @@ export default function RecipePage() {
           <>
             <div className="grid grid-cols-4 gap-2 mt-5">
               {[
-                ["kcal", tier.nutrition.kcal, "nutri_kcal"],
-                ["protein_g", tier.nutrition.protein_g, "nutri_protein"],
-                ["carbs_g", tier.nutrition.carbs_g, "nutri_carbs"],
-                ["fiber_g", tier.nutrition.fiber_g, "nutri_fiber"],
-              ].map(([key, val, labelKey]) => (
-                <div key={key} className="card text-center py-2.5 px-1">
+                ["kcal", tier.nutrition.kcal, "nutri_kcal", "calories"],
+                ["protein_g", tier.nutrition.protein_g, "nutri_protein", "protein"],
+                ["carbs_g", tier.nutrition.carbs_g, "nutri_carbs", "carbs"],
+                ["fiber_g", tier.nutrition.fiber_g, "nutri_fiber", "fiber"],
+              ].map(([key, val, labelKey, glossarySlug]) => (
+                <Link key={key} to={`/glossary/${glossarySlug}`} className="card text-center py-2.5 px-1">
                   <div className="font-display font-bold text-base" style={{ color: "var(--brand)" }}>
                     {key === "kcal" ? Math.round(val * factor) : Math.round(val * factor * 10) / 10 + "g"}
                   </div>
                   <div className="text-[9px] font-bold uppercase mt-0.5" style={{ color: "var(--muted)" }}>
                     {t(labelKey)}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
             <p className="text-[11px] mt-1.5" style={{ color: "var(--muted)" }}>{t("nutrition_note")}</p>
@@ -171,7 +201,7 @@ export default function RecipePage() {
               style={{ borderColor: "var(--line)", ...(doneSteps[i] ? { opacity: 0.4, textDecoration: "line-through" } : {}) }}
             >
               <span className="font-display font-bold text-xl" style={{ color: "var(--brand)" }}>{i + 1}</span>
-              <span className="text-sm pt-0.5">{s}</span>
+              <span className="text-sm pt-0.5"><GlossaryLinkedText text={s} entries={glossary} /></span>
             </li>
           ))}
         </ol>
@@ -182,7 +212,8 @@ export default function RecipePage() {
             <ul className="space-y-1.5">
               {tier.notes.map((n, i) => (
                 <li key={i} className="text-sm pl-4 relative">
-                  <span className="absolute left-0" style={{ color: "var(--plum, var(--hot))" }}>·</span>{n}
+                  <span className="absolute left-0" style={{ color: "var(--plum, var(--hot))" }}>·</span>
+                  <GlossaryLinkedText text={n} entries={glossary} />
                 </li>
               ))}
             </ul>

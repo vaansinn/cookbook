@@ -66,9 +66,13 @@ def create_app():
     from routes.auth import auth_bp
     from routes.recipes import recipes_bp
     from routes.groceries import groceries_bp
+    from routes.progress import progress_bp
+    from routes.glossary import glossary_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(recipes_bp, url_prefix="/api")
     app.register_blueprint(groceries_bp, url_prefix="/api")
+    app.register_blueprint(progress_bp, url_prefix="/api")
+    app.register_blueprint(glossary_bp, url_prefix="/api")
 
     # ── CLI: flask sync-recipes ───────────────────────────────────────────────
     # Re-parses content/recipes/**/*.md + content/foods.json into Postgres.
@@ -79,6 +83,17 @@ def create_app():
         from models import Dish, RecipeTier, FoodItem
         try:
             sync(db, Dish, RecipeTier, FoodItem)
+        except SyncError as e:
+            print(f"Sync failed: {e}")
+            raise SystemExit(1)
+
+    # ── CLI: flask sync-glossary ──────────────────────────────────────────────
+    @app.cli.command("sync-glossary")
+    def sync_glossary_cmd():
+        from scripts.sync_glossary import sync, SyncError
+        from models import GlossaryEntry
+        try:
+            sync(db, GlossaryEntry)
         except SyncError as e:
             print(f"Sync failed: {e}")
             raise SystemExit(1)

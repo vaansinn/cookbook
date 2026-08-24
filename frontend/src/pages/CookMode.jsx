@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
 import { useT } from "../i18n";
 import { fetchDish } from "../api/recipes";
+import { logCook } from "../api/progress";
 import { parseSeconds, fmtSecs, beep } from "../utils/timer";
 
 export default function CookMode() {
@@ -60,8 +61,13 @@ export default function CookMode() {
 
   const goNext = () => {
     setTimer(null);
-    if (stepIdx < tier.steps.length - 1) setStepIdx((i) => i + 1);
-    else navigate(`/dish/${slug}`);
+    if (stepIdx < tier.steps.length - 1) {
+      setStepIdx((i) => i + 1);
+      return;
+    }
+    logCook(slug, level)
+      .then((res) => navigate(`/dish/${slug}`, { state: { cooked: true, newBadges: res.new_badges } }))
+      .catch(() => navigate(`/dish/${slug}`));
   };
   const goBack = () => {
     setTimer(null);

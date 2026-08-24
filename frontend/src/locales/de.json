@@ -84,5 +84,29 @@
   "planner_empty": "Noch keine Gerichte geplant.",
   "planner_pick_dish": "Gericht wählen",
   "planner_pick_date": "Datum",
-  "planner_pick_level": "Stufe"
+  "planner_pick_level": "Stufe",
+
+  "cooked_this": "Habe ich gekocht",
+  "cooked_logged": "Eingetragen! Gut gemacht.",
+  "new_badge_earned": "Neues Abzeichen: {badge}!",
+
+  "progress_streak": "Tage-Serie",
+  "progress_streak_sub": "Weiterkochen, um sie auszubauen",
+  "progress_level_xp": "{xp} / {next} XP",
+  "progress_level_max": "{xp} XP — Höchststufe erreicht",
+  "progress_badges": "Abzeichen",
+  "progress_dishes_cooked": "{n} Gerichte gekocht",
+  "badge_first_dish": "Erstes Gericht",
+  "badge_first_advanced": "Erstes Fortgeschritten",
+  "badge_five_cuisines": "5 Küchen",
+  "badge_week_streak": "Wochen-Serie",
+  "nudge_title": "Bereit für die nächste Stufe?",
+  "nudge_body": "Du hast {dish} zweimal auf {from} gekocht. Probier als Nächstes {to}.",
+  "nudge_button": "{to} probieren",
+  "progress_empty": "Koch ein Gericht, um deinen Fortschritt zu verfolgen.",
+
+  "glossary_title": "Glossar",
+  "glossary_techniques": "Techniken",
+  "glossary_nutrition": "Nährwerte",
+  "glossary_back": "Glossar"
 }

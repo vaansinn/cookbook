@@ -8,6 +8,8 @@ import Home from "./pages/Home";
 import RecipePage from "./pages/RecipePage";
 import CookMode from "./pages/CookMode";
 import GroceryPage from "./pages/GroceryPage";
+import ProgressPage from "./pages/ProgressPage";
+import { GlossaryList, GlossaryDetail } from "./pages/GlossaryPage";
 
 function RequireAuth({ children }) {
   const user = useAuthStore((s) => s.user);
@@ -62,6 +64,30 @@ export default function App() {
           element={
             <RequireAuth>
               <GroceryPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/progress"
+          element={
+            <RequireAuth>
+              <ProgressPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/glossary"
+          element={
+            <RequireAuth>
+              <GlossaryList />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/glossary/:slug"
+          element={
+            <RequireAuth>
+              <GlossaryDetail />
             </RequireAuth>
           }
         />

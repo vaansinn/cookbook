@@ -84,5 +84,29 @@
   "planner_empty": "No dishes planned yet.",
   "planner_pick_dish": "Pick a dish",
   "planner_pick_date": "Date",
-  "planner_pick_level": "Level"
+  "planner_pick_level": "Level",
+
+  "cooked_this": "I cooked this",
+  "cooked_logged": "Logged! Nice work.",
+  "new_badge_earned": "New badge: {badge}!",
+
+  "progress_streak": "day streak",
+  "progress_streak_sub": "Keep cooking to grow it",
+  "progress_level_xp": "{xp} / {next} XP",
+  "progress_level_max": "{xp} XP — top level reached",
+  "progress_badges": "Badges",
+  "progress_dishes_cooked": "{n} dishes cooked",
+  "badge_first_dish": "First dish",
+  "badge_first_advanced": "First Advanced",
+  "badge_five_cuisines": "5 cuisines",
+  "badge_week_streak": "Week streak",
+  "nudge_title": "Ready to level up?",
+  "nudge_body": "You've cooked {dish} on {from} twice. Try {to} next.",
+  "nudge_button": "Try {to}",
+  "progress_empty": "Cook a dish to start tracking your progress.",
+
+  "glossary_title": "Glossary",
+  "glossary_techniques": "Techniques",
+  "glossary_nutrition": "Nutrition",
+  "glossary_back": "Glossary"
 }

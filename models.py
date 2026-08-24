@@ -18,10 +18,16 @@ Table overview:
   grocery_items     — items on a list; food_slug-linked items merge by weight
                       when the same ingredient is added from more than one recipe
   plan_entries      — week planner: a dish+tier assigned to a date
+  cook_logs         — one row per "I cooked this" check-in; streaks/XP/badges
+                      are all derived from this table, never stored directly
+  badge_awards      — a badge, once earned, is permanent (see routes/progress.py)
+  glossary_entries  — technique/nutrition explainer pages, linked from recipe
+                      steps and the nutrition panel by keyword match (see
+                      content/glossary/*.md + scripts/sync_glossary.py)
 """
 
 from app import db
-from datetime import datetime
+from datetime import datetime, timedelta
 import secrets
 
 
@@ -230,4 +236,44 @@ class PlanEntry(db.Model):
             "dish_slug": self.dish_slug,
             "level": self.level,
             "serves": self.serves,
+        }
+
+
+class CookLog(db.Model):
+    __tablename__ = "cook_logs"
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    dish_id    = db.Column(db.Integer, db.ForeignKey("dishes.id"), nullable=False)
+    level      = db.Column(db.String(20), nullable=False)
+    cooked_at  = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    dish = db.relationship("Dish")
+
+
+class BadgeAward(db.Model):
+    __tablename__ = "badge_awards"
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    badge_slug = db.Column(db.String(40), nullable=False)
+    earned_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint("user_id", "badge_slug", name="uq_user_badge"),)
+
+
+class GlossaryEntry(db.Model):
+    __tablename__ = "glossary_entries"
+    id            = db.Column(db.Integer, primary_key=True)
+    slug          = db.Column(db.String(80), unique=True, nullable=False)
+    type          = db.Column(db.String(20), nullable=False)  # technique | nutrition
+    names         = db.Column(db.JSON, default=dict)          # {"en": "Deglazing", "de": "..."}
+    body          = db.Column(db.JSON, default=dict)          # {"en": "...", "de": "..."}
+    trigger_words = db.Column(db.JSON, default=list)          # lowercase phrases matched in recipe text
+
+    def to_dict(self, lang="en"):
+        return {
+            "slug": self.slug,
+            "type": self.type,
+            "title": (self.names or {}).get(lang, self.slug),
+            "body": (self.body or {}).get(lang, ""),
+            "trigger_words": self.trigger_words or [],
         }
