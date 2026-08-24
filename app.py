@@ -14,6 +14,7 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
+from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 from datetime import timedelta
@@ -26,6 +27,7 @@ db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 bcrypt = Bcrypt()
+compress = Compress()
 
 
 def create_app():
@@ -52,6 +54,7 @@ def create_app():
     migrate.init_app(app, db)
     jwt.init_app(app)
     bcrypt.init_app(app)
+    compress.init_app(app)
 
     allowed_origins = [
         os.environ.get("FRONTEND_URL", "http://localhost:5173"),
