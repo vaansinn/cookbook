@@ -56,5 +56,33 @@
   "cook_next": "Weiter",
   "cook_finish": "Fertig gekocht",
   "cook_timer_running": "antippen zum Abbrechen",
-  "cook_timer_done": "Zeit ist um!"
+  "cook_timer_done": "Zeit ist um!",
+
+  "add_to_list": "Zur Einkaufsliste hinzufügen",
+  "added_to_list": "Hinzugefügt!",
+
+  "household_setup_title": "Einkaufsliste teilen",
+  "household_setup_sub": "Eine gemeinsame Liste starten oder einer bestehenden beitreten.",
+  "household_start": "Neue Liste starten",
+  "household_join": "Mit Code beitreten",
+  "household_code_placeholder": "8-stelliger Code",
+  "household_join_button": "Beitreten",
+  "household_invalid_code": "Dieser Code passt zu keinem Haushalt",
+
+  "grocery_list_title": "Einkaufsliste",
+  "grocery_invite_code": "Einladungscode",
+  "grocery_invite_hint": "Diesen Code teilen, damit jemand beitreten kann",
+  "grocery_empty": "Noch nichts auf der Liste — unten ein Rezept oder einen Artikel hinzufügen.",
+  "grocery_add_placeholder": "Artikel hinzufügen…",
+  "grocery_clear_checked": "Erledigte löschen",
+  "grocery_used_in": "verwendet in {list}",
+  "grocery_count": "{done} / {total} im Korb",
+
+  "planner_title": "Diese Woche",
+  "planner_add": "Zum Plan hinzufügen",
+  "planner_build_list": "Wochenplan zur Einkaufsliste hinzufügen",
+  "planner_empty": "Noch keine Gerichte geplant.",
+  "planner_pick_dish": "Gericht wählen",
+  "planner_pick_date": "Datum",
+  "planner_pick_level": "Stufe"
 }

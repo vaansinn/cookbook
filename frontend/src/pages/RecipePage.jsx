@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
 import { useT } from "../i18n";
 import { fetchDish } from "../api/recipes";
+import { addRecipeToList } from "../api/groceries";
 import { scaleIngredientText } from "../utils/scaleIngredient";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
@@ -26,6 +27,7 @@ export default function RecipePage() {
   const [serves, setServes] = useState(null);
   const [doneSteps, setDoneSteps] = useState({});
   const [donePrep, setDonePrep] = useState({});
+  const [addedToList, setAddedToList] = useState(false);
 
   useEffect(() => {
     setDish(null);
@@ -188,8 +190,19 @@ export default function RecipePage() {
         )}
 
         <button
+          onClick={() => {
+            addRecipeToList(slug, level, serves, language).then(() => {
+              setAddedToList(true);
+              setTimeout(() => setAddedToList(false), 2000);
+            });
+          }}
+          className="btn-ghost w-full mt-8"
+        >
+          {addedToList ? t("added_to_list") : t("add_to_list")}
+        </button>
+        <button
           onClick={() => navigate(`/dish/${slug}/cook?level=${level}&serves=${serves}`)}
-          className="btn-primary w-full mt-8"
+          className="btn-primary w-full mt-3"
         >
           {t("start_cooking")}
         </button>

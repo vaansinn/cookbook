@@ -56,5 +56,33 @@
   "cook_next": "Next",
   "cook_finish": "Done cooking",
   "cook_timer_running": "tap to cancel",
-  "cook_timer_done": "Time's up!"
+  "cook_timer_done": "Time's up!",
+
+  "add_to_list": "Add to grocery list",
+  "added_to_list": "Added!",
+
+  "household_setup_title": "Share a grocery list",
+  "household_setup_sub": "Start a shared list, or join one someone already started.",
+  "household_start": "Start a new list",
+  "household_join": "Join with a code",
+  "household_code_placeholder": "8-character code",
+  "household_join_button": "Join",
+  "household_invalid_code": "That code doesn't match a household",
+
+  "grocery_list_title": "Grocery list",
+  "grocery_invite_code": "Invite code",
+  "grocery_invite_hint": "Share this code so someone else can join",
+  "grocery_empty": "Nothing on the list yet — add a recipe or an item below.",
+  "grocery_add_placeholder": "Add an item…",
+  "grocery_clear_checked": "Clear checked",
+  "grocery_used_in": "used in {list}",
+  "grocery_count": "{done} / {total} in the basket",
+
+  "planner_title": "This week",
+  "planner_add": "Add to plan",
+  "planner_build_list": "Add week's plan to grocery list",
+  "planner_empty": "No dishes planned yet.",
+  "planner_pick_dish": "Pick a dish",
+  "planner_pick_date": "Date",
+  "planner_pick_level": "Level"
 }

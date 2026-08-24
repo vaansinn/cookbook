@@ -65,8 +65,10 @@ def create_app():
     # ── Register API blueprints ───────────────────────────────────────────────
     from routes.auth import auth_bp
     from routes.recipes import recipes_bp
+    from routes.groceries import groceries_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(recipes_bp, url_prefix="/api")
+    app.register_blueprint(groceries_bp, url_prefix="/api")
 
     # ── CLI: flask sync-recipes ───────────────────────────────────────────────
     # Re-parses content/recipes/**/*.md + content/foods.json into Postgres.

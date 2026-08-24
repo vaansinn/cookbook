@@ -2,18 +2,27 @@
 models.py — SQLAlchemy database models.
 
 Table overview:
-  users        — registered accounts
-  dishes       — one row per dish concept (slug, cuisine, meal type, methods)
-  recipe_tiers — one row per (dish, difficulty level, language) — the actual
-                 recipe content, including nutrition computed at sync time
-  food_items   — per-100g nutrition lookup, keyed by slug; ingredient lines in
-                 recipe markdown reference these via a `food:<slug>` tag so
-                 nutrition is always derived, never hand-typed (see
-                 scripts/sync_recipes.py)
+  users             — registered accounts
+  dishes            — one row per dish concept (slug, cuisine, meal type, methods)
+  recipe_tiers      — one row per (dish, difficulty level, language) — the actual
+                      recipe content, including nutrition computed at sync time
+  food_items        — per-100g nutrition lookup, keyed by slug; ingredient lines in
+                      recipe markdown reference these via a `food:<slug>` tag so
+                      nutrition is always derived, never hand-typed (see
+                      scripts/sync_recipes.py)
+  households        — a shared grocery list + planner belongs to a household, not
+                      a user, so it can be shared between accounts
+  household_members — join table, user <-> household
+  grocery_lists     — one active list per household (kept to one for now — no
+                      per-week lists yet, see PIPELINE.md)
+  grocery_items     — items on a list; food_slug-linked items merge by weight
+                      when the same ingredient is added from more than one recipe
+  plan_entries      — week planner: a dish+tier assigned to a date
 """
 
 from app import db
 from datetime import datetime
+import secrets
 
 
 class User(db.Model):
@@ -131,3 +140,94 @@ class FoodItem(db.Model):
 
     def to_dict(self):
         return {"slug": self.slug, "names": self.names or {}, "per_100g": self.per_100g}
+
+
+def _invite_code():
+    return secrets.token_hex(4)  # 8 hex chars, easy to read aloud/type
+
+
+class Household(db.Model):
+    __tablename__ = "households"
+    id          = db.Column(db.Integer, primary_key=True)
+    name        = db.Column(db.String(100), default="Our kitchen")
+    invite_code = db.Column(db.String(16), unique=True, nullable=False, default=_invite_code)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    members = db.relationship("HouseholdMember", backref="household", cascade="all, delete-orphan")
+    lists   = db.relationship("GroceryList", backref="household", cascade="all, delete-orphan")
+    plan_entries = db.relationship("PlanEntry", backref="household", cascade="all, delete-orphan")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "invite_code": self.invite_code,
+            "members": [
+                {"user_id": m.user_id, "display_name": m.user.display_name, "email": m.user.email}
+                for m in self.members
+            ],
+        }
+
+
+class HouseholdMember(db.Model):
+    __tablename__ = "household_members"
+    id           = db.Column(db.Integer, primary_key=True)
+    household_id = db.Column(db.Integer, db.ForeignKey("households.id"), nullable=False)
+    user_id      = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True)
+    role         = db.Column(db.String(20), default="member")  # owner | member
+    joined_at    = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User")
+
+
+class GroceryList(db.Model):
+    __tablename__ = "grocery_lists"
+    id           = db.Column(db.Integer, primary_key=True)
+    household_id = db.Column(db.Integer, db.ForeignKey("households.id"), nullable=False)
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    items = db.relationship("GroceryItem", backref="list", cascade="all, delete-orphan")
+
+
+class GroceryItem(db.Model):
+    __tablename__ = "grocery_items"
+    id         = db.Column(db.Integer, primary_key=True)
+    list_id    = db.Column(db.Integer, db.ForeignKey("grocery_lists.id"), nullable=False)
+    food_slug  = db.Column(db.String(80), nullable=True)   # set when added from a recipe; enables merging
+    text       = db.Column(db.String(200), nullable=False) # display name ("Onion", "Paper towels")
+    qty_g      = db.Column(db.Float, nullable=True)         # summed across contributing recipes, when food_slug is set
+    sources    = db.Column(db.JSON, default=list)           # list[{"dish_slug", "dish_title"}] — "used in: X, Y"
+    checked    = db.Column(db.Boolean, default=False, nullable=False)
+    added_by   = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "food_slug": self.food_slug,
+            "text": self.text,
+            "qty_g": self.qty_g,
+            "sources": self.sources or [],
+            "checked": self.checked,
+        }
+
+
+class PlanEntry(db.Model):
+    __tablename__ = "plan_entries"
+    id           = db.Column(db.Integer, primary_key=True)
+    household_id = db.Column(db.Integer, db.ForeignKey("households.id"), nullable=False)
+    date         = db.Column(db.String(10), nullable=False)  # ISO "YYYY-MM-DD" — no timezone math needed for a meal plan
+    dish_slug    = db.Column(db.String(80), nullable=False)
+    level        = db.Column(db.String(20), nullable=False)
+    serves       = db.Column(db.Integer, default=2)
+    added_by     = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "date": self.date,
+            "dish_slug": self.dish_slug,
+            "level": self.level,
+            "serves": self.serves,
+        }

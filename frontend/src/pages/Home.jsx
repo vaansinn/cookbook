@@ -6,6 +6,7 @@ import { useT } from "../i18n";
 import { fetchDishes, fetchFilters } from "../api/recipes";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
+import BottomNav from "../components/BottomNav";
 
 const TIER_DOT_CLASS = { basic: "bg-basic", intermediate: "bg-inter", advanced: "bg-hot" };
 const DISH_EMOJI = {
@@ -132,6 +133,7 @@ export default function Home() {
           ))}
         </div>
       </main>
+      <BottomNav />
     </div>
   );
 }
