@@ -16,6 +16,10 @@ const DISH_EMOJI = {
   "sushi-rice": "🍚",
   "lemon-ricotta-spaghetti": "🍋",
   "potato-chickpea-skillet": "🥘",
+  "eggs-benedict": "🍳",
+  "tiramisu": "🍰",
+  "banana-bread": "🍞",
+  "no-knead-bread": "🥖",
 };
 
 export default function Home() {

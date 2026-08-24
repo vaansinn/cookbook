@@ -52,5 +52,26 @@
   "pine_nuts":                      { "names": {"en": "Pine nuts", "de": "Pinienkerne"}, "per_100g": {"kcal": 673, "protein_g": 13.7, "carbs_g": 13.1, "fat_g": 68.4, "fiber_g": 3.7, "iron_mg": 5.5} },
   "saffron":                        { "names": {"en": "Saffron threads", "de": "Safranfäden"}, "per_100g": {"kcal": 310, "protein_g": 11.4, "carbs_g": 65.4, "fat_g": 5.9, "fiber_g": 3.9, "iron_mg": 11.1} },
   "sherry_vinegar":                 { "names": {"en": "Sherry vinegar", "de": "Sherryessig"}, "per_100g": {"kcal": 19, "protein_g": 0, "carbs_g": 0.4, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.1}, "grams_per_unit": {"tbsp": 15} },
-  "sushi_seasoning_bottled":        { "names": {"en": "Bottled sushi seasoning", "de": "Fertige Sushi-Würzmischung"}, "per_100g": {"kcal": 120, "protein_g": 0, "carbs_g": 28.0, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.1}, "grams_per_unit": {"tbsp": 15} }
+  "sushi_seasoning_bottled":        { "names": {"en": "Bottled sushi seasoning", "de": "Fertige Sushi-Würzmischung"}, "per_100g": {"kcal": 120, "protein_g": 0, "carbs_g": 28.0, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.1}, "grams_per_unit": {"tbsp": 15} },
+
+  "english_muffin":         { "names": {"en": "English muffin", "de": "English Muffin"}, "per_100g": {"kcal": 235, "protein_g": 8.0, "carbs_g": 46.0, "fat_g": 2.0, "fiber_g": 2.2, "iron_mg": 2.5}, "grams_per_unit": {"piece": 57} },
+  "ham":                     { "names": {"en": "Ham / Canadian bacon", "de": "Kochschinken"}, "per_100g": {"kcal": 145, "protein_g": 21.0, "carbs_g": 1.5, "fat_g": 5.5, "fiber_g": 0, "iron_mg": 0.9} },
+  "vinegar_white":           { "names": {"en": "White vinegar", "de": "Weißer Essig"}, "per_100g": {"kcal": 18, "protein_g": 0, "carbs_g": 0.4, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.1}, "grams_per_unit": {"tbsp": 15} },
+  "cayenne_pepper":          { "names": {"en": "Cayenne pepper", "de": "Cayennepfeffer"}, "per_100g": {"kcal": 318, "protein_g": 12.0, "carbs_g": 57.0, "fat_g": 17.0, "fiber_g": 27.0, "iron_mg": 7.8}, "grams_per_unit": {"tsp": 1.8} },
+  "hollandaise_jarred":      { "names": {"en": "Prepared hollandaise sauce", "de": "Fertige Sauce Hollandaise"}, "per_100g": {"kcal": 380, "protein_g": 2.0, "carbs_g": 8.0, "fat_g": 38.0, "fiber_g": 0, "iron_mg": 0.3} },
+  "chives_fresh":            { "names": {"en": "Fresh chives", "de": "Frischer Schnittlauch"}, "per_100g": {"kcal": 30, "protein_g": 3.3, "carbs_g": 4.4, "fat_g": 0.7, "fiber_g": 2.5, "iron_mg": 1.6} },
+  "egg_yolk":                { "names": {"en": "Egg yolk", "de": "Eigelb"}, "per_100g": {"kcal": 322, "protein_g": 15.9, "carbs_g": 3.6, "fat_g": 26.5, "fiber_g": 0, "iron_mg": 2.7}, "grams_per_unit": {"piece": 17} },
+  "egg_white":                { "names": {"en": "Egg white", "de": "Eiweiß"}, "per_100g": {"kcal": 52, "protein_g": 10.9, "carbs_g": 0.7, "fat_g": 0.2, "fiber_g": 0, "iron_mg": 0.1}, "grams_per_unit": {"piece": 33} },
+  "mascarpone":               { "names": {"en": "Mascarpone", "de": "Mascarpone"}, "per_100g": {"kcal": 429, "protein_g": 4.8, "carbs_g": 4.8, "fat_g": 44.0, "fiber_g": 0, "iron_mg": 0.1} },
+  "ladyfingers":              { "names": {"en": "Ladyfinger biscuits (savoiardi)", "de": "Löffelbiskuit"}, "per_100g": {"kcal": 391, "protein_g": 8.8, "carbs_g": 74.0, "fat_g": 6.2, "fiber_g": 1.9, "iron_mg": 3.2} },
+  "coffee_brewed":            { "names": {"en": "Brewed coffee, strong", "de": "Starker gebrühter Kaffee"}, "per_100g": {"kcal": 2, "protein_g": 0.1, "carbs_g": 0, "fat_g": 0, "fiber_g": 0, "iron_mg": 0} },
+  "cocoa_powder":             { "names": {"en": "Unsweetened cocoa powder", "de": "Ungesüßtes Kakaopulver"}, "per_100g": {"kcal": 228, "protein_g": 19.6, "carbs_g": 58.0, "fat_g": 13.7, "fiber_g": 33.0, "iron_mg": 13.9}, "grams_per_unit": {"tbsp": 5.4} },
+  "marsala_wine":              { "names": {"en": "Marsala wine", "de": "Marsala-Wein"}, "per_100g": {"kcal": 130, "protein_g": 0.1, "carbs_g": 8.0, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.3} },
+  "flour_wheat":               { "names": {"en": "All-purpose flour", "de": "Weizenmehl"}, "per_100g": {"kcal": 364, "protein_g": 10.3, "carbs_g": 76.0, "fat_g": 1.0, "fiber_g": 2.7, "iron_mg": 4.6} },
+  "baking_soda":               { "names": {"en": "Baking soda", "de": "Natron"}, "per_100g": {"kcal": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "fiber_g": 0, "iron_mg": 0}, "grams_per_unit": {"tsp": 4.6} },
+  "banana":                    { "names": {"en": "Banana", "de": "Banane"}, "per_100g": {"kcal": 89, "protein_g": 1.1, "carbs_g": 22.8, "fat_g": 0.3, "fiber_g": 2.6, "iron_mg": 0.3} },
+  "walnuts":                   { "names": {"en": "Walnuts", "de": "Walnüsse"}, "per_100g": {"kcal": 654, "protein_g": 15.2, "carbs_g": 13.7, "fat_g": 65.2, "fiber_g": 6.7, "iron_mg": 2.9} },
+  "vanilla_extract":            { "names": {"en": "Vanilla extract", "de": "Vanilleextrakt"}, "per_100g": {"kcal": 288, "protein_g": 0.1, "carbs_g": 12.7, "fat_g": 0.1, "fiber_g": 0, "iron_mg": 0.1}, "grams_per_unit": {"tsp": 4.2} },
+  "cinnamon_ground":             { "names": {"en": "Ground cinnamon", "de": "Gemahlener Zimt"}, "per_100g": {"kcal": 247, "protein_g": 4.0, "carbs_g": 81.0, "fat_g": 1.2, "fiber_g": 53.1, "iron_mg": 8.3}, "grams_per_unit": {"tsp": 2.6} },
+  "yeast_dry":                    { "names": {"en": "Instant dry yeast", "de": "Trockenhefe"}, "per_100g": {"kcal": 325, "protein_g": 40.0, "carbs_g": 41.0, "fat_g": 7.6, "fiber_g": 26.9, "iron_mg": 19.6}, "grams_per_unit": {"tsp": 3.1} }
 }
