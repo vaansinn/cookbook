@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Recipe Drawer — Cookbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--rice:#F2F1E9;--card:#FBFAF5;--ink:#252A20;--matcha:#6F8440;--matcha-deep:#55672F;--plum:#96485B;--stone:#8E8C7F;--line:#DDDACC}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--rice);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16px;line-height:1.55;min-height:100vh}
+button{font:inherit;cursor:pointer;background:none;border:none;color:inherit}
+button:focus-visible,input:focus-visible{outline:2px solid var(--matcha);outline-offset:2px}
+header{padding:28px 20px 10px;max-width:960px;margin:0 auto}
+.drawer-label{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;color:var(--stone);text-transform:uppercase}
+h1{font-family:'Instrument Serif',serif;font-weight:400;font-size:clamp(34px,7vw,52px);line-height:1.05;margin-top:4px}
+h1 em{font-style:italic;color:var(--matcha-deep)}
+.sub{color:var(--stone);font-size:14px;margin-top:6px}
+.toolbar{max-width:960px;margin:18px auto 0;padding:0 20px;display:flex;gap:10px;flex-wrap:wrap}
+.search{flex:1 1 220px;display:flex;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;gap:8px}
+.search input{border:none;background:none;flex:1;font:inherit;color:var(--ink);min-width:0}
+.search input::placeholder{color:var(--stone)}
+.tags{max-width:960px;margin:12px auto 0;padding:0 20px;display:flex;gap:8px;flex-wrap:wrap}
+.tag{font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--stone)}
+.tag[aria-pressed="true"]{background:var(--matcha);border-color:var(--matcha);color:#fff}
+main{max-width:960px;margin:22px auto 60px;padding:0 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+.state-msg{color:var(--stone);padding:30px 0}
+.recipe-card{position:relative;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:4px 12px 12px 12px;padding:20px 18px 16px;margin-top:14px;transition:transform .15s ease,box-shadow .15s ease;display:block;width:100%}
+.recipe-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(37,42,32,.08)}
+.slug-tab{position:absolute;top:-14px;left:-1px;font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--ink);color:var(--rice);padding:3px 10px;border-radius:6px 6px 0 0}
+.recipe-card h2{font-family:'Instrument Serif',serif;font-weight:400;font-size:26px;line-height:1.1;margin-bottom:6px}
+.meta{font-size:13px;color:var(--stone)}
+.meta b{color:var(--matcha-deep);font-weight:600}
+.card-tags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.card-tags span{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--plum);border:1px solid #E5D3D8;border-radius:999px;padding:2px 8px}
+.detail{max-width:720px;margin:10px auto 80px;padding:0 20px;display:none}
+.back{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--matcha-deep);padding:8px 0;margin-bottom:4px}
+.detail .slugline{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--stone)}
+.detail h2{font-family:'Instrument Serif',serif;font-weight:400;font-size:clamp(30px,6vw,44px);line-height:1.05;margin:4px 0 8px}
+.detail .meta{font-size:14px;margin-bottom:18px}
+.scaler{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:22px}
+.scaler .lbl{font-size:14px;color:var(--stone)}
+.scaler button{width:36px;height:36px;border:1px solid var(--line);border-radius:50%;font-size:18px;color:var(--matcha-deep);background:var(--rice)}
+.scaler .count{font-family:'IBM Plex Mono',monospace;font-size:18px;min-width:2ch;text-align:center}
+.sec-label{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--matcha-deep);border-bottom:1px solid var(--line);padding-bottom:6px;margin:26px 0 12px}
+.prep{background:#EFE9DE;border:1px solid #E0D6C2;border-left:4px solid var(--plum);border-radius:10px;padding:14px 16px;margin-bottom:8px}
+.prep-title{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--plum);margin-bottom:8px}
+.prep ul{list-style:none}
+.prep li{padding:5px 0 5px 26px;position:relative;cursor:pointer}
+.prep li::before{content:"○";position:absolute;left:4px;color:var(--plum)}
+.prep li.done{opacity:.45}
+.prep li.done::before{content:"●"}
+.ing{list-style:none}
+.ing li{padding:7px 0;border-bottom:1px dashed var(--line);display:flex;gap:8px}
+.ing .qty{font-family:'IBM Plex Mono',monospace;color:var(--matcha-deep);white-space:nowrap}
+.steps{list-style:none}
+.steps li{display:flex;gap:14px;padding:12px 0;border-bottom:1px dashed var(--line);align-items:flex-start;cursor:pointer}
+.steps li .n{font-family:'Instrument Serif',serif;font-size:24px;color:var(--matcha);min-width:26px;line-height:1.2}
+.steps li.done{opacity:.4;text-decoration:line-through}
+.notes{list-style:none}
+.notes li{padding:6px 0 6px 16px;position:relative}
+.notes li::before{content:"·";position:absolute;left:0;color:var(--plum);font-weight:700}
+.timer-btn{font-family:'IBM Plex Mono',monospace;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 12px;color:var(--matcha-deep);background:var(--rice);margin-top:8px;display:inline-block;white-space:nowrap}
+.timer-btn.running{background:var(--matcha);color:#fff;border-color:var(--matcha)}
+.timer-btn.done{background:var(--plum);color:#fff;border-color:var(--plum);animation:pulse 1s ease 3}
+@keyframes pulse{50%{transform:scale(1.08)}}
+footer{max-width:960px;margin:0 auto;padding:0 20px 40px;color:var(--stone);font-size:12px;font-family:'IBM Plex Mono',monospace}
+@media (prefers-reduced-motion:reduce){.recipe-card{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="drawer-label">Recipes/ · cookbook edition · reads live from GitHub</div>
+  <h1>The Recipe <em>Drawer</em></h1>
+  <div class="sub">Nico &amp; co.'s favorite dishes.</div>
+</header>
+<div class="toolbar">
+  <div class="search"><span aria-hidden="true">🔍</span><input id="q" type="text" placeholder="Search dishes or ingredients…" aria-label="Search recipes"></div>
+</div>
+<div class="tags" id="tagRow"></div>
+<main><div class="grid" id="grid"><div class="state-msg">Loading recipes…</div></div></main>
+<section class="detail" id="detail" aria-live="polite"></section>
+<footer>cookbook edition · reads recipes live from <a href="https://github.com/vaansinn/cookbook/tree/main/recipes" style="color:inherit">github.com/vaansinn/cookbook/recipes</a> · add a .md file there to add a recipe, no rebuild needed</footer>
+<script>
+const REPO = "vaansinn/cookbook";
+const BRANCH = "main";
+const RECIPES_DIR = "recipes";
+
+let recipes=[],activeTag=null,currentServes=0;
+const el=id=>document.getElementById(id);
+
+function parseRecipe(md,fileMeta){
+  const lines=md.split(/\r?\n/);
+  const r={id:fileMeta.name,slug:fileMeta.name,title:fileMeta.name.replace(/\.md$/,""),cuisine:"",serves:2,time:"",tags:[],prep:[],ingredients:[],steps:[],notes:[]};
+  let section="";
+  for(const raw of lines){
+    const line=raw.trim();
+    if(!line)continue;
+    if(line.startsWith("# ")&&!line.startsWith("## ")){r.title=line.slice(2).trim();continue;}
+    if(/^\*\*Cuisine:\*\*/i.test(line)){
+      const c=line.match(/\*\*Cuisine:\*\*\s*([^·]+)/i);if(c)r.cuisine=c[1].trim();
+      const s=line.match(/\*\*Serves:\*\*\s*(\d+)/i);if(s)r.serves=parseInt(s[1],10);
+      const t=line.match(/\*\*Time:\*\*\s*(.+)$/i);if(t)r.time=t[1].trim();continue;
+    }
+    if(/^\*\*Tags:\*\*/i.test(line)){r.tags=line.replace(/^\*\*Tags:\*\*/i,"").split(",").map(x=>x.trim()).filter(Boolean);continue;}
+    if(/^##\s*prep/i.test(line)){section="prep";continue;}
+    if(/^##\s*ingredients/i.test(line)){section="ing";continue;}
+    if(/^##\s*instructions/i.test(line)){section="steps";continue;}
+    if(/^##\s*notes/i.test(line)){section="notes";continue;}
+    if(/^##/.test(line)){section="";continue;}
+    if(section==="prep"&&/^[-*]\s+/.test(line))r.prep.push(line.replace(/^[-*]\s+/,""));
+    if(section==="ing"&&/^[-*]\s+/.test(line))r.ingredients.push(line.replace(/^[-*]\s+/,""));
+    if(section==="steps"&&/^\d+[.)]\s+/.test(line))r.steps.push(line.replace(/^\d+[.)]\s+/,""));
+    if(section==="notes"&&/^[-*]\s+/.test(line))r.notes.push(line.replace(/^[-*]\s+/,""));
+  }
+  return r;
+}
+const UNICODE_FRAC={"½":0.5,"⅓":1/3,"⅔":2/3,"¼":0.25,"¾":0.75,"⅛":0.125};
+function fmtNum(n){
+  if(Math.abs(n-Math.round(n))<0.02)return String(Math.round(n));
+  for(const[gl,v]of Object.entries(UNICODE_FRAC)){if(Math.abs((n%1)-v)<0.03)return(Math.floor(n)||"")+gl;}
+  return(Math.round(n*10)/10).toString();
+}
+function scaleIngredient(text,factor){
+  const m=text.match(/^([\d]+(?:[.,]\d+)?|[½⅓⅔¼¾⅛]|\d+[½⅓⅔¼¾⅛])(\s*)(.*)$/);
+  if(!m)return{qty:"",rest:text};
+  let numStr=m[1],val=0;
+  if(UNICODE_FRAC[numStr]!==undefined)val=UNICODE_FRAC[numStr];
+  else if(/[½⅓⅔¼¾⅛]$/.test(numStr))val=parseInt(numStr,10)+UNICODE_FRAC[numStr.slice(-1)];
+  else val=parseFloat(numStr.replace(",","."));
+  return{qty:fmtNum(val*factor),rest:m[3]};
+}
+function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+function renderTags(){
+  const all=[...new Set(recipes.flatMap(r=>r.tags))].sort();
+  el("tagRow").innerHTML=all.map(t=>`<button class="tag" aria-pressed="${t===activeTag}" data-tag="${esc(t)}">${esc(t)}</button>`).join("");
+  el("tagRow").querySelectorAll(".tag").forEach(b=>b.addEventListener("click",()=>{activeTag=activeTag===b.dataset.tag?null:b.dataset.tag;renderGrid();renderTags();}));
+}
+function renderGrid(){
+  const q=el("q").value.toLowerCase();
+  const list=recipes.filter(r=>{
+    const hay=(r.title+" "+r.cuisine+" "+r.ingredients.join(" ")).toLowerCase();
+    return(!q||hay.includes(q))&&(!activeTag||r.tags.includes(activeTag));
+  });
+  el("grid").innerHTML=list.map(r=>`
+    <button class="recipe-card" data-id="${esc(r.id)}">
+      <span class="slug-tab">${esc(r.slug)}</span>
+      <h2>${esc(r.title)}</h2>
+      <div class="meta">${esc(r.cuisine)} · serves <b>${r.serves}</b>${r.time?" · "+esc(r.time):""}</div>
+      ${r.tags.length?`<div class="card-tags">${r.tags.map(t=>`<span>${esc(t)}</span>`).join("")}</div>`:""}
+    </button>`).join("")||`<div class="state-msg">Nothing matches — try another search.</div>`;
+  el("grid").querySelectorAll(".recipe-card").forEach(c=>c.addEventListener("click",()=>openDetail(c.dataset.id)));
+}
+const timers={};
+function parseSeconds(text){
+  const h=text.match(/(\d+(?:[.,]\d+)?)(?:\s*[–-]\s*\d+(?:[.,]\d+)?)?\s*(?:h\b|hours?\b)/i);
+  const m=text.match(/(\d+(?:[.,]\d+)?)(?:\s*[–-]\s*\d+(?:[.,]\d+)?)?\s*(?:min\b|minutes?\b)/i);
+  let s=0;
+  if(h)s+=parseFloat(h[1].replace(",","."))*3600;
+  if(m)s+=parseFloat(m[1].replace(",","."))*60;
+  return s>0?Math.round(s):null;
+}
+function fmtSecs(s){
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  return h?`${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`:`${m}:${String(sec).padStart(2,"0")}`;
+}
+function timerLabel(s){return s>=3600?`⏱ ${(s/3600).toFixed(s%3600?1:0)} h`:`⏱ ${Math.round(s/60)} min`;}
+function beep(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    [0,0.35,0.7].forEach(t=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);o.frequency.value=880;
+      g.gain.setValueAtTime(0.25,ctx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+0.3);
+      o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+0.3);
+    });
+  }catch(e){}
+}
+function toggleTimer(key,secs){
+  const t=timers[key];
+  if(t){clearInterval(t.iv);delete timers[key];paintTimer(key,secs);return;}
+  const end=Date.now()+secs*1000;
+  timers[key]={end,secs,iv:setInterval(()=>{
+    const left=Math.round((timers[key].end-Date.now())/1000);
+    if(left<=0){
+      clearInterval(timers[key].iv);delete timers[key];
+      beep();if(navigator.vibrate)navigator.vibrate([300,150,300]);
+      paintTimer(key,secs,"done");
+    }else paintTimer(key,secs,"running",left);
+  },250)};
+  paintTimer(key,secs,"running",secs);
+}
+function paintTimer(key,secs,state,left){
+  const b=document.getElementById("tmr-"+key);
+  if(!b)return;
+  b.classList.remove("running","done");
+  if(state==="running"){b.classList.add("running");b.textContent="⏱ "+fmtSecs(left)+" · tap to cancel";}
+  else if(state==="done"){b.classList.add("done");b.textContent="✓ time's up!";}
+  else b.textContent=timerLabel(secs);
+}
+function bindTimers(){
+  document.querySelectorAll(".timer-btn").forEach(b=>{
+    const key=b.id.slice(4),secs=parseInt(b.dataset.secs,10);
+    const t=timers[key];
+    if(t)paintTimer(key,secs,"running",Math.max(0,Math.round((t.end-Date.now())/1000)));
+    b.addEventListener("click",e=>{e.stopPropagation();toggleTimer(key,secs);});
+  });
+}
+function openDetail(id){
+  const r=recipes.find(x=>x.id===id);if(!r)return;
+  currentServes=r.serves;
+  document.querySelector("main").style.display="none";
+  document.querySelector(".toolbar").style.display="none";el("tagRow").style.display="none";
+  const d=el("detail");d.style.display="block";
+  const draw=()=>{
+    const f=currentServes/r.serves;
+    d.innerHTML=`
+      <button class="back" id="backBtn">← all recipes</button>
+      <div class="slugline">${esc(r.slug)}</div>
+      <h2>${esc(r.title)}</h2>
+      <div class="meta">${esc(r.cuisine)}${r.time?" · "+esc(r.time):""}</div>
+      <div class="scaler">
+        <span class="lbl">Servings</span>
+        <button id="minus" aria-label="Fewer servings">−</button>
+        <span class="count">${currentServes}</span>
+        <button id="plus" aria-label="More servings">+</button>
+        ${currentServes!==r.serves?`<span class="lbl">(scaled from ${r.serves})</span>`:""}
+      </div>
+      ${r.prep.length?`<div class="prep"><div class="prep-title">Before you start</div><ul>${r.prep.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div>`:""}
+      <div class="sec-label">Ingredients</div>
+      <ul class="ing">${r.ingredients.map(i=>{const s=scaleIngredient(i,f);return `<li>${s.qty?`<span class="qty">${esc(s.qty)}</span>`:""}<span>${esc(s.rest)}</span></li>`;}).join("")}</ul>
+      <div class="sec-label">Instructions — tap a step when done</div>
+      <ol class="steps">${r.steps.map((s,i)=>`<li data-i="${i}"><span class="n">${i+1}</span><span>${esc(s)}${((()=>{const ts=parseSeconds(s);return ts?`<br><button class="timer-btn" id="tmr-${esc(r.id)}-${i}" data-secs="${ts}">${timerLabel(ts)}</button>`:"";})())}</span></li>`).join("")}</ol>
+      ${r.notes.length?`<div class="sec-label">Notes &amp; tweaks</div><ul class="notes">${r.notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`:""}`;
+    el("backBtn").addEventListener("click",closeDetail);
+    el("minus").addEventListener("click",()=>{if(currentServes>1){currentServes--;draw();}});
+    el("plus").addEventListener("click",()=>{currentServes++;draw();});
+    d.querySelectorAll(".steps li").forEach(li=>li.addEventListener("click",()=>li.classList.toggle("done")));
+    d.querySelectorAll(".prep li").forEach(li=>li.addEventListener("click",()=>li.classList.toggle("done")));
+    bindTimers();
+  };
+  draw();window.scrollTo({top:0});
+}
+function closeDetail(){
+  el("detail").style.display="none";
+  document.querySelector("main").style.display="block";
+  document.querySelector(".toolbar").style.display="flex";el("tagRow").style.display="flex";
+}
+
+async function loadRecipes(){
+  try{
+    const listRes=await fetch(`https://api.github.com/repos/${REPO}/contents/${RECIPES_DIR}?ref=${BRANCH}`);
+    if(!listRes.ok)throw new Error("Could not list recipes ("+listRes.status+")");
+    const entries=(await listRes.json()).filter(e=>e.type==="file"&&e.name.endsWith(".md"));
+    const files=await Promise.all(entries.map(async e=>{
+      const res=await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${RECIPES_DIR}/${e.name}`);
+      return{name:e.name,md:await res.text()};
+    }));
+    recipes=files.map(f=>parseRecipe(f.md,f)).sort((a,b)=>a.title.localeCompare(b.title));
+    renderGrid();renderTags();
+  }catch(err){
+    el("grid").innerHTML=`<div class="state-msg">Could not load recipes right now — check your connection and reload. (${esc(err.message)})</div>`;
+  }
+}
+el("q").addEventListener("input",renderGrid);
+loadRecipes();
+</script>
+</body>
+</html>
