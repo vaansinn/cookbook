@@ -43,5 +43,14 @@
   "tomato_pasta_sauce_jar":        { "names": {"en": "Tomato pasta sauce (jar)", "de": "Tomatensauce (Glas)"}, "per_100g": {"kcal": 55, "protein_g": 1.5, "carbs_g": 8.0, "fat_g": 1.8, "fiber_g": 1.5, "iron_mg": 0.5} },
   "red_wine":                      { "names": {"en": "Red wine", "de": "Rotwein"}, "per_100g": {"kcal": 85, "protein_g": 0.1, "carbs_g": 2.6, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.5} },
   "butter":                        { "names": {"en": "Butter", "de": "Butter"}, "per_100g": {"kcal": 717, "protein_g": 0.9, "carbs_g": 0.1, "fat_g": 81.0, "fiber_g": 0, "iron_mg": 0.02}, "grams_per_unit": {"tbsp": 14} },
-  "basil_fresh":                   { "names": {"en": "Fresh basil", "de": "Frisches Basilikum"}, "per_100g": {"kcal": 23, "protein_g": 3.2, "carbs_g": 2.7, "fat_g": 0.6, "fiber_g": 1.6, "iron_mg": 3.2} }
+  "basil_fresh":                   { "names": {"en": "Fresh basil", "de": "Frisches Basilikum"}, "per_100g": {"kcal": 23, "protein_g": 3.2, "carbs_g": 2.7, "fat_g": 0.6, "fiber_g": 1.6, "iron_mg": 3.2} },
+
+  "garam_masala":                  { "names": {"en": "Garam masala", "de": "Garam Masala"}, "per_100g": {"kcal": 379, "protein_g": 13.0, "carbs_g": 51.0, "fat_g": 15.0, "fiber_g": 22.0, "iron_mg": 40.0}, "grams_per_unit": {"tsp": 2.0} },
+  "turmeric_ground":                { "names": {"en": "Ground turmeric", "de": "Gemahlene Kurkuma"}, "per_100g": {"kcal": 312, "protein_g": 8.0, "carbs_g": 65.0, "fat_g": 3.3, "fiber_g": 21.0, "iron_mg": 55.0}, "grams_per_unit": {"tsp": 2.2} },
+  "yogurt_plain":                   { "names": {"en": "Plain yogurt", "de": "Naturjoghurt"}, "per_100g": {"kcal": 61, "protein_g": 3.5, "carbs_g": 4.7, "fat_g": 3.3, "fiber_g": 0, "iron_mg": 0.05} },
+  "chili_flakes":                   { "names": {"en": "Chili flakes", "de": "Chiliflocken"}, "per_100g": {"kcal": 282, "protein_g": 12.0, "carbs_g": 50.0, "fat_g": 14.0, "fiber_g": 34.0, "iron_mg": 7.8}, "grams_per_unit": {"tsp": 1.8} },
+  "pine_nuts":                      { "names": {"en": "Pine nuts", "de": "Pinienkerne"}, "per_100g": {"kcal": 673, "protein_g": 13.7, "carbs_g": 13.1, "fat_g": 68.4, "fiber_g": 3.7, "iron_mg": 5.5} },
+  "saffron":                        { "names": {"en": "Saffron threads", "de": "Safranfäden"}, "per_100g": {"kcal": 310, "protein_g": 11.4, "carbs_g": 65.4, "fat_g": 5.9, "fiber_g": 3.9, "iron_mg": 11.1} },
+  "sherry_vinegar":                 { "names": {"en": "Sherry vinegar", "de": "Sherryessig"}, "per_100g": {"kcal": 19, "protein_g": 0, "carbs_g": 0.4, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.1}, "grams_per_unit": {"tbsp": 15} },
+  "sushi_seasoning_bottled":        { "names": {"en": "Bottled sushi seasoning", "de": "Fertige Sushi-Würzmischung"}, "per_100g": {"kcal": 120, "protein_g": 0, "carbs_g": 28.0, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.1}, "grams_per_unit": {"tbsp": 15} }
 }

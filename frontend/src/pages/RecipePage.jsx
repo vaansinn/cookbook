@@ -59,7 +59,10 @@ export default function RecipePage() {
           </div>
         </div>
         <div className="text-xs font-bold uppercase mt-3" style={{ color: "var(--brand)" }}>
-          {dish.cuisine}{tier.tags?.length ? " · " + tier.tags.join(" · ") : ""}
+          {dish.cuisine}
+          {tier.tags?.filter((tg) => tg.toLowerCase() !== (dish.cuisine || "").toLowerCase()).length
+            ? " · " + tier.tags.filter((tg) => tg.toLowerCase() !== (dish.cuisine || "").toLowerCase()).join(" · ")
+            : ""}
         </div>
         <h1 className="font-display text-3xl font-bold mt-1" style={{ color: "var(--ink)" }}>
           {tier.title}
