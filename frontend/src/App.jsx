@@ -5,6 +5,8 @@ import useSettingsStore from "./store/useSettingsStore";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
+import RecipePage from "./pages/RecipePage";
+import CookMode from "./pages/CookMode";
 
 function RequireAuth({ children }) {
   const user = useAuthStore((s) => s.user);
@@ -35,6 +37,22 @@ export default function App() {
           element={
             <RequireAuth>
               <Home />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dish/:slug"
+          element={
+            <RequireAuth>
+              <RecipePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dish/:slug/cook"
+          element={
+            <RequireAuth>
+              <CookMode />
             </RequireAuth>
           }
         />

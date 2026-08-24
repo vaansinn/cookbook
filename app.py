@@ -64,7 +64,22 @@ def create_app():
 
     # ── Register API blueprints ───────────────────────────────────────────────
     from routes.auth import auth_bp
+    from routes.recipes import recipes_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(recipes_bp, url_prefix="/api")
+
+    # ── CLI: flask sync-recipes ───────────────────────────────────────────────
+    # Re-parses content/recipes/**/*.md + content/foods.json into Postgres.
+    # Run manually after content changes — see scripts/sync_recipes.py.
+    @app.cli.command("sync-recipes")
+    def sync_recipes_cmd():
+        from scripts.sync_recipes import sync, SyncError
+        from models import Dish, RecipeTier, FoodItem
+        try:
+            sync(db, Dish, RecipeTier, FoodItem)
+        except SyncError as e:
+            print(f"Sync failed: {e}")
+            raise SystemExit(1)
 
     # ── React SPA catchall ────────────────────────────────────────────────────
     # The React app builds into /static (see frontend/vite.config.js). Any URL

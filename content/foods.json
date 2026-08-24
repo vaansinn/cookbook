@@ -1,0 +1,47 @@
+{
+  "pasta_dry":            { "names": {"en": "Dry pasta (spaghetti/spaghettini)", "de": "Trockene Pasta (Spaghetti)"}, "per_100g": {"kcal": 371, "protein_g": 13.0, "carbs_g": 74.7, "fat_g": 1.5, "fiber_g": 3.2, "iron_mg": 1.3} },
+  "lentils_red_dry":      { "names": {"en": "Red lentils (dry)", "de": "Rote Linsen (trocken)"}, "per_100g": {"kcal": 352, "protein_g": 24.6, "carbs_g": 63.4, "fat_g": 1.1, "fiber_g": 10.7, "iron_mg": 6.5} },
+  "onion":                { "names": {"en": "Onion", "de": "Zwiebel"}, "per_100g": {"kcal": 40, "protein_g": 1.1, "carbs_g": 9.3, "fat_g": 0.1, "fiber_g": 1.7, "iron_mg": 0.2} },
+  "carrot":                { "names": {"en": "Carrot", "de": "Karotte"}, "per_100g": {"kcal": 41, "protein_g": 0.9, "carbs_g": 9.6, "fat_g": 0.2, "fiber_g": 2.8, "iron_mg": 0.3} },
+  "celery":                { "names": {"en": "Celery", "de": "Stangensellerie"}, "per_100g": {"kcal": 16, "protein_g": 0.7, "carbs_g": 3.0, "fat_g": 0.2, "fiber_g": 1.6, "iron_mg": 0.2} },
+  "garlic":                { "names": {"en": "Garlic", "de": "Knoblauch"}, "per_100g": {"kcal": 149, "protein_g": 6.4, "carbs_g": 33.1, "fat_g": 0.5, "fiber_g": 2.1, "iron_mg": 1.7}, "grams_per_unit": {"clove": 5} },
+  "tomatoes_canned":       { "names": {"en": "Canned chopped tomatoes", "de": "Tomaten aus der Dose"}, "per_100g": {"kcal": 32, "protein_g": 1.6, "carbs_g": 6.6, "fat_g": 0.3, "fiber_g": 1.5, "iron_mg": 0.7} },
+  "tomato_paste":          { "names": {"en": "Tomato paste", "de": "Tomatenmark"}, "per_100g": {"kcal": 82, "protein_g": 4.3, "carbs_g": 18.9, "fat_g": 0.5, "fiber_g": 4.1, "iron_mg": 3.0}, "grams_per_unit": {"tbsp": 16} },
+  "olive_oil":             { "names": {"en": "Olive oil", "de": "Olivenöl"}, "per_100g": {"kcal": 884, "protein_g": 0, "carbs_g": 0, "fat_g": 100, "fiber_g": 0, "iron_mg": 0.6}, "grams_per_unit": {"tbsp": 13.5, "tsp": 4.5} },
+  "herbs_dried":           { "names": {"en": "Dried herbs (oregano/Italian mix)", "de": "Getrocknete Kräuter"}, "per_100g": {"kcal": 265, "protein_g": 9.0, "carbs_g": 68.9, "fat_g": 4.3, "fiber_g": 42.5, "iron_mg": 36.8}, "grams_per_unit": {"tsp": 1.5} },
+  "vegetable_bouillon":    { "names": {"en": "Vegetable bouillon (prepared)", "de": "Gemüsebrühe (fertig)"}, "per_100g": {"kcal": 8, "protein_g": 0.5, "carbs_g": 1.0, "fat_g": 0.2, "fiber_g": 0, "iron_mg": 0.1} },
+  "parmesan":              { "names": {"en": "Parmesan, grated", "de": "Parmesan, gerieben"}, "per_100g": {"kcal": 431, "protein_g": 38.0, "carbs_g": 4.1, "fat_g": 29.0, "fiber_g": 0, "iron_mg": 0.8}, "grams_per_unit": {"tbsp": 5} },
+
+  "rice_dry":              { "names": {"en": "Rice, dry (basmati/long grain)", "de": "Reis, trocken"}, "per_100g": {"kcal": 365, "protein_g": 7.1, "carbs_g": 80.0, "fat_g": 0.7, "fiber_g": 1.3, "iron_mg": 0.8} },
+  "rice_cooked":            { "names": {"en": "Rice, cooked", "de": "Reis, gekocht"}, "per_100g": {"kcal": 130, "protein_g": 2.7, "carbs_g": 28.0, "fat_g": 0.3, "fiber_g": 0.4, "iron_mg": 0.2} },
+  "chickpeas_canned":       { "names": {"en": "Chickpeas, canned & drained", "de": "Kichererbsen, aus der Dose"}, "per_100g": {"kcal": 139, "protein_g": 7.5, "carbs_g": 22.5, "fat_g": 2.6, "fiber_g": 7.6, "iron_mg": 1.6} },
+  "tikka_masala_sauce":     { "names": {"en": "Tikka masala sauce (jar)", "de": "Tikka-Masala-Sauce (Glas)"}, "per_100g": {"kcal": 90, "protein_g": 1.5, "carbs_g": 8.0, "fat_g": 5.5, "fiber_g": 1.2, "iron_mg": 0.5} },
+  "ginger_fresh":           { "names": {"en": "Fresh ginger", "de": "Frischer Ingwer"}, "per_100g": {"kcal": 80, "protein_g": 1.8, "carbs_g": 17.8, "fat_g": 0.8, "fiber_g": 2.0, "iron_mg": 0.6} },
+  "spinach_fresh":          { "names": {"en": "Fresh spinach", "de": "Frischer Spinat"}, "per_100g": {"kcal": 23, "protein_g": 2.9, "carbs_g": 3.6, "fat_g": 0.4, "fiber_g": 2.2, "iron_mg": 2.7} },
+  "coriander_fresh":        { "names": {"en": "Fresh coriander/parsley", "de": "Frischer Koriander/Petersilie"}, "per_100g": {"kcal": 23, "protein_g": 2.1, "carbs_g": 3.7, "fat_g": 0.5, "fiber_g": 2.8, "iron_mg": 1.8} },
+
+  "ricotta":                { "names": {"en": "Ricotta", "de": "Ricotta"}, "per_100g": {"kcal": 174, "protein_g": 11.3, "carbs_g": 3.0, "fat_g": 13.0, "fiber_g": 0, "iron_mg": 0.4} },
+  "lemon":                  { "names": {"en": "Lemon (zest + juice)", "de": "Zitrone (Schale + Saft)"}, "per_100g": {"kcal": 29, "protein_g": 1.1, "carbs_g": 9.3, "fat_g": 0.3, "fiber_g": 2.8, "iron_mg": 0.6} },
+  "black_pepper":           { "names": {"en": "Black pepper", "de": "Schwarzer Pfeffer"}, "per_100g": {"kcal": 251, "protein_g": 10.0, "carbs_g": 64.0, "fat_g": 3.3, "fiber_g": 25.0, "iron_mg": 9.7}, "grams_per_unit": {"tsp": 2.3} },
+  "salt":                   { "names": {"en": "Salt", "de": "Salz"}, "per_100g": {"kcal": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "fiber_g": 0, "iron_mg": 0}, "grams_per_unit": {"tsp": 6} },
+
+  "potatoes":                { "names": {"en": "Potatoes (waxy)", "de": "Kartoffeln (festkochend)"}, "per_100g": {"kcal": 77, "protein_g": 2.0, "carbs_g": 17.0, "fat_g": 0.1, "fiber_g": 2.2, "iron_mg": 0.8} },
+  "feta":                    { "names": {"en": "Feta", "de": "Feta"}, "per_100g": {"kcal": 264, "protein_g": 14.2, "carbs_g": 4.1, "fat_g": 21.3, "fiber_g": 0, "iron_mg": 0.65} },
+  "smoked_paprika":          { "names": {"en": "Smoked paprika", "de": "Geräuchertes Paprikapulver"}, "per_100g": {"kcal": 282, "protein_g": 14.1, "carbs_g": 54.0, "fat_g": 12.9, "fiber_g": 34.9, "iron_mg": 21.1}, "grams_per_unit": {"tsp": 2.3} },
+  "cumin_ground":            { "names": {"en": "Ground cumin", "de": "Gemahlener Kreuzkümmel"}, "per_100g": {"kcal": 375, "protein_g": 17.8, "carbs_g": 44.2, "fat_g": 22.3, "fiber_g": 10.5, "iron_mg": 66.4}, "grams_per_unit": {"tsp": 2.1} },
+
+  "eggs":                    { "names": {"en": "Eggs", "de": "Eier"}, "per_100g": {"kcal": 143, "protein_g": 12.6, "carbs_g": 0.7, "fat_g": 9.5, "fiber_g": 0, "iron_mg": 1.2}, "grams_per_unit": {"piece": 50} },
+  "soy_sauce":               { "names": {"en": "Soy sauce", "de": "Sojasauce"}, "per_100g": {"kcal": 53, "protein_g": 8.0, "carbs_g": 4.9, "fat_g": 0.1, "fiber_g": 0.8, "iron_mg": 2.4}, "grams_per_unit": {"tbsp": 16} },
+  "sesame_oil":               { "names": {"en": "Sesame oil", "de": "Sesamöl"}, "per_100g": {"kcal": 884, "protein_g": 0, "carbs_g": 0, "fat_g": 100, "fiber_g": 0, "iron_mg": 0}, "grams_per_unit": {"tsp": 4.5} },
+  "bell_pepper":              { "names": {"en": "Bell pepper", "de": "Paprika"}, "per_100g": {"kcal": 31, "protein_g": 1.0, "carbs_g": 6.0, "fat_g": 0.3, "fiber_g": 2.1, "iron_mg": 0.4} },
+  "spring_onion":              { "names": {"en": "Spring onion", "de": "Frühlingszwiebel"}, "per_100g": {"kcal": 32, "protein_g": 1.8, "carbs_g": 7.3, "fat_g": 0.2, "fiber_g": 2.6, "iron_mg": 1.5} },
+
+  "sushi_rice_dry":            { "names": {"en": "Sushi rice, dry", "de": "Sushi-Reis, trocken"}, "per_100g": {"kcal": 358, "protein_g": 6.5, "carbs_g": 79.3, "fat_g": 0.5, "fiber_g": 0.5, "iron_mg": 0.6} },
+  "rice_vinegar":                { "names": {"en": "Rice vinegar", "de": "Reisessig"}, "per_100g": {"kcal": 18, "protein_g": 0, "carbs_g": 1.0, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.1}, "grams_per_unit": {"tbsp": 15} },
+  "sugar":                        { "names": {"en": "Sugar", "de": "Zucker"}, "per_100g": {"kcal": 387, "protein_g": 0, "carbs_g": 100.0, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.01}, "grams_per_unit": {"tbsp": 12.5} },
+
+  "tomato_pasta_sauce_jar":        { "names": {"en": "Tomato pasta sauce (jar)", "de": "Tomatensauce (Glas)"}, "per_100g": {"kcal": 55, "protein_g": 1.5, "carbs_g": 8.0, "fat_g": 1.8, "fiber_g": 1.5, "iron_mg": 0.5} },
+  "red_wine":                      { "names": {"en": "Red wine", "de": "Rotwein"}, "per_100g": {"kcal": 85, "protein_g": 0.1, "carbs_g": 2.6, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.5} },
+  "butter":                        { "names": {"en": "Butter", "de": "Butter"}, "per_100g": {"kcal": 717, "protein_g": 0.9, "carbs_g": 0.1, "fat_g": 81.0, "fiber_g": 0, "iron_mg": 0.02}, "grams_per_unit": {"tbsp": 14} },
+  "basil_fresh":                   { "names": {"en": "Fresh basil", "de": "Frisches Basilikum"}, "per_100g": {"kcal": 23, "protein_g": 3.2, "carbs_g": 2.7, "fat_g": 0.6, "fiber_g": 1.6, "iron_mg": 3.2} }
+}
