@@ -73,5 +73,24 @@
   "walnuts":                   { "names": {"en": "Walnuts", "de": "Walnüsse"}, "per_100g": {"kcal": 654, "protein_g": 15.2, "carbs_g": 13.7, "fat_g": 65.2, "fiber_g": 6.7, "iron_mg": 2.9} },
   "vanilla_extract":            { "names": {"en": "Vanilla extract", "de": "Vanilleextrakt"}, "per_100g": {"kcal": 288, "protein_g": 0.1, "carbs_g": 12.7, "fat_g": 0.1, "fiber_g": 0, "iron_mg": 0.1}, "grams_per_unit": {"tsp": 4.2} },
   "cinnamon_ground":             { "names": {"en": "Ground cinnamon", "de": "Gemahlener Zimt"}, "per_100g": {"kcal": 247, "protein_g": 4.0, "carbs_g": 81.0, "fat_g": 1.2, "fiber_g": 53.1, "iron_mg": 8.3}, "grams_per_unit": {"tsp": 2.6} },
-  "yeast_dry":                    { "names": {"en": "Instant dry yeast", "de": "Trockenhefe"}, "per_100g": {"kcal": 325, "protein_g": 40.0, "carbs_g": 41.0, "fat_g": 7.6, "fiber_g": 26.9, "iron_mg": 19.6}, "grams_per_unit": {"tsp": 3.1} }
+  "yeast_dry":                    { "names": {"en": "Instant dry yeast", "de": "Trockenhefe"}, "per_100g": {"kcal": 325, "protein_g": 40.0, "carbs_g": 41.0, "fat_g": 7.6, "fiber_g": 26.9, "iron_mg": 19.6}, "grams_per_unit": {"tsp": 3.1} },
+
+  "beef_stock":               { "names": {"en": "Beef stock, prepared", "de": "Rinderbrühe, fertig"}, "per_100g": {"kcal": 10, "protein_g": 1.5, "carbs_g": 0.5, "fat_g": 0.3, "fiber_g": 0, "iron_mg": 0.2} },
+  "white_wine":                { "names": {"en": "Dry white wine", "de": "Trockener Weißwein"}, "per_100g": {"kcal": 82, "protein_g": 0.1, "carbs_g": 2.6, "fat_g": 0, "fiber_g": 0, "iron_mg": 0.4} },
+  "baguette":                   { "names": {"en": "Crusty bread (baguette)", "de": "Baguette"}, "per_100g": {"kcal": 274, "protein_g": 9.0, "carbs_g": 55.0, "fat_g": 1.7, "fiber_g": 2.4, "iron_mg": 3.6} },
+  "cheese_gruyere":              { "names": {"en": "Gruyère cheese", "de": "Gruyère-Käse"}, "per_100g": {"kcal": 413, "protein_g": 29.8, "carbs_g": 0.4, "fat_g": 32.3, "fiber_g": 0, "iron_mg": 0.2} },
+  "avocado":                      { "names": {"en": "Avocado", "de": "Avocado"}, "per_100g": {"kcal": 160, "protein_g": 2.0, "carbs_g": 8.5, "fat_g": 14.7, "fiber_g": 6.7, "iron_mg": 0.6} },
+  "lime":                          { "names": {"en": "Lime", "de": "Limette"}, "per_100g": {"kcal": 30, "protein_g": 0.7, "carbs_g": 10.5, "fat_g": 0.2, "fiber_g": 2.8, "iron_mg": 0.6} },
+  "tomato_fresh":                  { "names": {"en": "Fresh tomato", "de": "Frische Tomate"}, "per_100g": {"kcal": 18, "protein_g": 0.9, "carbs_g": 3.9, "fat_g": 0.2, "fiber_g": 1.2, "iron_mg": 0.3} },
+  "jalapeno_fresh":                 { "names": {"en": "Fresh jalapeño", "de": "Frische Jalapeño"}, "per_100g": {"kcal": 29, "protein_g": 0.9, "carbs_g": 6.5, "fat_g": 0.4, "fiber_g": 2.8, "iron_mg": 0.2} },
+  "tortilla_chips":                  { "names": {"en": "Tortilla chips", "de": "Tortilla-Chips"}, "per_100g": {"kcal": 490, "protein_g": 7.0, "carbs_g": 62.0, "fat_g": 25.0, "fiber_g": 4.5, "iron_mg": 1.5} },
+  "coconut_milk":                     { "names": {"en": "Coconut milk (canned)", "de": "Kokosmilch (Dose)"}, "per_100g": {"kcal": 230, "protein_g": 2.3, "carbs_g": 5.5, "fat_g": 24.0, "fiber_g": 2.2, "iron_mg": 1.6} },
+  "curry_paste_green_jarred":          { "names": {"en": "Green curry paste (jarred)", "de": "Grüne Currypaste (Glas)"}, "per_100g": {"kcal": 90, "protein_g": 2.0, "carbs_g": 12.0, "fat_g": 4.0, "fiber_g": 2.0, "iron_mg": 1.5}, "grams_per_unit": {"tbsp": 17} },
+  "tofu_firm":                          { "names": {"en": "Firm tofu", "de": "Fester Tofu"}, "per_100g": {"kcal": 144, "protein_g": 15.8, "carbs_g": 3.3, "fat_g": 8.7, "fiber_g": 1.2, "iron_mg": 2.7} },
+  "thai_basil":                         { "names": {"en": "Thai basil", "de": "Thai-Basilikum"}, "per_100g": {"kcal": 22, "protein_g": 3.2, "carbs_g": 2.7, "fat_g": 0.6, "fiber_g": 1.6, "iron_mg": 3.2} },
+  "fish_sauce":                         { "names": {"en": "Fish sauce", "de": "Fischsauce"}, "per_100g": {"kcal": 35, "protein_g": 5.1, "carbs_g": 3.6, "fat_g": 0, "fiber_g": 0, "iron_mg": 1.2}, "grams_per_unit": {"tbsp": 18} },
+  "cucumber":                            { "names": {"en": "Cucumber", "de": "Gurke"}, "per_100g": {"kcal": 15, "protein_g": 0.7, "carbs_g": 3.6, "fat_g": 0.1, "fiber_g": 0.5, "iron_mg": 0.3} },
+  "olives_kalamata":                      { "names": {"en": "Kalamata olives", "de": "Kalamata-Oliven"}, "per_100g": {"kcal": 115, "protein_g": 0.8, "carbs_g": 6.3, "fat_g": 10.7, "fiber_g": 3.2, "iron_mg": 3.3} },
+  "chicken_breast":                        { "names": {"en": "Chicken breast", "de": "Hähnchenbrust"}, "per_100g": {"kcal": 165, "protein_g": 31.0, "carbs_g": 0, "fat_g": 3.6, "fiber_g": 0, "iron_mg": 0.7} },
+  "pita_bread":                             { "names": {"en": "Pita bread", "de": "Pita-Brot"}, "per_100g": {"kcal": 275, "protein_g": 9.1, "carbs_g": 55.7, "fat_g": 1.2, "fiber_g": 2.2, "iron_mg": 2.4} }
 }

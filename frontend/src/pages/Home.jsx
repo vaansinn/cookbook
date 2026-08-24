@@ -20,6 +20,11 @@ const DISH_EMOJI = {
   "tiramisu": "🍰",
   "banana-bread": "🍞",
   "no-knead-bread": "🥖",
+  "french-onion-soup": "🍲",
+  "guacamole": "🥑",
+  "thai-green-curry": "🍛",
+  "greek-salad": "🥗",
+  "chicken-souvlaki": "🍢",
 };
 
 export default function Home() {
