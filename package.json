@@ -1,0 +1,7 @@
+{
+  "name": "cookbook",
+  "scripts": {
+    "build": "cd frontend && npm install --include=dev && npm run build",
+    "heroku-postbuild": "npm run build"
+  }
+}
