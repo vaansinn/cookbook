@@ -17,9 +17,11 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 
 - #5 — Backfill: Basic + Advanced tiers + German for all 5 remaining dishes (chickpea-tikka-masala, lemon-ricotta-spaghetti, potato-chickpea-skillet, spinach-egg-fried-rice, sushi-rice). All 6 dishes now have all 3 tiers × EN/DE — 36 recipe tiers total. Added 8 food-table entries (garam masala, turmeric, yogurt, chili flakes, pine nuts, saffron, sherry vinegar, bottled sushi seasoning). Fixed a display bug found in testing: recipe header duplicated the cuisine name when a tag matched it case-insensitively. Verified live on Heroku.
 
+- #6 — P3: Households, shared grocery list, week planner. Join a household with an 8-char invite code (no email required — SMTP still isn't configured, deferred to P5). Grocery items merge across recipes by `food_slug`, summed in grams, with a "used in: X, Y" source list per item — verified with two real accounts adding different recipes and seeing merged onion/garlic/oil lines with correct combined weights. Week planner assigns dishes to dates and batch-adds a whole week's ingredients to the list in one call, same merge path. Checked/unchecked state is shared live across household members (poll-on-load, not push — matches the blueprint's "poll first, live sync only if it annoys in practice"). Verified end to end locally AND on the live Heroku URL.
+
 ## Next up
 
 - Deferred from P2: full metric/imperial unit converter (would need the ingredient schema split into structured qty+unit, not just a qty_g anchor — current servings scaler covers the common case by reusing the old site's proven regex scaling)
-- P3: households, shared grocery lists, week planner, "add to list" from a recipe
+- Deferred from P3: multiple/per-week grocery lists (one active list per household for now); real-time push sync if polling turns out to annoy in practice; email-based household invites (waiting on P5 SMTP)
 - P4: glossary (technique + nutrition), streaks/XP/badges, progression nudges
-- Custom domain for the new app is undecided — menu.zeni-design.com keeps serving the static Netlify cookbook until P3 parity per the blueprint
+- Custom domain for the new app is undecided — menu.zeni-design.com keeps serving the static Netlify cookbook until P3 parity per the blueprint. **P3 parity is now reached** — worth revisiting the DNS-swap decision with the user.
