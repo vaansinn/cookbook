@@ -27,6 +27,85 @@ const DISH_EMOJI = {
   "chicken-souvlaki": "🍢",
 };
 
+const MEAL_TYPE_EMOJI = {
+  breakfast: "🍳",
+  lunch: "🥪",
+  dinner: "🍲",
+  dessert: "🍰",
+  side: "🥗",
+  snack: "🥑",
+};
+
+const CUISINE_EMOJI = {
+  American: "🍔",
+  Chinese: "🥢",
+  French: "🥐",
+  Greek: "🫒",
+  Indian: "🍛",
+  Italian: "🍝",
+  Japanese: "🍣",
+  Mexican: "🌮",
+  "Spanish/Mediterranean": "🥘",
+  Thai: "🌶️",
+};
+
+function FilterTileRow({ label, allLabel, items, active, onSelect, emojiMap, labelFor }) {
+  return (
+    <div className="mt-4">
+      <div
+        className="font-display font-bold text-xs uppercase tracking-wide mb-2 ml-0.5"
+        style={{ color: "var(--muted)" }}
+      >
+        {label}
+      </div>
+      <div className="flex gap-2.5 overflow-x-auto pb-1">
+        <FilterTile
+          emoji="🍽️"
+          text={allLabel}
+          isActive={!active}
+          onClick={() => onSelect(null)}
+        />
+        {items.map((item) => (
+          <FilterTile
+            key={item}
+            emoji={emojiMap[item] || "🍽️"}
+            text={labelFor ? labelFor(item) : item}
+            isActive={active === item}
+            onClick={() => onSelect(active === item ? null : item)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FilterTile({ emoji, text, isActive, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={isActive}
+      className="shrink-0 w-16 flex flex-col items-center gap-1.5"
+    >
+      <span
+        className="w-16 h-16 rounded-2xl border-2 flex items-center justify-center text-2xl"
+        style={
+          isActive
+            ? { background: "var(--brand)", borderColor: "var(--brand)", boxShadow: "0 3px 0 var(--brand-dk)" }
+            : { background: "var(--card)", borderColor: "var(--line)" }
+        }
+      >
+        {emoji}
+      </span>
+      <span
+        className="font-display font-bold text-[11px] leading-tight text-center"
+        style={{ color: isActive ? "var(--brand)" : "var(--ink)" }}
+      >
+        {text}
+      </span>
+    </button>
+  );
+}
+
 export default function Home() {
   const t = useT();
   const user = useAuthStore((s) => s.user);
@@ -38,6 +117,7 @@ export default function Home() {
   const [filters, setFilters] = useState({ cuisines: [], meal_types: [], methods: [] });
   const [q, setQ] = useState("");
   const [activeCuisine, setActiveCuisine] = useState(null);
+  const [activeMealType, setActiveMealType] = useState(null);
 
   useEffect(() => {
     fetchFilters(language).then(setFilters).catch(() => {});
@@ -47,6 +127,7 @@ export default function Home() {
     const params = { lang: language };
     if (q) params.q = q;
     if (activeCuisine) params.cuisine = activeCuisine;
+    if (activeMealType) params.meal_type = activeMealType;
     setDishesError(false);
     fetchDishes(params).then(setDishes).catch(() => setDishesError(true));
   };
@@ -54,7 +135,7 @@ export default function Home() {
   useEffect(() => {
     const handle = setTimeout(loadDishes, 200);
     return () => clearTimeout(handle);
-  }, [language, q, activeCuisine]);
+  }, [language, q, activeCuisine, activeMealType]);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg)" }}>
@@ -100,21 +181,23 @@ export default function Home() {
           />
         </div>
 
-        <div className="flex gap-2 overflow-x-auto mt-4 pb-1">
-          <button onClick={() => setActiveCuisine(null)} className="chip" style={!activeCuisine ? { background: "var(--brand)", color: "var(--brand-ink)", borderColor: "var(--brand)" } : {}}>
-            {t("filter_all")}
-          </button>
-          {filters.cuisines.map((c) => (
-            <button
-              key={c}
-              onClick={() => setActiveCuisine(activeCuisine === c ? null : c)}
-              className="chip"
-              style={activeCuisine === c ? { background: "var(--brand)", color: "var(--brand-ink)", borderColor: "var(--brand)" } : {}}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+        <FilterTileRow
+          label={t("filter_meal_label")}
+          allLabel={t("filter_all")}
+          items={filters.meal_types}
+          active={activeMealType}
+          onSelect={setActiveMealType}
+          emojiMap={MEAL_TYPE_EMOJI}
+          labelFor={(item) => t(`meal_type_${item}`)}
+        />
+        <FilterTileRow
+          label={t("filter_cuisine_label")}
+          allLabel={t("filter_all")}
+          items={filters.cuisines}
+          active={activeCuisine}
+          onSelect={setActiveCuisine}
+          emojiMap={CUISINE_EMOJI}
+        />
 
         <div className="mt-5 flex flex-col gap-3">
           {dishesError && (

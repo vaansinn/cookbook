@@ -86,14 +86,22 @@ export default function GroceryPage() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen p-8" style={{ background: "var(--bg)" }}>
-        <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
-        <button onClick={loadAll} className="btn-ghost text-sm py-2 px-4 mt-3">{t("error_retry")}</button>
+      <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
+        <div className="flex-1 p-8">
+          <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+          <button onClick={loadAll} className="btn-ghost text-sm py-2 px-4 mt-3">{t("error_retry")}</button>
+        </div>
+        <BottomNav />
       </div>
     );
   }
   if (household === undefined) {
-    return <div className="min-h-screen p-8" style={{ background: "var(--bg)", color: "var(--muted)" }}>{t("loading")}</div>;
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
+        <div className="flex-1 p-8" style={{ color: "var(--muted)" }}>{t("loading")}</div>
+        <BottomNav />
+      </div>
+    );
   }
 
   if (household === null) {
@@ -120,6 +128,7 @@ export default function GroceryPage() {
             {joinError && <p className="text-sm mt-2 font-semibold" style={{ color: "var(--hot)" }}>{joinError}</p>}
           </div>
         </div>
+        <BottomNav />
       </div>
     );
   }

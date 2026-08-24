@@ -34,6 +34,7 @@ export default function RecipePage() {
   const [doneSteps, setDoneSteps] = useState({});
   const [donePrep, setDonePrep] = useState({});
   const [addedToList, setAddedToList] = useState(false);
+  const [listErrorCode, setListErrorCode] = useState(null);
   const [glossary, setGlossary] = useState([]);
   const [dishError, setDishError] = useState(false);
 
@@ -231,15 +232,29 @@ export default function RecipePage() {
 
         <button
           onClick={() => {
-            addRecipeToList(slug, level, serves, language).then(() => {
-              setAddedToList(true);
-              setTimeout(() => setAddedToList(false), 2000);
-            });
+            setListErrorCode(null);
+            addRecipeToList(slug, level, serves, language)
+              .then(() => {
+                setAddedToList(true);
+                setTimeout(() => setAddedToList(false), 2000);
+              })
+              .catch((err) => {
+                setListErrorCode(err.response?.data?.code === "no_household" ? "no_household" : "generic");
+              });
           }}
           className="btn-ghost w-full mt-8"
         >
           {addedToList ? t("added_to_list") : t("add_to_list")}
         </button>
+        {listErrorCode && (
+          <p className="text-sm font-semibold text-center mt-2" style={{ color: "var(--hot)" }}>
+            {listErrorCode === "no_household" ? (
+              <>{t("list_add_needs_household")} <Link to="/groceries" style={{ color: "var(--brand)", textDecoration: "underline" }}>{t("list_add_setup_link")}</Link></>
+            ) : (
+              t("list_add_failed")
+            )}
+          </p>
+        )}
         <button
           onClick={() => navigate(`/dish/${slug}/cook?level=${level}&serves=${serves}`)}
           className="btn-primary w-full mt-3"

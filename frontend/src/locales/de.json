@@ -26,6 +26,14 @@
 
   "search_placeholder": "Gerichte oder Zutaten suchen…",
   "filter_all": "Alle",
+  "filter_meal_label": "Mahlzeit",
+  "filter_cuisine_label": "Küche",
+  "meal_type_breakfast": "Frühstück",
+  "meal_type_lunch": "Mittagessen",
+  "meal_type_dinner": "Abendessen",
+  "meal_type_dessert": "Dessert",
+  "meal_type_side": "Beilage",
+  "meal_type_snack": "Snack",
   "no_dishes_found": "Nichts gefunden — andere Suche versuchen.",
   "loading": "Lädt…",
   "serves": "für",
@@ -59,6 +67,9 @@
   "cook_timer_done": "Zeit ist um!",
 
   "add_to_list": "Zur Einkaufsliste hinzufügen",
+  "list_add_needs_household": "Du brauchst zuerst eine gemeinsame Einkaufsliste.",
+  "list_add_setup_link": "Jetzt einrichten",
+  "list_add_failed": "Konnte nicht hinzugefügt werden — nochmal versuchen.",
   "added_to_list": "Hinzugefügt!",
 
   "household_setup_title": "Einkaufsliste teilen",

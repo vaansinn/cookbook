@@ -26,6 +26,14 @@
 
   "search_placeholder": "Search dishes or ingredients…",
   "filter_all": "All",
+  "filter_meal_label": "Meal",
+  "filter_cuisine_label": "Cuisine",
+  "meal_type_breakfast": "Breakfast",
+  "meal_type_lunch": "Lunch",
+  "meal_type_dinner": "Dinner",
+  "meal_type_dessert": "Dessert",
+  "meal_type_side": "Side",
+  "meal_type_snack": "Snack",
   "no_dishes_found": "Nothing matches — try another search.",
   "loading": "Loading…",
   "serves": "serves",
@@ -59,6 +67,9 @@
   "cook_timer_done": "Time's up!",
 
   "add_to_list": "Add to grocery list",
+  "list_add_needs_household": "You need a shared grocery list first.",
+  "list_add_setup_link": "Set one up",
+  "list_add_failed": "Couldn't add to the list — try again.",
   "added_to_list": "Added!",
 
   "household_setup_title": "Share a grocery list",
