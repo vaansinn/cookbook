@@ -1,0 +1,16 @@
+{
+  "name": "Recipe Drawer",
+  "short_name": "Recipe Drawer",
+  "description": "Cook a dish at your level, then level up — with shared grocery lists built in.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFBF3",
+  "theme_color": "#B24A2A",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

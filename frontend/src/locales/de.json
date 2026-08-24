@@ -108,5 +108,32 @@
   "glossary_title": "Glossar",
   "glossary_techniques": "Techniken",
   "glossary_nutrition": "Nährwerte",
-  "glossary_back": "Glossar"
+  "glossary_back": "Glossar",
+
+  "remove_item": "Entfernen",
+  "servings_decrease": "Weniger Portionen",
+  "servings_increase": "Mehr Portionen",
+  "grocery_item_checked": "Als noch nicht gekauft markieren",
+  "grocery_item_unchecked": "Als gekauft markieren",
+
+  "error_generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+  "error_retry": "Erneut versuchen",
+
+  "settings_title": "Einstellungen",
+  "settings_account": "Konto",
+  "settings_privacy_link": "Datenschutz",
+  "settings_export_title": "Daten exportieren",
+  "settings_export_desc": "Alles zu deinem Konto als JSON-Datei herunterladen — Profil, Kochverlauf, Abzeichen und alles, was du zu geteilten Listen hinzugefügt hast.",
+  "settings_export_button": "Meine Daten exportieren",
+  "settings_delete_title": "Konto löschen",
+  "settings_delete_desc": "Löscht dein Konto und deinen Kochverlauf endgültig. Bist du das einzige Mitglied deines Haushalts, werden auch dessen Einkaufsliste und Plan gelöscht.",
+  "settings_delete_button": "Mein Konto löschen",
+  "settings_delete_confirm": "Das kann nicht rückgängig gemacht werden. Konto endgültig löschen?",
+  "settings_delete_confirm_button": "Ja, löschen",
+  "settings_cancel": "Abbrechen",
+
+  "privacy_title": "Datenschutz",
+  "privacy_body_1": "Diese App speichert deine E-Mail, ein sicher gehashtes Passwort und deinen Namen, damit du dich anmelden kannst. Sie speichert, welche Rezepte du in welcher Schwierigkeit wann gekocht hast — das treibt deine Serie, XP und Abzeichen an. Trittst du einem Haushalt bei, sind Einkaufslisten-Artikel und geplante Mahlzeiten, die du hinzufügst, für alle im Haushalt sichtbar.",
+  "privacy_body_2": "Nichts wird verkauft oder an Dritte weitergegeben, es gibt keine Werbung oder Tracking-Skripte. Du kannst jederzeit über die Einstellungsseite alles herunterladen, was die App über dich gespeichert hat, oder dein Konto vollständig löschen.",
+  "privacy_back": "Zurück"
 }

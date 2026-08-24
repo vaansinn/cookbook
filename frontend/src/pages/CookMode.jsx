@@ -103,7 +103,7 @@ export default function CookMode() {
         </p>
 
         {secs && !timer && (
-          <button onClick={startTimer} className="mt-6 rounded-full px-5 py-2.5 font-bold text-sm" style={{ background: "var(--basic)", color: "#fff", boxShadow: "0 4px 0 var(--basic-dk)" }}>
+          <button onClick={startTimer} className="mt-6 rounded-full px-5 py-2.5 font-bold text-sm" style={{ background: "var(--basic)", color: "var(--brand-ink)", boxShadow: "0 4px 0 var(--basic-dk)" }}>
             ⏱ {Math.round(secs / 60)} min
           </button>
         )}
@@ -113,8 +113,8 @@ export default function CookMode() {
             className="mt-6 rounded-full px-5 py-2.5 font-bold text-sm"
             style={
               timer.done
-                ? { background: "var(--hot)", color: "#fff" }
-                : { background: "var(--basic)", color: "#fff", boxShadow: "0 4px 0 var(--basic-dk)" }
+                ? { background: "var(--hot)", color: "var(--brand-ink)" }
+                : { background: "var(--basic)", color: "var(--brand-ink)", boxShadow: "0 4px 0 var(--basic-dk)" }
             }
           >
             {timer.done ? `✓ ${t("cook_timer_done")}` : `⏱ ${fmtSecs(timer.left)} · ${t("cook_timer_running")}`}

@@ -12,11 +12,6 @@ import GlossaryLinkedText from "../components/GlossaryLinkedText";
 
 const TIER_ORDER = ["basic", "intermediate", "advanced"];
 const TIER_ICON = { basic: "🌶️", intermediate: "🌶️🌶️", advanced: "🌶️🌶️🌶️" };
-const TIER_CLASS = {
-  basic: { active: "bg-basic text-white shadow-[0_4px_0_var(--basic-dk)]" },
-  intermediate: { active: "bg-white border-2" },
-  advanced: { active: "bg-white border-2" },
-};
 
 export default function RecipePage() {
   const { slug } = useParams();
@@ -40,23 +35,37 @@ export default function RecipePage() {
   const [donePrep, setDonePrep] = useState({});
   const [addedToList, setAddedToList] = useState(false);
   const [glossary, setGlossary] = useState([]);
+  const [dishError, setDishError] = useState(false);
 
   useEffect(() => {
-    getGlossary(language).then(setGlossary);
+    getGlossary(language).then(setGlossary).catch(() => {});
   }, [language]);
 
-  useEffect(() => {
+  const loadDish = () => {
     setDish(null);
-    fetchDish(slug, language).then((d) => {
-      setDish(d);
-      const firstAvailable = TIER_ORDER.find((l) => d.tiers[l]);
-      setLevel(firstAvailable);
-      setServes(d.tiers[firstAvailable]?.serves);
-      setDoneSteps({});
-      setDonePrep({});
-    });
-  }, [slug, language]);
+    setDishError(false);
+    fetchDish(slug, language)
+      .then((d) => {
+        setDish(d);
+        const firstAvailable = TIER_ORDER.find((l) => d.tiers[l]);
+        setLevel(firstAvailable);
+        setServes(d.tiers[firstAvailable]?.serves);
+        setDoneSteps({});
+        setDonePrep({});
+      })
+      .catch(() => setDishError(true));
+  };
 
+  useEffect(loadDish, [slug, language]);
+
+  if (dishError) {
+    return (
+      <div className="min-h-screen p-8" style={{ background: "var(--bg)" }}>
+        <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+        <button onClick={loadDish} className="btn-ghost text-sm py-2 px-4 mt-3">{t("error_retry")}</button>
+      </div>
+    );
+  }
   if (!dish || !level) {
     return <div className="min-h-screen p-8" style={{ background: "var(--bg)", color: "var(--muted)" }}>{t("loading")}</div>;
   }
@@ -68,7 +77,7 @@ export default function RecipePage() {
     <div className="min-h-screen pb-16" style={{ background: "var(--bg)" }}>
       {cookToast && (
         <div className="max-w-2xl mx-auto px-6 pt-4">
-          <div className="rounded-2xl px-4 py-3 text-sm font-semibold text-white" style={{ background: "var(--basic)" }}>
+          <div className="rounded-2xl px-4 py-3 text-sm font-semibold" style={{ background: "var(--basic)", color: "var(--brand-ink)" }}>
             {t("cooked_logged")}
             {cookToast.newBadges?.length > 0 && (
               <div className="mt-1">
@@ -118,10 +127,10 @@ export default function RecipePage() {
                     ? { background: "var(--locked-soft)", color: "var(--locked)", border: "2px solid var(--line)" }
                     : active
                     ? lvl === "basic"
-                      ? { background: "var(--basic)", color: "#fff", boxShadow: "0 4px 0 var(--basic-dk)" }
+                      ? { background: "var(--basic)", color: "var(--brand-ink)", boxShadow: "0 4px 0 var(--basic-dk)" }
                       : lvl === "intermediate"
-                      ? { background: "#fff", color: "var(--inter-dk)", border: "2px solid var(--inter)" }
-                      : { background: "#fff", color: "var(--hot-dk)", border: "2px solid var(--hot)" }
+                      ? { background: "var(--card)", color: "var(--inter-dk)", border: "2px solid var(--inter)" }
+                      : { background: "var(--card)", color: "var(--hot-dk)", border: "2px solid var(--hot)" }
                     : { background: "var(--card)", color: "var(--muted)", border: "2px solid var(--line)" }
                 }
               >
@@ -176,9 +185,9 @@ export default function RecipePage() {
 
         <div className="flex items-center gap-3 rounded-2xl mt-6 p-3.5" style={{ background: "var(--card)", border: "2px solid var(--line)" }}>
           <span className="text-sm font-semibold" style={{ color: "var(--muted)" }}>{t("servings")}</span>
-          <button onClick={() => setServes((s) => Math.max(1, s - 1))} className="w-9 h-9 rounded-full border-2 font-bold" style={{ borderColor: "var(--line)", color: "var(--brand)" }}>−</button>
+          <button onClick={() => setServes((s) => Math.max(1, s - 1))} className="w-9 h-9 rounded-full border-2 font-bold" style={{ borderColor: "var(--line)", color: "var(--brand)" }} aria-label={t("servings_decrease")}>−</button>
           <span className="font-bold w-6 text-center">{serves}</span>
-          <button onClick={() => setServes((s) => s + 1)} className="w-9 h-9 rounded-full border-2 font-bold" style={{ borderColor: "var(--line)", color: "var(--brand)" }}>+</button>
+          <button onClick={() => setServes((s) => s + 1)} className="w-9 h-9 rounded-full border-2 font-bold" style={{ borderColor: "var(--line)", color: "var(--brand)" }} aria-label={t("servings_increase")}>+</button>
           {serves !== tier.serves && <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>{t("scaled_from", { n: tier.serves })}</span>}
         </div>
 

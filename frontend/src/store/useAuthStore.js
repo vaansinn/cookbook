@@ -48,6 +48,14 @@ const useAuthStore = create((set) => ({
     localStorage.removeItem("token");
     set({ user: null, token: null });
   },
+
+  exportData: () => api.get("/auth/me/export").then((r) => r.data),
+
+  deleteAccount: async () => {
+    await api.delete("/auth/me");
+    localStorage.removeItem("token");
+    set({ user: null, token: null });
+  },
 }));
 
 export default useAuthStore;

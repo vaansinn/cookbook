@@ -25,6 +25,7 @@ export default function Home() {
   const language = useSettingsStore((s) => s.language);
 
   const [dishes, setDishes] = useState(null);
+  const [dishesError, setDishesError] = useState(false);
   const [filters, setFilters] = useState({ cuisines: [], meal_types: [], methods: [] });
   const [q, setQ] = useState("");
   const [activeCuisine, setActiveCuisine] = useState(null);
@@ -33,13 +34,16 @@ export default function Home() {
     fetchFilters(language).then(setFilters).catch(() => {});
   }, [language]);
 
-  useEffect(() => {
+  const loadDishes = () => {
     const params = { lang: language };
     if (q) params.q = q;
     if (activeCuisine) params.cuisine = activeCuisine;
-    const handle = setTimeout(() => {
-      fetchDishes(params).then(setDishes).catch(() => setDishes([]));
-    }, 200);
+    setDishesError(false);
+    fetchDishes(params).then(setDishes).catch(() => setDishesError(true));
+  };
+
+  useEffect(() => {
+    const handle = setTimeout(loadDishes, 200);
     return () => clearTimeout(handle);
   }, [language, q, activeCuisine]);
 
@@ -63,6 +67,9 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <LangSwitch />
             <ThemeSwitch />
+            <Link to="/settings" className="w-9 h-9 rounded-full border-2 flex items-center justify-center" style={{ borderColor: "var(--line)" }} aria-label={t("settings_title")}>
+              ⚙️
+            </Link>
             <button onClick={logout} className="btn-ghost text-sm py-2 px-4">
               {t("auth_logout")}
             </button>
@@ -101,8 +108,14 @@ export default function Home() {
         </div>
 
         <div className="mt-5 flex flex-col gap-3">
-          {dishes === null && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
-          {dishes && dishes.length === 0 && <p style={{ color: "var(--muted)" }}>{t("no_dishes_found")}</p>}
+          {dishesError && (
+            <div className="mt-2">
+              <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+              <button onClick={loadDishes} className="btn-ghost text-sm py-2 px-4 mt-2">{t("error_retry")}</button>
+            </div>
+          )}
+          {!dishesError && dishes === null && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+          {!dishesError && dishes && dishes.length === 0 && <p style={{ color: "var(--muted)" }}>{t("no_dishes_found")}</p>}
           {dishes && dishes.map((d) => (
             <Link key={d.slug} to={`/dish/${d.slug}`} className="card flex gap-3 p-4 shadow-[0_3px_0_var(--line)]">
               <div

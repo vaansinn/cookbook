@@ -8,7 +8,7 @@ trimmed for this project's current scope (Talisman/rate-limiting/email flows
 are deferred until P5 hardening, see PIPELINE.md).
 """
 
-from flask import Flask, send_from_directory
+from flask import Flask, Response, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -98,16 +98,51 @@ def create_app():
             print(f"Sync failed: {e}")
             raise SystemExit(1)
 
+    # ── SEO: sitemap + robots ──────────────────────────────────────────────────
+    @app.route("/sitemap.xml")
+    def sitemap():
+        from models import Dish
+        origin = os.environ.get("FRONTEND_URL", "https://" + os.environ.get("HEROKU_APP_NAME", "localhost"))
+        urls = [origin + "/"] + [origin + f"/dish/{d.slug}" for d in Dish.query.all()]
+        body = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        body += "".join(f"  <url><loc>{u}</loc></url>\n" for u in urls)
+        body += "</urlset>"
+        return Response(body, mimetype="application/xml")
+
+    @app.route("/robots.txt")
+    def robots():
+        origin = os.environ.get("FRONTEND_URL", "https://" + os.environ.get("HEROKU_APP_NAME", "localhost"))
+        return Response(f"User-agent: *\nAllow: /\nSitemap: {origin}/sitemap.xml\n", mimetype="text/plain")
+
     # ── React SPA catchall ────────────────────────────────────────────────────
     # The React app builds into /static (see frontend/vite.config.js). Any URL
     # that isn't an API call or a real static file gets index.html so React
-    # Router can handle it client-side.
+    # Router can handle it client-side. /dish/<slug> gets its <title>/<meta
+    # description>/JSON-LD swapped in server-side first — see seo.py.
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     def serve_react(path):
         static_dir = os.path.join(os.path.dirname(__file__), "static")
         if path and os.path.exists(os.path.join(static_dir, path)):
             return send_from_directory(static_dir, path)
+
+        index_path = os.path.join(static_dir, "index.html")
+        parts = path.split("/") if path else []
+        if len(parts) == 2 and parts[0] == "dish":
+            from models import Dish
+            from seo import build_recipe_head, inject_head
+            dish = Dish.query.filter_by(slug=parts[1]).first()
+            if dish:
+                tier = next(
+                    (t for t in dish.tiers if t.lang == "en" and t.level == "basic"),
+                    next((t for t in dish.tiers if t.lang == "en"), None),
+                )
+                if tier:
+                    with open(index_path, "r", encoding="utf-8") as f:
+                        html_text = f.read()
+                    title, description, json_ld = build_recipe_head(dish, tier)
+                    return inject_head(html_text, title, description, json_ld)
+
         return send_from_directory(static_dir, "index.html")
 
     return app

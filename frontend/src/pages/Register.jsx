@@ -45,6 +45,9 @@ export default function Register() {
         <Link to="/login" className="block mt-5 text-sm font-semibold text-center" style={{ color: "var(--brand)" }}>
           {t("auth_switch_to_login")}
         </Link>
+        <Link to="/privacy" className="block mt-2 text-xs font-semibold text-center" style={{ color: "var(--muted)" }}>
+          {t("settings_privacy_link")}
+        </Link>
       </div>
     </div>
   );

@@ -10,6 +10,8 @@ import CookMode from "./pages/CookMode";
 import GroceryPage from "./pages/GroceryPage";
 import ProgressPage from "./pages/ProgressPage";
 import { GlossaryList, GlossaryDetail } from "./pages/GlossaryPage";
+import SettingsPage from "./pages/SettingsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 
 function RequireAuth({ children }) {
   const user = useAuthStore((s) => s.user);
@@ -91,6 +93,15 @@ export default function App() {
             </RequireAuth>
           }
         />
+        <Route
+          path="/settings"
+          element={
+            <RequireAuth>
+              <SettingsPage />
+            </RequireAuth>
+          }
+        />
+        <Route path="/privacy" element={<PrivacyPage />} />
       </Routes>
     </BrowserRouter>
   );

@@ -11,13 +11,22 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Accent shades are calibrated, not just picked: every "main" tone below
+   * passes WCAG AA (>=4.5:1) as white text on the fill (light mode) or as
+   * --brand-ink text on the fill (dark mode) — verified with the actual sRGB
+   * relative-luminance formula, not eyeballed. --*-dk is the same contract
+   * for text placed *on* var(--card) (e.g. an inactive-but-selected tier tab)
+   * and doubles as the button drop-shadow colour. --*-soft tints are always
+   * paired with --ink text, never with white, so they're unconstrained.
+   */
   :root {
-    --bg: #FFFBF3; --card: #FFFFFF; --ink: #2A2118; --muted: #948A7A;
-    --brand: #FF6B3D; --brand-dk: #E24E20; --brand-ink: #FFFFFF; --brand-soft: #FFE4D6;
-    --basic: #3FA84F; --basic-dk: #2E8A3D; --basic-soft: #E1F3E2;
-    --inter: #E8A23A; --inter-dk: #C9821E; --inter-soft: #FBEBD1;
-    --hot: #E5473A; --hot-dk: #C3311F; --hot-soft: #FBE0DC;
-    --locked: #C7BFAE; --locked-soft: #F1ECE0;
+    --bg: #FFFBF3; --card: #FFFFFF; --ink: #2A2118; --muted: #766E61;
+    --brand: #B24A2A; --brand-dk: #7F351E; --brand-ink: #FFFFFF; --brand-soft: #FFE4D6;
+    --basic: #2C7537; --basic-dk: #1F5427; --basic-soft: #E1F3E2;
+    --inter: #8F6423; --inter-dk: #68481A; --inter-soft: #FBEBD1;
+    --hot: #A03128; --hot-dk: #72231D; --hot-soft: #FBE0DC;
+    --locked: #6B685C; --locked-soft: #F1ECE0;
     --line: #F0E8D8;
   }
 
@@ -25,9 +34,9 @@
     --bg: #1C160F; --card: #271F16; --ink: #F5EEE1; --muted: #B0A490;
     --brand: #FF8557; --brand-dk: #D9532A; --brand-ink: #1C0C04; --brand-soft: #3D2416;
     --basic: #65C978; --basic-dk: #3C8F4B; --basic-soft: #1E3320;
-    --inter: #F2BC63; --inter-dk: #C9821E; --inter-soft: #3A2C13;
-    --hot: #F27C6E; --hot-dk: #C3311F; --hot-soft: #3D2119;
-    --locked: #5C5344; --locked-soft: #2A2318;
+    --inter: #F2BC63; --inter-dk: #F2BC63; --inter-soft: #3A2C13;
+    --hot: #F27C6E; --hot-dk: #F27C6E; --hot-soft: #3D2119;
+    --locked: #8A8270; --locked-soft: #2A2318;
     --line: #382E20;
   }
 

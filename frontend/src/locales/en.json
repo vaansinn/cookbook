@@ -108,5 +108,32 @@
   "glossary_title": "Glossary",
   "glossary_techniques": "Techniques",
   "glossary_nutrition": "Nutrition",
-  "glossary_back": "Glossary"
+  "glossary_back": "Glossary",
+
+  "remove_item": "Remove",
+  "servings_decrease": "Fewer servings",
+  "servings_increase": "More servings",
+  "grocery_item_checked": "Mark as not bought yet",
+  "grocery_item_unchecked": "Mark as bought",
+
+  "error_generic": "Something went wrong. Please try again.",
+  "error_retry": "Try again",
+
+  "settings_title": "Settings",
+  "settings_account": "Account",
+  "settings_privacy_link": "Privacy",
+  "settings_export_title": "Export your data",
+  "settings_export_desc": "Download everything tied to your account as a JSON file — profile, cook history, badges, and anything you've added to shared lists.",
+  "settings_export_button": "Export my data",
+  "settings_delete_title": "Delete account",
+  "settings_delete_desc": "Permanently deletes your account and cooking history. If you're the only member of your household, its grocery list and plan are deleted too.",
+  "settings_delete_button": "Delete my account",
+  "settings_delete_confirm": "This can't be undone. Delete your account permanently?",
+  "settings_delete_confirm_button": "Yes, delete it",
+  "settings_cancel": "Cancel",
+
+  "privacy_title": "Privacy",
+  "privacy_body_1": "This app stores your email, a securely hashed password, and your display name so you can sign in. It stores which recipes you've cooked, at which difficulty, and when — that's what powers your streak, XP, and badges. If you join a household, grocery-list items and planned meals you add are visible to everyone in that household.",
+  "privacy_body_2": "Nothing is sold or shared with third parties, and there are no ads or tracking scripts. You can download everything the app holds about you, or delete your account entirely, from the Settings page at any time.",
+  "privacy_back": "Back"
 }

@@ -148,7 +148,7 @@ export default function GroceryPage() {
               onChange={(e) => setNewItemText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addText()}
             />
-            <button onClick={addText} className="btn-ghost px-4">+</button>
+            <button onClick={addText} className="btn-ghost px-4" aria-label={t("grocery_add_placeholder")}>+</button>
           </div>
 
           {items.length === 0 && <p className="mt-6 text-sm" style={{ color: "var(--muted)" }}>{t("grocery_empty")}</p>}
@@ -158,8 +158,9 @@ export default function GroceryPage() {
               <li key={item.id} className="flex items-start gap-2.5 py-2.5 border-b border-dashed" style={{ borderColor: "var(--line)" }}>
                 <button
                   onClick={() => toggleItem(item)}
-                  className="w-5 h-5 rounded-md border-2 mt-0.5 shrink-0 flex items-center justify-center text-white text-xs font-bold"
-                  style={{ borderColor: "var(--basic)", background: item.checked ? "var(--basic)" : "transparent" }}
+                  className="w-5 h-5 rounded-md border-2 mt-0.5 shrink-0 flex items-center justify-center text-xs font-bold"
+                  style={{ borderColor: "var(--basic)", background: item.checked ? "var(--basic)" : "transparent", color: "var(--brand-ink)" }}
+                  aria-label={item.checked ? t("grocery_item_checked") : t("grocery_item_unchecked")}
                 >
                   {item.checked ? "✓" : ""}
                 </button>
@@ -173,7 +174,7 @@ export default function GroceryPage() {
                     </div>
                   )}
                 </div>
-                <button onClick={() => removeItem(item)} className="text-sm px-1" style={{ color: "var(--muted)" }}>✕</button>
+                <button onClick={() => removeItem(item)} className="text-sm px-1" style={{ color: "var(--muted)" }} aria-label={t("remove_item")}>✕</button>
               </li>
             ))}
           </ul>
@@ -194,7 +195,7 @@ export default function GroceryPage() {
                     <span className="font-semibold">{entry.date}</span> — {d?.summary?.title || entry.dish_slug}
                     <span className="ml-1.5 text-xs" style={{ color: "var(--muted)" }}>({t("tier_" + entry.level)})</span>
                   </div>
-                  <button onClick={() => doRemovePlan(entry.id)} className="text-sm px-1" style={{ color: "var(--muted)" }}>✕</button>
+                  <button onClick={() => doRemovePlan(entry.id)} className="text-sm px-1" style={{ color: "var(--muted)" }} aria-label={t("remove_item")}>✕</button>
                 </li>
               );
             })}
