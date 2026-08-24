@@ -33,9 +33,10 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 
 - #11 — 4 new dishes across new categories the user asked for: Eggs Benedict (breakfast), Tiramisu (dessert), Banana Bread (sweet baking), No-Knead Bread (savory baking). All 3 tiers × EN/DE — 60 recipe tiers total across 10 dishes now. New meal_types (breakfast, dessert) and methods (baking, no-bake) — both flowed through the existing filter system with zero schema changes. 4 new glossary entries (hollandaise, bain-marie, creaming-butter, autolyse) plus 2 existing ones (brown-butter, toasting-nuts) reused in Banana Bread — glossary auto-linking verified working on all three technique-heavy new dishes. 21 new food-table entries. Verified live on menu.zeni-design.com.
 
+- #12 — 15-dish launch target reached: French Onion Soup (lunch), Guacamole (snack, no-cook), Thai Green Curry, Greek Salad (no-cook), Chicken Souvlaki (grill) — chosen to fill remaining gaps in meal_type (lunch, snack) and method (no-cook, grill) coverage. All 3 tiers × EN/DE — 90 recipe tiers total across 15 dishes now. 3 new glossary entries (caramelizing-onions, marinating, resting-meat) reused across the new dishes' Advanced tiers — auto-linking verified working via browser (marinade/marinate/resting all correctly linked on Chicken Souvlaki Advanced). 18 new food-table entries. Verified live on menu.zeni-design.com.
+
 ## Still open in P5
 
-- 15-dish content target (now 10 of 15) — real writing work, not technical
 - Full Lighthouse audit (performance/PWA/SEO/accessibility scores) — not run this session, only targeted fixes verified
 - Offline caching itself needs a real-browser check (see SW note above) — now more relevant since the real domain is live
-- Custom domain for the new app is undecided — menu.zeni-design.com keeps serving the static Netlify cookbook until P3 parity per the blueprint. **P3 parity was reached in the previous session** — user chose to hold off on the DNS swap for now, revisit when asked.
+- Domain cutover shipped in #9 — menu.zeni-design.com now serves this app, not the old static Netlify cookbook.
