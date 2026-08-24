@@ -31,9 +31,11 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 - #9 — Domain cutover: `menu.zeni-design.com` now points at the Heroku app (`heroku domains:add` + GoDaddy CNAME repointed to the herokudns.com target + `heroku certs:auto:enable`), SSL issued and verified, `FRONTEND_URL` updated. The old static Netlify cookbook is no longer reachable at this domain (still deployed on Netlify itself, just not linked to the domain anymore). Verified via Google's public DNS + a direct-IP curl bypass + the issued cert — some local networks (including the one this session ran on) may show the old site briefly from router-level DNS caching, that's normal and not a real issue.
 - #10 — Finished the error-state audit: GroceryPage, ProgressPage, GlossaryPage (list + detail) now all show retry UI on fetch failure, matching the pattern already on Home/RecipePage.
 
+- #11 — 4 new dishes across new categories the user asked for: Eggs Benedict (breakfast), Tiramisu (dessert), Banana Bread (sweet baking), No-Knead Bread (savory baking). All 3 tiers × EN/DE — 60 recipe tiers total across 10 dishes now. New meal_types (breakfast, dessert) and methods (baking, no-bake) — both flowed through the existing filter system with zero schema changes. 4 new glossary entries (hollandaise, bain-marie, creaming-butter, autolyse) plus 2 existing ones (brown-butter, toasting-nuts) reused in Banana Bread — glossary auto-linking verified working on all three technique-heavy new dishes. 21 new food-table entries. Verified live on menu.zeni-design.com.
+
 ## Still open in P5
 
-- 15-dish content target (currently 6) — real writing work, not technical
+- 15-dish content target (now 10 of 15) — real writing work, not technical
 - Full Lighthouse audit (performance/PWA/SEO/accessibility scores) — not run this session, only targeted fixes verified
 - Offline caching itself needs a real-browser check (see SW note above) — now more relevant since the real domain is live
 - Custom domain for the new app is undecided — menu.zeni-design.com keeps serving the static Netlify cookbook until P3 parity per the blueprint. **P3 parity was reached in the previous session** — user chose to hold off on the DNS swap for now, revisit when asked.
