@@ -1,0 +1,67 @@
+/*
+ * index.css — theme tokens + global styles.
+ * Palette and type pairing carried over from the approved Phase 0 mockup:
+ * Baloo 2 (display) + Plus Jakarta Sans (body/UI), tomato/basil/amber/hot-chili
+ * accent set, tier colour = spice heat (basic=mild green, intermediate=amber,
+ * advanced=hot red).
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #FFFBF3; --card: #FFFFFF; --ink: #2A2118; --muted: #948A7A;
+    --brand: #FF6B3D; --brand-dk: #E24E20; --brand-ink: #FFFFFF; --brand-soft: #FFE4D6;
+    --basic: #3FA84F; --basic-dk: #2E8A3D; --basic-soft: #E1F3E2;
+    --inter: #E8A23A; --inter-dk: #C9821E; --inter-soft: #FBEBD1;
+    --hot: #E5473A; --hot-dk: #C3311F; --hot-soft: #FBE0DC;
+    --locked: #C7BFAE; --locked-soft: #F1ECE0;
+    --line: #F0E8D8;
+  }
+
+  html.dark {
+    --bg: #1C160F; --card: #271F16; --ink: #F5EEE1; --muted: #B0A490;
+    --brand: #FF8557; --brand-dk: #D9532A; --brand-ink: #1C0C04; --brand-soft: #3D2416;
+    --basic: #65C978; --basic-dk: #3C8F4B; --basic-soft: #1E3320;
+    --inter: #F2BC63; --inter-dk: #C9821E; --inter-soft: #3A2C13;
+    --hot: #F27C6E; --hot-dk: #C3311F; --hot-soft: #3D2119;
+    --locked: #5C5344; --locked-soft: #2A2318;
+    --line: #382E20;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply font-display font-bold rounded-2xl py-3.5 px-5 text-brand-ink bg-brand;
+    box-shadow: 0 4px 0 var(--brand-dk);
+  }
+  .btn-ghost {
+    @apply font-display font-bold rounded-2xl py-3.5 px-5 border-2;
+    background: var(--card);
+    border-color: var(--line);
+    color: var(--ink);
+    box-shadow: 0 4px 0 var(--line);
+  }
+  .card {
+    @apply rounded-3xl border-2;
+    background: var(--card);
+    border-color: var(--line);
+  }
+  .field {
+    @apply w-full rounded-2xl border-2 px-4 py-3 font-medium outline-none;
+    background: var(--card);
+    border-color: var(--line);
+    color: var(--ink);
+  }
+  .field:focus {
+    border-color: var(--brand);
+  }
+}
