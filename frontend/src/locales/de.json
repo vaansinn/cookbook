@@ -71,8 +71,14 @@
 
   "add_to_list": "Zur Einkaufsliste hinzufügen",
   "list_add_needs_household": "Du brauchst zuerst eine gemeinsame Einkaufsliste.",
+  "list_add_needs_account": "Erstelle ein Konto, um eine Einkaufsliste zu führen.",
   "list_add_setup_link": "Jetzt einrichten",
   "list_add_failed": "Konnte nicht hinzugefügt werden — nochmal versuchen.",
+  "locked_more_steps": "{n} weitere Schritte in der Version {level}",
+  "locked_desc_account": "Erstelle ein kostenloses Konto, um diese Stufe freizuschalten.",
+  "locked_desc_premium": "Hol dir Premium, um diese Stufe freizuschalten.",
+  "locked_cta_premium": "Premium holen",
+  "premium_coming_soon": "Premium ist noch nicht verfügbar — schau bald wieder vorbei.",
   "added_to_list": "Hinzugefügt!",
 
   "household_setup_title": "Einkaufsliste teilen",

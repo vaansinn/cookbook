@@ -9,7 +9,8 @@ household's data by guessing an id (see .claude/rules/security.md).
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
-from models import Household, HouseholdMember, GroceryList, GroceryItem, PlanEntry, Dish, RecipeTier, FoodItem
+from models import Household, HouseholdMember, GroceryList, GroceryItem, PlanEntry, Dish, RecipeTier, FoodItem, User
+from access import tier_access
 
 groceries_bp = Blueprint("groceries", __name__)
 
@@ -120,6 +121,9 @@ def add_grocery_items():
     tier = RecipeTier.query.filter_by(dish_id=dish.id if dish else -1, level=level, lang=lang).first()
     if not dish or not tier:
         return jsonify({"error": "Dish/tier not found"}), 404
+    allowed, reason = tier_access(level, User.query.get(_current_user_id()))
+    if not allowed:
+        return jsonify({"error": "This tier needs an upgrade", "code": f"needs_{reason}"}), 403
     factor = (serves or tier.serves) / tier.serves
 
     added = _merge_recipe_into_list(lst, dish, tier, factor, lang)
@@ -217,6 +221,9 @@ def add_plan_entry():
     for field in ("date", "dish_slug", "level"):
         if not data.get(field):
             return jsonify({"error": f"{field} required"}), 400
+    allowed, reason = tier_access(data["level"], User.query.get(_current_user_id()))
+    if not allowed:
+        return jsonify({"error": "This tier needs an upgrade", "code": f"needs_{reason}"}), 403
     entry = PlanEntry(
         household_id=m.household_id, date=data["date"], dish_slug=data["dish_slug"],
         level=data["level"], serves=data.get("serves", 2), added_by=_current_user_id(),

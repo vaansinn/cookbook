@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
+import useAuthStore from "../store/useAuthStore";
 import { useT } from "../i18n";
 import { fetchDish } from "../api/recipes";
 import { addRecipeToList } from "../api/groceries";
@@ -20,6 +21,7 @@ export default function RecipePage() {
   const location = useLocation();
   const t = useT();
   const language = useSettingsStore((s) => s.language);
+  const user = useAuthStore((s) => s.user);
   const [cookToast, setCookToast] = useState(location.state?.cooked ? location.state : null);
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export default function RecipePage() {
   const [donePrep, setDonePrep] = useState({});
   const [addedToList, setAddedToList] = useState(false);
   const [listErrorCode, setListErrorCode] = useState(null);
+  const [showPremiumNote, setShowPremiumNote] = useState(false);
   const [glossary, setGlossary] = useState([]);
   const [dishError, setDishError] = useState(false);
   const favoriteSlugs = useFavoritesStore((s) => s.slugs);
@@ -47,7 +50,7 @@ export default function RecipePage() {
     getGlossary(language).then(setGlossary).catch(() => {});
   }, [language]);
 
-  useEffect(() => { if (!favoritesLoaded) loadFavorites(); }, []);
+  useEffect(() => { if (user && !favoritesLoaded) loadFavorites(); }, [user]);
 
   const loadDish = () => {
     setDish(null);
@@ -118,7 +121,7 @@ export default function RecipePage() {
             {tier.title}
           </h1>
           <button
-            onClick={() => toggleFavorite(slug)}
+            onClick={() => (user ? toggleFavorite(slug) : navigate("/login"))}
             aria-label={favoriteSlugs.has(slug) ? t("favorite_remove") : t("favorite_add")}
             aria-pressed={favoriteSlugs.has(slug)}
             className="shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg mt-1"
@@ -142,7 +145,7 @@ export default function RecipePage() {
               <button
                 key={lvl}
                 disabled={!available}
-                onClick={() => { setLevel(lvl); setServes(dish.tiers[lvl].serves); setDoneSteps({}); setDonePrep({}); }}
+                onClick={() => { setLevel(lvl); setServes(dish.tiers[lvl].serves); setDoneSteps({}); setDonePrep({}); setShowPremiumNote(false); }}
                 className="flex-1 rounded-2xl py-2.5 text-xs font-bold flex flex-col items-center gap-0.5"
                 style={
                   !available
@@ -245,64 +248,106 @@ export default function RecipePage() {
 
         <h2 className="font-display font-bold text-lg mt-6 mb-1" style={{ color: "var(--ink)" }}>{t("instructions")}</h2>
         <ol>
-          {tier.steps.map((s, i) => (
-            <li
-              key={i}
-              onClick={() => setDoneSteps((st) => ({ ...st, [i]: !st[i] }))}
-              className="flex gap-3 py-3 border-b border-dashed cursor-pointer"
-              style={{ borderColor: "var(--line)", ...(doneSteps[i] ? { opacity: 0.4, textDecoration: "line-through" } : {}) }}
-            >
-              <span className="font-display font-bold text-xl" style={{ color: "var(--brand)" }}>{i + 1}</span>
-              <span className="text-sm pt-0.5"><GlossaryLinkedText text={s} entries={glossary} /></span>
-            </li>
-          ))}
+          {tier.steps.map((s, i) => {
+            const isLastVisible = tier.locked && i === tier.steps.length - 1;
+            return (
+              <li
+                key={i}
+                onClick={() => !tier.locked && setDoneSteps((st) => ({ ...st, [i]: !st[i] }))}
+                className={`relative flex gap-3 py-3 border-b border-dashed ${tier.locked ? "" : "cursor-pointer"}`}
+                style={{ borderColor: "var(--line)", ...(doneSteps[i] ? { opacity: 0.4, textDecoration: "line-through" } : {}) }}
+              >
+                <span className="font-display font-bold text-xl" style={{ color: "var(--brand)" }}>{i + 1}</span>
+                <span className="text-sm pt-0.5"><GlossaryLinkedText text={s} entries={glossary} /></span>
+                {isLastVisible && (
+                  <div
+                    className="absolute inset-x-0 bottom-0 h-14 pointer-events-none"
+                    style={{ background: "linear-gradient(to bottom, transparent, var(--bg) 85%)" }}
+                  />
+                )}
+              </li>
+            );
+          })}
         </ol>
 
-        {tier.notes?.length > 0 && (
+        {tier.locked ? (
           <>
-            <h2 className="font-display font-bold text-lg mt-6 mb-1" style={{ color: "var(--ink)" }}>{t("notes_and_tweaks")}</h2>
-            <ul className="space-y-1.5">
-              {tier.notes.map((n, i) => (
-                <li key={i} className="text-sm pl-4 relative">
-                  <span className="absolute left-0" style={{ color: "var(--plum, var(--hot))" }}>·</span>
-                  <GlossaryLinkedText text={n} entries={glossary} />
-                </li>
+            <div className="flex flex-col gap-2 mt-1">
+              {[95, 88, 92, 60].map((w, i) => (
+                <div key={i} className="h-2.5 rounded-full" style={{ width: `${w}%`, background: "var(--line)" }} />
               ))}
-            </ul>
+            </div>
+            <div className="rounded-2xl mt-5 p-5 text-center" style={{ background: "var(--card)", border: "2px solid var(--line)" }}>
+              <div className="text-xl" aria-hidden="true">{TIER_ICON[level]}</div>
+              <div className="font-display font-bold text-base mt-1" style={{ color: "var(--ink)" }}>
+                {t("locked_more_steps", { n: tier.steps_total - tier.steps.length, level: t("tier_" + level) })}
+              </div>
+              <div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+                {tier.unlock_reason === "account" ? t("locked_desc_account") : t("locked_desc_premium")}
+              </div>
+              {tier.unlock_reason === "account" ? (
+                <Link to="/register" className="btn-primary w-full mt-4 inline-block">{t("auth_register_button")}</Link>
+              ) : (
+                <button onClick={() => setShowPremiumNote(true)} className="btn-primary w-full mt-4">{t("locked_cta_premium")}</button>
+              )}
+              {showPremiumNote && tier.unlock_reason === "premium" && (
+                <p className="text-xs mt-2" style={{ color: "var(--muted)" }}>{t("premium_coming_soon")}</p>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {tier.notes?.length > 0 && (
+              <>
+                <h2 className="font-display font-bold text-lg mt-6 mb-1" style={{ color: "var(--ink)" }}>{t("notes_and_tweaks")}</h2>
+                <ul className="space-y-1.5">
+                  {tier.notes.map((n, i) => (
+                    <li key={i} className="text-sm pl-4 relative">
+                      <span className="absolute left-0" style={{ color: "var(--plum, var(--hot))" }}>·</span>
+                      <GlossaryLinkedText text={n} entries={glossary} />
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            <button
+              onClick={() => {
+                setListErrorCode(null);
+                addRecipeToList(slug, level, serves, language)
+                  .then(() => {
+                    setAddedToList(true);
+                    setTimeout(() => setAddedToList(false), 2000);
+                  })
+                  .catch((err) => {
+                    if (err.response?.status === 401) setListErrorCode("needs_account");
+                    else if (err.response?.data?.code === "no_household") setListErrorCode("no_household");
+                    else setListErrorCode("generic");
+                  });
+              }}
+              className="btn-ghost w-full mt-8"
+            >
+              {addedToList ? t("added_to_list") : t("add_to_list")}
+            </button>
+            {listErrorCode && (
+              <p className="text-sm font-semibold text-center mt-2" style={{ color: "var(--hot)" }}>
+                {listErrorCode === "no_household" ? (
+                  <>{t("list_add_needs_household")} <Link to="/groceries" style={{ color: "var(--brand)", textDecoration: "underline" }}>{t("list_add_setup_link")}</Link></>
+                ) : listErrorCode === "needs_account" ? (
+                  <>{t("list_add_needs_account")} <Link to="/register" style={{ color: "var(--brand)", textDecoration: "underline" }}>{t("list_add_setup_link")}</Link></>
+                ) : (
+                  t("list_add_failed")
+                )}
+              </p>
+            )}
+            <button
+              onClick={() => navigate(user ? `/dish/${slug}/cook?level=${level}&serves=${serves}` : "/login")}
+              className="btn-primary w-full mt-3"
+            >
+              {t("start_cooking")}
+            </button>
           </>
         )}
-
-        <button
-          onClick={() => {
-            setListErrorCode(null);
-            addRecipeToList(slug, level, serves, language)
-              .then(() => {
-                setAddedToList(true);
-                setTimeout(() => setAddedToList(false), 2000);
-              })
-              .catch((err) => {
-                setListErrorCode(err.response?.data?.code === "no_household" ? "no_household" : "generic");
-              });
-          }}
-          className="btn-ghost w-full mt-8"
-        >
-          {addedToList ? t("added_to_list") : t("add_to_list")}
-        </button>
-        {listErrorCode && (
-          <p className="text-sm font-semibold text-center mt-2" style={{ color: "var(--hot)" }}>
-            {listErrorCode === "no_household" ? (
-              <>{t("list_add_needs_household")} <Link to="/groceries" style={{ color: "var(--brand)", textDecoration: "underline" }}>{t("list_add_setup_link")}</Link></>
-            ) : (
-              t("list_add_failed")
-            )}
-          </p>
-        )}
-        <button
-          onClick={() => navigate(`/dish/${slug}/cook?level=${level}&serves=${serves}`)}
-          className="btn-primary w-full mt-3"
-        >
-          {t("start_cooking")}
-        </button>
       </div>
     </div>
   );

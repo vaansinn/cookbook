@@ -1,13 +1,17 @@
 """
 routes/recipes.py — Read-only dish/recipe endpoints.
 
-Recipe content is public (Basic tier is always free; the frontend still sits
-behind login for now per the P1 account gate, but the API itself doesn't
-require a token — nothing here is per-user data).
+Recipe content is public: browsing and Basic never require a token.
+Intermediate needs an account, Advanced needs a premium account (P6
+paywall, see access.py) -- get_dish uses an optional JWT to figure out
+who's asking and returns the teaser shape (models.RecipeTier.to_dict
+with full=False) for any tier the caller can't fully access yet.
 """
 
 from flask import Blueprint, request, jsonify
-from models import Dish, RecipeTier
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from models import Dish, RecipeTier, User
+from access import tier_access
 
 recipes_bp = Blueprint("recipes", __name__)
 
@@ -54,13 +58,26 @@ def list_dishes():
 
 
 @recipes_bp.route("/dishes/<slug>", methods=["GET"])
+@jwt_required(optional=True)
 def get_dish(slug):
     lang = request.args.get("lang", "en")
     dish = Dish.query.filter_by(slug=slug).first()
     if not dish:
         return jsonify({"error": "Dish not found"}), 404
 
-    tiers = {t.level: t.to_dict() for t in dish.tiers if t.lang == lang}
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id)) if user_id else None
+
+    tiers = {}
+    for t in dish.tiers:
+        if t.lang != lang:
+            continue
+        allowed, reason = tier_access(t.level, user)
+        d = t.to_dict(full=allowed)
+        if not allowed:
+            d["locked"] = True
+            d["unlock_reason"] = reason
+        tiers[t.level] = d
     if not tiers:
         return jsonify({"error": "No content for this language yet"}), 404
 

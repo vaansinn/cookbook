@@ -114,7 +114,13 @@ class RecipeTier(db.Model):
             "kcal": (self.nutrition or {}).get("kcal"),
         }
 
-    def to_dict(self):
+    def to_dict(self, full=True):
+        """full=False returns the paywall teaser shape: prep/ingredients/
+        nutrition stay complete (they're the "what you'd need to buy"
+        preview), but steps are cut to the first one and notes are
+        withheld, with steps_total telling the frontend how much more
+        there is so the fade UI can say "N more steps" accurately."""
+        steps = self.steps or []
         return {
             "level": self.level,
             "lang": self.lang,
@@ -128,8 +134,9 @@ class RecipeTier(db.Model):
             "tags": self.tags or [],
             "prep": self.prep or [],
             "ingredients": self.ingredients or [],
-            "steps": self.steps or [],
-            "notes": self.notes or [],
+            "steps": steps if full else steps[:1],
+            "steps_total": len(steps),
+            "notes": (self.notes or []) if full else [],
             "nutrition": self.nutrition or {},
         }
 

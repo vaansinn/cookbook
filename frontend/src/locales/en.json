@@ -71,8 +71,14 @@
 
   "add_to_list": "Add to grocery list",
   "list_add_needs_household": "You need a shared grocery list first.",
+  "list_add_needs_account": "Create an account to build a shopping list.",
   "list_add_setup_link": "Set one up",
   "list_add_failed": "Couldn't add to the list — try again.",
+  "locked_more_steps": "{n} more steps in the {level} version",
+  "locked_desc_account": "Create a free account to unlock this tier.",
+  "locked_desc_premium": "Upgrade to Premium to unlock this tier.",
+  "locked_cta_premium": "Go Premium",
+  "premium_coming_soon": "Premium plans aren't available yet — check back soon.",
   "added_to_list": "Added!",
 
   "household_setup_title": "Share a grocery list",

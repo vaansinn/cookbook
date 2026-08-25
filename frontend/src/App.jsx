@@ -37,22 +37,8 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route
-          path="/"
-          element={
-            <RequireAuth>
-              <Home />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/dish/:slug"
-          element={
-            <RequireAuth>
-              <RecipePage />
-            </RequireAuth>
-          }
-        />
+        <Route path="/" element={<Home />} />
+        <Route path="/dish/:slug" element={<RecipePage />} />
         <Route
           path="/dish/:slug/cook"
           element={
@@ -77,22 +63,8 @@ export default function App() {
             </RequireAuth>
           }
         />
-        <Route
-          path="/glossary"
-          element={
-            <RequireAuth>
-              <GlossaryList />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/glossary/:slug"
-          element={
-            <RequireAuth>
-              <GlossaryDetail />
-            </RequireAuth>
-          }
-        />
+        <Route path="/glossary" element={<GlossaryList />} />
+        <Route path="/glossary/:slug" element={<GlossaryDetail />} />
         <Route
           path="/settings"
           element={

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "../store/useAuthStore";
 import useSettingsStore from "../store/useSettingsStore";
 import useFavoritesStore from "../store/useFavoritesStore";
@@ -109,6 +109,7 @@ function FilterTile({ emoji, text, isActive, onClick }) {
 
 export default function Home() {
   const t = useT();
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const language = useSettingsStore((s) => s.language);
@@ -128,7 +129,7 @@ export default function Home() {
     fetchFilters(language).then(setFilters).catch(() => {});
   }, [language]);
 
-  useEffect(() => { loadFavorites(); }, []);
+  useEffect(() => { if (user) loadFavorites(); }, [user]);
 
   const loadDishes = () => {
     const params = { lang: language };
@@ -166,12 +167,20 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <LangSwitch />
             <ThemeSwitch />
-            <Link to="/settings" className="w-9 h-9 rounded-full border-2 flex items-center justify-center" style={{ borderColor: "var(--line)" }} aria-label={t("settings_title")}>
-              ⚙️
-            </Link>
-            <button onClick={logout} className="btn-ghost text-sm py-2 px-4">
-              {t("auth_logout")}
-            </button>
+            {user ? (
+              <>
+                <Link to="/settings" className="w-9 h-9 rounded-full border-2 flex items-center justify-center" style={{ borderColor: "var(--line)" }} aria-label={t("settings_title")}>
+                  ⚙️
+                </Link>
+                <button onClick={logout} className="btn-ghost text-sm py-2 px-4">
+                  {t("auth_logout")}
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="btn-ghost text-sm py-2 px-4">
+                {t("auth_login_button")}
+              </Link>
+            )}
           </div>
         </header>
         <h1 className="max-w-3xl mx-auto font-display text-4xl font-bold mt-6" style={{ color: "var(--ink)" }}>
@@ -233,7 +242,11 @@ export default function Home() {
           {dishes && visibleDishes.map((d) => (
             <Link key={d.slug} to={`/dish/${d.slug}`} className="card relative flex gap-3 p-4 shadow-[0_3px_0_var(--line)]">
               <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(d.slug); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  user ? toggleFavorite(d.slug) : navigate("/login");
+                }}
                 aria-label={favoriteSlugs.has(d.slug) ? t("favorite_remove") : t("favorite_add")}
                 aria-pressed={favoriteSlugs.has(d.slug)}
                 className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center text-base"

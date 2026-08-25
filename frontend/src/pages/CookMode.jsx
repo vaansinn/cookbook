@@ -20,7 +20,14 @@ export default function CookMode() {
   const [timer, setTimer] = useState(null); // { total, left, running, done }
 
   useEffect(() => {
-    fetchDish(slug, language).then((d) => setTier(d.tiers[level]));
+    fetchDish(slug, language).then((d) => {
+      const t = d.tiers[level];
+      if (t?.locked) {
+        navigate(`/dish/${slug}`, { replace: true });
+        return;
+      }
+      setTier(t);
+    });
   }, [slug, level, language]);
 
   useEffect(() => {

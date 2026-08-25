@@ -12,7 +12,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 from app import db
-from models import CookLog, BadgeAward, Dish, RecipeTier
+from models import CookLog, BadgeAward, Dish, RecipeTier, User
+from access import tier_access
 
 progress_bp = Blueprint("progress", __name__)
 
@@ -126,6 +127,10 @@ def log_cook():
     dish = Dish.query.filter_by(slug=dish_slug).first()
     if not dish:
         return jsonify({"error": "Dish not found"}), 404
+
+    allowed, reason = tier_access(level, User.query.get(user_id))
+    if not allowed:
+        return jsonify({"error": "This tier needs an upgrade", "code": f"needs_{reason}"}), 403
 
     db.session.add(CookLog(user_id=user_id, dish_id=dish.id, level=level))
     db.session.commit()

@@ -10,7 +10,7 @@ Recipe Drawer teaches cooking by growing the *same dish* through three tiers —
 4. Feature breadth — matters, but not before 1–3.
 
 ## Feature Decisions
-- Basic tier is always free — decided 2026-08-24. Whether Intermediate/Advanced ever get locked behind a plan, and when, is open until there's real traction.
+- Basic tier is always free — decided 2026-08-24. Intermediate needs an account, Advanced needs premium — decided and shipped 2026-08-25 (P6, `access.py`). No Stripe/checkout yet; premium is a manually-set `user.plan` flag until pricing is decided.
 - Don't add features speculatively — the phased roadmap (blueprint artifact) is the plan; deviations get proposed, not silently built.
 - "Coming soon" placeholders are fine for planned-but-not-ready tabs — never ship a blank stub.
 
