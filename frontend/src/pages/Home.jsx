@@ -8,25 +8,9 @@ import { fetchDishes, fetchFilters } from "../api/recipes";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
 import BottomNav from "../components/BottomNav";
+import DISH_EMOJI from "../dishEmoji";
 
 const TIER_DOT_CLASS = { basic: "bg-basic", intermediate: "bg-inter", advanced: "bg-hot" };
-const DISH_EMOJI = {
-  "lentil-bolognese": "🍝",
-  "chickpea-tikka-masala": "🍛",
-  "spinach-egg-fried-rice": "🍳",
-  "sushi-rice": "🍚",
-  "lemon-ricotta-spaghetti": "🍋",
-  "potato-chickpea-skillet": "🥘",
-  "eggs-benedict": "🍳",
-  "tiramisu": "🍰",
-  "banana-bread": "🍞",
-  "no-knead-bread": "🥖",
-  "french-onion-soup": "🍲",
-  "guacamole": "🥑",
-  "thai-green-curry": "🍛",
-  "greek-salad": "🥗",
-  "chicken-souvlaki": "🍢",
-};
 
 const MEAL_TYPE_EMOJI = {
   breakfast: "🍳",
@@ -153,29 +137,33 @@ export default function Home() {
         className="px-6 pt-8 pb-4"
         style={{ background: `linear-gradient(160deg, var(--brand-soft), var(--bg) 70%)` }}
       >
-        <header className="max-w-3xl mx-auto flex items-center justify-between flex-wrap gap-4">
-          <div>
+        <header className="max-w-3xl mx-auto">
+          <div className="flex items-center justify-between">
             <span className="font-display font-bold text-lg" style={{ color: "var(--brand)" }}>
               {t("app_name")}
             </span>
-            {user && (
+            <div className="flex items-center gap-3">
+              <LangSwitch />
+              <ThemeSwitch />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-4 mt-3">
+            {user ? (
               <p className="text-sm font-medium" style={{ color: "var(--muted)" }}>
                 {t("home_signed_in_as", { name: user.display_name || user.email })}
               </p>
+            ) : (
+              <span />
             )}
-          </div>
-          <div className="flex items-center gap-3">
-            <LangSwitch />
-            <ThemeSwitch />
             {user ? (
-              <>
+              <div className="flex items-center gap-3">
                 <Link to="/settings" className="w-9 h-9 rounded-full border-2 flex items-center justify-center" style={{ borderColor: "var(--line)" }} aria-label={t("settings_title")}>
                   ⚙️
                 </Link>
                 <button onClick={logout} className="btn-ghost text-sm py-2 px-4">
                   {t("auth_logout")}
                 </button>
-              </>
+              </div>
             ) : (
               <Link to="/login" className="btn-ghost text-sm py-2 px-4">
                 {t("auth_login_button")}

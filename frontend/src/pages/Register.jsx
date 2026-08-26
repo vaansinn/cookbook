@@ -26,11 +26,12 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-6" style={{ background: "var(--bg)" }}>
-      <div className="flex gap-3">
+    <div className="min-h-screen flex flex-col px-6" style={{ background: "var(--bg)" }}>
+      <div className="flex justify-end gap-3 pt-6">
         <LangSwitch />
         <ThemeSwitch />
       </div>
+      <div className="flex-1 flex flex-col items-center justify-center pb-12">
       <div className="card w-full max-w-sm p-8">
         <h1 className="font-display text-3xl font-bold mb-1" style={{ color: "var(--ink)" }}>
           {t("auth_register_title")}
@@ -48,6 +49,7 @@ export default function Register() {
         <Link to="/privacy" className="block mt-2 text-xs font-semibold text-center" style={{ color: "var(--muted)" }}>
           {t("settings_privacy_link")}
         </Link>
+      </div>
       </div>
     </div>
   );

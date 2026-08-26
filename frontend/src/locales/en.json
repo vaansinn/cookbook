@@ -182,6 +182,10 @@
   "meal_plan_shared_by": "Shared by {name}",
   "meal_plan_not_found": "This meal plan link doesn't work anymore",
   "meal_plan_not_found_sub": "It may have been deleted, or the link is incorrect.",
+  "meal_plan_apply_week": "Add to week plan",
+  "meal_plan_apply_week_done": "Planned!",
+  "meal_plan_generate": "Suggest a plan",
+  "meal_plan_generated_name": "Chef's picks",
 
   "api_needs_account": "Create a free account to use this tier.",
   "api_needs_premium": "This tier needs Premium."

@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
 import useAuthStore from "../store/useAuthStore";
 import useMealPlansStore from "../store/useMealPlansStore";
 import { useT, apiMessage } from "../i18n";
 import { fetchDishes } from "../api/recipes";
+import { addPlanToGroceryList, applyPlanToWeek } from "../api/mealPlans";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
 import BottomNav from "../components/BottomNav";
 import ShareButton from "../components/ShareButton";
 import ChefHats from "../components/ChefHats";
+import { dishEmoji } from "../dishEmoji";
 
 const TIER_ORDER = ["basic", "intermediate", "advanced"];
 
@@ -94,6 +97,94 @@ function CreatePlanForm({ dishes, allowedLvls, onSave, onCancel, initial }) {
   );
 }
 
+function PlanCard({ plan, dishTitle, onEdit, onRemove }) {
+  const t = useT();
+  const language = useSettingsStore((s) => s.language);
+  const [added, setAdded] = useState(false);
+  const [applied, setApplied] = useState(false);
+  const [applyDate, setApplyDate] = useState(new Date().toISOString().slice(0, 10));
+  const [errorCode, setErrorCode] = useState(null);
+
+  const doAddToList = () => {
+    setErrorCode(null);
+    addPlanToGroceryList(plan.id, language)
+      .then(() => {
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+      })
+      .catch((err) => setErrorCode(err.response?.data?.code === "no_household" ? "no_household" : "generic"));
+  };
+
+  const doApplyWeek = () => {
+    setErrorCode(null);
+    applyPlanToWeek(plan.id, applyDate)
+      .then(() => {
+        setApplied(true);
+        setTimeout(() => setApplied(false), 2000);
+      })
+      .catch((err) => setErrorCode(err.response?.data?.code === "no_household" ? "no_household" : "generic"));
+  };
+
+  return (
+    <>
+      <div className="font-display font-bold text-base" style={{ color: "var(--ink)" }}>{plan.name}</div>
+      <div className="text-xs font-semibold mt-0.5" style={{ color: "var(--muted)" }}>
+        {t("meal_plan_recipe_count", { n: plan.items.length })}
+      </div>
+      <div className="flex flex-col gap-1.5 mt-3">
+        {plan.items.map((item, i) => (
+          <Link key={i} to={`/dish/${item.dish_slug}`} className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--ink)" }}>
+            <span aria-hidden="true">{dishEmoji(item.dish_slug)}</span>
+            <ChefHats level={item.level} />
+            <span className="flex-1">{dishTitle(item.dish_slug)}</span>
+            <span aria-hidden="true" style={{ color: "var(--brand)" }}>→</span>
+          </Link>
+        ))}
+      </div>
+      <div className="flex gap-2 mt-4">
+        <ShareButton
+          variant="text"
+          url={`${window.location.origin}/plans/${plan.share_slug}`}
+          title={plan.name}
+          className="btn-primary flex-1 text-sm py-2.5"
+        />
+        <button onClick={onEdit} className="btn-ghost text-sm py-2.5 px-4">{t("meal_plan_edit")}</button>
+        <button
+          onClick={() => window.confirm(t("meal_plan_delete_confirm")) && onRemove()}
+          className="btn-ghost text-sm py-2.5 px-4"
+          style={{ color: "var(--hot)" }}
+        >
+          {t("meal_plan_delete")}
+        </button>
+      </div>
+      <button onClick={doAddToList} className="btn-ghost w-full mt-2 text-sm py-2.5">
+        {added ? t("added_to_list") : t("add_to_list")}
+      </button>
+      <div className="flex gap-2 mt-2">
+        <input
+          type="date"
+          className="field !py-2 text-sm flex-1"
+          value={applyDate}
+          onChange={(e) => setApplyDate(e.target.value)}
+          aria-label={t("planner_pick_date")}
+        />
+        <button onClick={doApplyWeek} className="btn-ghost text-sm py-2 px-4">
+          {applied ? t("meal_plan_apply_week_done") : t("meal_plan_apply_week")}
+        </button>
+      </div>
+      {errorCode && (
+        <p className="text-sm font-semibold mt-2" style={{ color: "var(--hot)" }}>
+          {errorCode === "no_household" ? (
+            <>{t("list_add_needs_household")} <Link to="/groceries" style={{ color: "var(--brand)", textDecoration: "underline" }}>{t("list_add_setup_link")}</Link></>
+          ) : (
+            t("error_generic")
+          )}
+        </p>
+      )}
+    </>
+  );
+}
+
 export default function MealPlansPage() {
   const t = useT();
   const language = useSettingsStore((s) => s.language);
@@ -104,11 +195,22 @@ export default function MealPlansPage() {
   const create = useMealPlansStore((s) => s.create);
   const update = useMealPlansStore((s) => s.update);
   const remove = useMealPlansStore((s) => s.remove);
+  const generate = useMealPlansStore((s) => s.generate);
 
   const [dishes, setDishes] = useState([]);
   const [loadError, setLoadError] = useState(false);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState(false);
+
+  const doGenerate = () => {
+    setGenerateError(false);
+    setGenerating(true);
+    generate(t("meal_plan_generated_name"))
+      .catch(() => setGenerateError(true))
+      .finally(() => setGenerating(false));
+  };
 
   const doLoad = () => { setLoadError(false); load().catch(() => setLoadError(true)); };
   useEffect(doLoad, []);
@@ -157,40 +259,12 @@ export default function MealPlansPage() {
                     onSave={(name, items) => update(plan.id, { name, items }).then(() => setEditingId(null))}
                   />
                 ) : (
-                  <>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="font-display font-bold text-base" style={{ color: "var(--ink)" }}>{plan.name}</div>
-                        <div className="text-xs font-semibold mt-0.5" style={{ color: "var(--muted)" }}>
-                          {t("meal_plan_recipe_count", { n: plan.items.length })}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-1.5 mt-3">
-                      {plan.items.map((item, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--ink)" }}>
-                          <ChefHats level={item.level} />
-                          {dishTitle(item.dish_slug)}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <ShareButton
-                        variant="text"
-                        url={`${window.location.origin}/plans/${plan.share_slug}`}
-                        title={plan.name}
-                        className="btn-primary flex-1 text-sm py-2.5"
-                      />
-                      <button onClick={() => setEditingId(plan.id)} className="btn-ghost text-sm py-2.5 px-4">{t("meal_plan_edit")}</button>
-                      <button
-                        onClick={() => window.confirm(t("meal_plan_delete_confirm")) && remove(plan.id)}
-                        className="btn-ghost text-sm py-2.5 px-4"
-                        style={{ color: "var(--hot)" }}
-                      >
-                        {t("meal_plan_delete")}
-                      </button>
-                    </div>
-                  </>
+                  <PlanCard
+                    plan={plan}
+                    dishTitle={dishTitle}
+                    onEdit={() => setEditingId(plan.id)}
+                    onRemove={() => remove(plan.id)}
+                  />
                 )}
               </li>
             ))}
@@ -204,7 +278,17 @@ export default function MealPlansPage() {
               onSave={(name, items) => create(name, items).then(() => setCreating(false))}
             />
           ) : (
-            <button onClick={() => setCreating(true)} className="btn-primary w-full mt-4 mb-8">{t("meal_plan_new")}</button>
+            <>
+              <div className="flex gap-2 mt-4 mb-8">
+                <button onClick={doGenerate} disabled={generating} className="btn-ghost flex-1 disabled:opacity-50">
+                  ✨ {t("meal_plan_generate")}
+                </button>
+                <button onClick={() => setCreating(true)} className="btn-primary flex-1">{t("meal_plan_new")}</button>
+              </div>
+              {generateError && (
+                <p className="text-sm font-semibold -mt-6 mb-8" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+              )}
+            </>
           )}
         </div>
       </div>

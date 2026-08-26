@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { getMealPlans, createMealPlan, updateMealPlan, deleteMealPlan } from "../api/mealPlans";
+import { getMealPlans, createMealPlan, updateMealPlan, deleteMealPlan, generateMealPlan } from "../api/mealPlans";
 
 const useMealPlansStore = create((set, get) => ({
   plans: [],
@@ -12,6 +12,12 @@ const useMealPlansStore = create((set, get) => ({
 
   create: async (name, items) => {
     const plan = await createMealPlan(name, items);
+    set({ plans: [plan, ...get().plans] });
+    return plan;
+  },
+
+  generate: async (name) => {
+    const plan = await generateMealPlan(name);
     set({ plans: [plan, ...get().plans] });
     return plan;
   },
