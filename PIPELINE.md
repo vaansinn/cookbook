@@ -5,7 +5,7 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 
 ## Open
 
-(none — #16-#18 shipped this session)
+- #19 — Restyle the 3 tier tabs on the recipe page away from the current pill-button look, toward a "chopping board" or "recipe card" visual metaphor. Raises a second, bigger question: whether every dish stays fixed at exactly 3 tiers (Basic/Intermediate/Advanced) or some dishes could have fewer/more. **Flagged per `business.md`**: "Tier tabs are the future paywall boundary. Any change to tab structure has payment-gating implications even before Stripe is wired up." A variable tier count touches the P6 access model (`access.py`'s `tier_access()` is hardcoded to 3 named levels), the whole recipe content pipeline (`Dish`/`RecipeTier`, markdown sync), and every dish's content across both languages — a different scope of change than a visual reskin. Needs a decision (see chat) before any data-model work; the visual restyle can proceed independent of that.
 
 ## Already shipped
 
