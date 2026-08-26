@@ -11,9 +11,10 @@ import { scaleIngredientText } from "../utils/scaleIngredient";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
 import GlossaryLinkedText from "../components/GlossaryLinkedText";
+import ChefHats from "../components/ChefHats";
+import ShareButton from "../components/ShareButton";
 
 const TIER_ORDER = ["basic", "intermediate", "advanced"];
-const TIER_ICON = { basic: "🌶️", intermediate: "🌶️🌶️", advanced: "🌶️🌶️🌶️" };
 
 export default function RecipePage() {
   const { slug } = useParams();
@@ -120,18 +121,25 @@ export default function RecipePage() {
           <h1 className="font-display text-3xl font-bold" style={{ color: "var(--ink)" }}>
             {tier.title}
           </h1>
-          <button
-            onClick={() => (user ? toggleFavorite(slug) : navigate("/login"))}
-            aria-label={favoriteSlugs.has(slug) ? t("favorite_remove") : t("favorite_add")}
-            aria-pressed={favoriteSlugs.has(slug)}
-            className="shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg mt-1"
-            style={{
-              borderColor: favoriteSlugs.has(slug) ? "var(--brand)" : "var(--line)",
-              color: favoriteSlugs.has(slug) ? "var(--brand)" : "var(--muted)",
-            }}
-          >
-            {favoriteSlugs.has(slug) ? "♥" : "♡"}
-          </button>
+          <div className="flex items-center gap-2 mt-1">
+            <ShareButton
+              url={`${window.location.origin}/dish/${slug}`}
+              title={tier.title}
+              className="shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center"
+            />
+            <button
+              onClick={() => (user ? toggleFavorite(slug) : navigate("/login"))}
+              aria-label={favoriteSlugs.has(slug) ? t("favorite_remove") : t("favorite_add")}
+              aria-pressed={favoriteSlugs.has(slug)}
+              className="shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg"
+              style={{
+                borderColor: favoriteSlugs.has(slug) ? "var(--brand)" : "var(--line)",
+                color: favoriteSlugs.has(slug) ? "var(--brand)" : "var(--muted)",
+              }}
+            >
+              {favoriteSlugs.has(slug) ? "♥" : "♡"}
+            </button>
+          </div>
         </div>
         <div className="text-sm font-semibold mt-1" style={{ color: "var(--muted)" }}>
           {t("serves")} {tier.serves} · ~{tier.time_min} {t("min_short")}
@@ -159,7 +167,7 @@ export default function RecipePage() {
                     : { background: "var(--card)", color: "var(--muted)", border: "2px solid var(--line)" }
                 }
               >
-                <span>{available ? TIER_ICON[lvl] : "🔒"}</span>
+                <span>{available ? <ChefHats level={lvl} /> : <span aria-hidden="true">🔒</span>}</span>
                 {t("tier_" + lvl)}
               </button>
             );
@@ -278,7 +286,7 @@ export default function RecipePage() {
               ))}
             </div>
             <div className="rounded-2xl mt-5 p-5 text-center" style={{ background: "var(--card)", border: "2px solid var(--line)" }}>
-              <div className="text-xl" aria-hidden="true">{TIER_ICON[level]}</div>
+              <div className="flex justify-center"><ChefHats level={level} size="1.4em" /></div>
               <div className="font-display font-bold text-base mt-1" style={{ color: "var(--ink)" }}>
                 {t("locked_more_steps", { n: tier.steps_total - tier.steps.length, level: t("tier_" + level) })}
               </div>

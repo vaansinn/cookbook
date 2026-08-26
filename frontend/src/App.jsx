@@ -12,6 +12,8 @@ import ProgressPage from "./pages/ProgressPage";
 import { GlossaryList, GlossaryDetail } from "./pages/GlossaryPage";
 import SettingsPage from "./pages/SettingsPage";
 import PrivacyPage from "./pages/PrivacyPage";
+import MealPlansPage from "./pages/MealPlansPage";
+import SharedMealPlanPage from "./pages/SharedMealPlanPage";
 
 function RequireAuth({ children }) {
   const user = useAuthStore((s) => s.user);
@@ -63,6 +65,15 @@ export default function App() {
             </RequireAuth>
           }
         />
+        <Route
+          path="/plans"
+          element={
+            <RequireAuth>
+              <MealPlansPage />
+            </RequireAuth>
+          }
+        />
+        <Route path="/plans/:shareSlug" element={<SharedMealPlanPage />} />
         <Route path="/glossary" element={<GlossaryList />} />
         <Route path="/glossary/:slug" element={<GlossaryDetail />} />
         <Route

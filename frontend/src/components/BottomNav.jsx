@@ -7,6 +7,7 @@ export default function BottomNav() {
   const tabs = [
     { to: "/", key: "nav_home", icon: "🏠" },
     { to: "/groceries", key: "nav_groceries", icon: "🧾" },
+    { to: "/plans", key: "nav_meal_plans", icon: "📋" },
     { to: "/glossary", key: "nav_glossary", icon: "📖" },
     { to: "/progress", key: "nav_progress", icon: "🔥" },
   ];

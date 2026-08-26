@@ -25,6 +25,11 @@ Table overview:
                       steps and the nutrition panel by keyword match (see
                       content/glossary/*.md + scripts/sync_glossary.py)
   favorites         — a user's heart-marked dishes (routes/favorites.py)
+  meal_plans        — a named, user-owned bundle of recipes with a public
+                      shareable link (routes/meal_plans.py) — distinct from
+                      plan_entries: this is a curated set to share out, not a
+                      household's dated week schedule
+  meal_plan_items   — one dish+tier in a meal plan
 """
 
 from app import db
@@ -257,6 +262,41 @@ class PlanEntry(db.Model):
             "level": self.level,
             "serves": self.serves,
         }
+
+
+def _plan_share_slug():
+    return secrets.token_urlsafe(9)  # public, unguessable — longer than the household invite code
+
+
+class MealPlan(db.Model):
+    __tablename__ = "meal_plans"
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    name       = db.Column(db.String(100), nullable=False)
+    share_slug = db.Column(db.String(24), unique=True, nullable=False, default=_plan_share_slug)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user  = db.relationship("User")
+    items = db.relationship("MealPlanItem", backref="plan", cascade="all, delete-orphan", order_by="MealPlanItem.id")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "share_slug": self.share_slug,
+            "items": [i.to_dict() for i in self.items],
+        }
+
+
+class MealPlanItem(db.Model):
+    __tablename__ = "meal_plan_items"
+    id           = db.Column(db.Integer, primary_key=True)
+    meal_plan_id = db.Column(db.Integer, db.ForeignKey("meal_plans.id"), nullable=False)
+    dish_slug    = db.Column(db.String(80), nullable=False)
+    level        = db.Column(db.String(20), nullable=False)
+
+    def to_dict(self):
+        return {"dish_slug": self.dish_slug, "level": self.level}
 
 
 class CookLog(db.Model):
