@@ -4,6 +4,7 @@
   "nav_groceries": "Einkaufsliste",
   "nav_glossary": "Glossar",
   "nav_progress": "Fortschritt",
+  "nav_meal_plans": "Menüpläne",
   "auth_login_title": "Willkommen zurück",
   "auth_register_title": "Konto erstellen",
   "auth_email": "E-Mail",
@@ -155,5 +156,33 @@
   "privacy_title": "Datenschutz",
   "privacy_body_1": "Diese App speichert deine E-Mail, ein sicher gehashtes Passwort und deinen Namen, damit du dich anmelden kannst. Sie speichert, welche Rezepte du in welcher Schwierigkeit wann gekocht hast — das treibt deine Serie, XP und Abzeichen an. Trittst du einem Haushalt bei, sind Einkaufslisten-Artikel und geplante Mahlzeiten, die du hinzufügst, für alle im Haushalt sichtbar.",
   "privacy_body_2": "Nichts wird verkauft oder an Dritte weitergegeben, es gibt keine Werbung oder Tracking-Skripte. Du kannst jederzeit über die Einstellungsseite alles herunterladen, was die App über dich gespeichert hat, oder dein Konto vollständig löschen.",
-  "privacy_back": "Zurück"
+  "privacy_back": "Zurück",
+
+  "share": "Teilen",
+  "share_link": "Link kopieren",
+  "link_copied": "Kopiert!",
+
+  "meal_plans_title": "Menüpläne",
+  "meal_plans_empty": "Noch keine Menüpläne — ein paar Rezepte bündeln und den Link teilen.",
+  "meal_plan_new": "Neuer Menüplan",
+  "meal_plan_name_placeholder": "Name für den Plan…",
+  "meal_plan_pick_dish": "Gericht",
+  "meal_plan_pick_level": "Stufe",
+  "meal_plan_add_recipe": "Hinzufügen",
+  "meal_plan_items_title": "Rezepte in diesem Plan",
+  "meal_plan_no_items": "Noch keine Rezepte hinzugefügt.",
+  "meal_plan_save": "Plan speichern",
+  "meal_plan_cancel": "Abbrechen",
+  "meal_plan_copy_link": "Link zum Teilen kopieren",
+  "meal_plan_edit": "Bearbeiten",
+  "meal_plan_delete": "Löschen",
+  "meal_plan_delete_confirm": "Diesen Menüplan löschen? Der geteilte Link funktioniert danach nicht mehr.",
+  "meal_plan_recipe_count": "{n} Rezepte",
+  "meal_plan_shared_banner": "Geteilter Menüplan — nur Ansicht",
+  "meal_plan_shared_by": "Geteilt von {name}",
+  "meal_plan_not_found": "Dieser Link funktioniert nicht mehr",
+  "meal_plan_not_found_sub": "Der Plan wurde vielleicht gelöscht, oder der Link ist falsch.",
+
+  "api_needs_account": "Erstelle ein kostenloses Konto, um diese Stufe zu nutzen.",
+  "api_needs_premium": "Diese Stufe braucht Premium."
 }

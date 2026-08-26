@@ -72,12 +72,14 @@ def create_app():
     from routes.progress import progress_bp
     from routes.glossary import glossary_bp
     from routes.favorites import favorites_bp
+    from routes.meal_plans import meal_plans_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(recipes_bp, url_prefix="/api")
     app.register_blueprint(groceries_bp, url_prefix="/api")
     app.register_blueprint(progress_bp, url_prefix="/api")
     app.register_blueprint(glossary_bp, url_prefix="/api")
     app.register_blueprint(favorites_bp, url_prefix="/api")
+    app.register_blueprint(meal_plans_bp, url_prefix="/api")
 
     # ── CLI: flask sync-recipes ───────────────────────────────────────────────
     # Re-parses content/recipes/**/*.md + content/foods.json into Postgres.
