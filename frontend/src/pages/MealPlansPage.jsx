@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
 import useAuthStore from "../store/useAuthStore";
 import useMealPlansStore from "../store/useMealPlansStore";
@@ -9,6 +10,7 @@ import ThemeSwitch from "../components/ThemeSwitch";
 import BottomNav from "../components/BottomNav";
 import ShareButton from "../components/ShareButton";
 import ChefHats from "../components/ChefHats";
+import { dishEmoji } from "../dishEmoji";
 
 const TIER_ORDER = ["basic", "intermediate", "advanced"];
 
@@ -168,10 +170,12 @@ export default function MealPlansPage() {
                     </div>
                     <div className="flex flex-col gap-1.5 mt-3">
                       {plan.items.map((item, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--ink)" }}>
+                        <Link key={i} to={`/dish/${item.dish_slug}`} className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--ink)" }}>
+                          <span aria-hidden="true">{dishEmoji(item.dish_slug)}</span>
                           <ChefHats level={item.level} />
-                          {dishTitle(item.dish_slug)}
-                        </div>
+                          <span className="flex-1">{dishTitle(item.dish_slug)}</span>
+                          <span aria-hidden="true" style={{ color: "var(--brand)" }}>→</span>
+                        </Link>
                       ))}
                     </div>
                     <div className="flex gap-2 mt-4">

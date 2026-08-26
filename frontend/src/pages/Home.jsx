@@ -8,25 +8,9 @@ import { fetchDishes, fetchFilters } from "../api/recipes";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
 import BottomNav from "../components/BottomNav";
+import DISH_EMOJI from "../dishEmoji";
 
 const TIER_DOT_CLASS = { basic: "bg-basic", intermediate: "bg-inter", advanced: "bg-hot" };
-const DISH_EMOJI = {
-  "lentil-bolognese": "🍝",
-  "chickpea-tikka-masala": "🍛",
-  "spinach-egg-fried-rice": "🍳",
-  "sushi-rice": "🍚",
-  "lemon-ricotta-spaghetti": "🍋",
-  "potato-chickpea-skillet": "🥘",
-  "eggs-benedict": "🍳",
-  "tiramisu": "🍰",
-  "banana-bread": "🍞",
-  "no-knead-bread": "🥖",
-  "french-onion-soup": "🍲",
-  "guacamole": "🥑",
-  "thai-green-curry": "🍛",
-  "greek-salad": "🥗",
-  "chicken-souvlaki": "🍢",
-};
 
 const MEAL_TYPE_EMOJI = {
   breakfast: "🍳",
