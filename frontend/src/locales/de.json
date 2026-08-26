@@ -182,6 +182,10 @@
   "meal_plan_shared_by": "Geteilt von {name}",
   "meal_plan_not_found": "Dieser Link funktioniert nicht mehr",
   "meal_plan_not_found_sub": "Der Plan wurde vielleicht gelöscht, oder der Link ist falsch.",
+  "meal_plan_apply_week": "In den Wochenplan",
+  "meal_plan_apply_week_done": "Geplant!",
+  "meal_plan_generate": "Plan vorschlagen",
+  "meal_plan_generated_name": "Chef-Empfehlung",
 
   "api_needs_account": "Erstelle ein kostenloses Konto, um diese Stufe zu nutzen.",
   "api_needs_premium": "Diese Stufe braucht Premium."
