@@ -5,7 +5,9 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 
 ## Open
 
-(none yet — P1 foundation just shipped)
+- #16 — Share button on the recipe page (`RecipePage.jsx`), next to the favorite heart. Web Share API with clipboard-copy fallback; recipe pages are already public at Basic tier so this is just sharing the current URL, no new access-control surface.
+- #17 — Replace the 🌶️/🌶️🌶️/🔒 difficulty icon (`RecipePage.jsx` tier tabs + unlock card) with something that reads as difficulty, not spice level. **Conflicts with `business.md`**: "Difficulty language leans into the spice-heat metaphor... keep it consistent, don't invent a second metaphor" — this is a business-rule change, not just a code change, flagged per that rule and per `visual-design.md`'s "state the issue before implementing." Needs a decision on the replacement (see chat).
+- #18 — Meal plan bundles with a shareable link. A week/day planner already exists (`PlanEntry` model, `/api/plan` routes, P3 #6) but nothing bundles recipes into a named, shareable collection, and no route in the app is public+unauthenticated today — the only share precedent (household invite code) is an authenticated JWT-gated lookup, not a public link. Needs a decision on public-link vs. authenticated-code (see chat) before building.
 
 ## Already shipped
 
