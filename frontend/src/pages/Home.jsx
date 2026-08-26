@@ -153,29 +153,33 @@ export default function Home() {
         className="px-6 pt-8 pb-4"
         style={{ background: `linear-gradient(160deg, var(--brand-soft), var(--bg) 70%)` }}
       >
-        <header className="max-w-3xl mx-auto flex items-center justify-between flex-wrap gap-4">
-          <div>
+        <header className="max-w-3xl mx-auto">
+          <div className="flex items-center justify-between">
             <span className="font-display font-bold text-lg" style={{ color: "var(--brand)" }}>
               {t("app_name")}
             </span>
-            {user && (
+            <div className="flex items-center gap-3">
+              <LangSwitch />
+              <ThemeSwitch />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-4 mt-3">
+            {user ? (
               <p className="text-sm font-medium" style={{ color: "var(--muted)" }}>
                 {t("home_signed_in_as", { name: user.display_name || user.email })}
               </p>
+            ) : (
+              <span />
             )}
-          </div>
-          <div className="flex items-center gap-3">
-            <LangSwitch />
-            <ThemeSwitch />
             {user ? (
-              <>
+              <div className="flex items-center gap-3">
                 <Link to="/settings" className="w-9 h-9 rounded-full border-2 flex items-center justify-center" style={{ borderColor: "var(--line)" }} aria-label={t("settings_title")}>
                   ⚙️
                 </Link>
                 <button onClick={logout} className="btn-ghost text-sm py-2 px-4">
                   {t("auth_logout")}
                 </button>
-              </>
+              </div>
             ) : (
               <Link to="/login" className="btn-ghost text-sm py-2 px-4">
                 {t("auth_login_button")}
