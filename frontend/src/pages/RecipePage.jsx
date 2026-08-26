@@ -15,6 +15,16 @@ import ChefHats from "../components/ChefHats";
 import ShareButton from "../components/ShareButton";
 
 const TIER_ORDER = ["basic", "intermediate", "advanced"];
+// "Board rack" tab look: the active tier's board pops forward in its own
+// saturated colour; the compare strip below picks up the same colour, like
+// the board's surface changed. --brand-ink is the text colour index.css
+// calibrates every "main" accent tone against (white in light mode, near-black
+// in dark mode) — using it here keeps the fill/text pairing at the same WCAG
+// AA contrast the rest of the app relies on.
+const TIER_FILL = { basic: "var(--basic)", intermediate: "var(--inter)", advanced: "var(--hot)" };
+const TIER_FILL_DK = { basic: "var(--basic-dk)", intermediate: "var(--inter-dk)", advanced: "var(--hot-dk)" };
+const TIER_SOFT = { basic: "var(--basic-soft)", intermediate: "var(--inter-soft)", advanced: "var(--hot-soft)" };
+const TIER_SOFT_TEXT = { basic: "var(--basic-dk)", intermediate: "var(--inter-dk)", advanced: "var(--hot-dk)" };
 
 export default function RecipePage() {
   const { slug } = useParams();
@@ -145,7 +155,7 @@ export default function RecipePage() {
           {t("serves")} {tier.serves} · ~{tier.time_min} {t("min_short")}
         </div>
 
-        <div className="flex gap-2 mt-5">
+        <div className="flex mt-5">
           {TIER_ORDER.map((lvl) => {
             const available = !!dish.tiers[lvl];
             const active = lvl === level;
@@ -154,20 +164,17 @@ export default function RecipePage() {
                 key={lvl}
                 disabled={!available}
                 onClick={() => { setLevel(lvl); setServes(dish.tiers[lvl].serves); setDoneSteps({}); setDonePrep({}); setShowPremiumNote(false); }}
-                className="flex-1 rounded-2xl py-2.5 text-xs font-bold flex flex-col items-center gap-0.5"
-                style={
-                  !available
-                    ? { background: "var(--locked-soft)", color: "var(--locked)", border: "2px solid var(--line)" }
+                className="flex-1 py-3 px-1 text-xs font-bold flex items-center justify-center gap-1.5"
+                style={{
+                  borderRadius: "12px 12px 4px 4px",
+                  ...(!available
+                    ? { background: "var(--locked-soft)", color: "var(--locked)", border: "2px solid var(--line)", transform: "translateY(6px)", zIndex: 1 }
                     : active
-                    ? lvl === "basic"
-                      ? { background: "var(--basic)", color: "var(--brand-ink)", boxShadow: "0 4px 0 var(--basic-dk)" }
-                      : lvl === "intermediate"
-                      ? { background: "var(--card)", color: "var(--inter-dk)", border: "2px solid var(--inter)" }
-                      : { background: "var(--card)", color: "var(--hot-dk)", border: "2px solid var(--hot)" }
-                    : { background: "var(--card)", color: "var(--muted)", border: "2px solid var(--line)" }
-                }
+                    ? { background: TIER_FILL[lvl], color: "var(--brand-ink)", boxShadow: `0 7px 0 ${TIER_FILL_DK[lvl]}`, transform: "translateY(-6px) scale(1.08)", margin: "0 -6px", zIndex: 3, position: "relative" }
+                    : { background: "var(--card)", color: "var(--muted)", border: "2px solid var(--line)", transform: "translateY(6px)", zIndex: 1, opacity: 0.85 }),
+                }}
               >
-                <span>{available ? <ChefHats level={lvl} /> : <span aria-hidden="true">🔒</span>}</span>
+                {available ? <ChefHats level={lvl} /> : <span aria-hidden="true">🔒</span>}
                 {t("tier_" + lvl)}
               </button>
             );
@@ -175,7 +182,7 @@ export default function RecipePage() {
         </div>
         {!dish.tiers[level] && <p className="text-sm mt-2" style={{ color: "var(--muted)" }}>{t("tier_locked")}</p>}
 
-        <div className="grid grid-cols-3 gap-2 mt-3">
+        <div className="grid grid-cols-3 gap-2 mt-4">
           {TIER_ORDER.map((lvl) => {
             const lvlTier = dish.tiers[lvl];
             const active = lvl === level;
@@ -183,11 +190,11 @@ export default function RecipePage() {
               <div
                 key={lvl}
                 className="rounded-xl px-2 py-1.5 text-center"
-                style={active ? { background: "var(--brand-soft)" } : undefined}
+                style={active ? { background: TIER_SOFT[lvl] } : undefined}
               >
                 <p
                   className="text-[10px] leading-tight"
-                  style={{ color: active ? "var(--brand)" : "var(--muted)", fontWeight: active ? 700 : 500 }}
+                  style={{ color: active ? TIER_SOFT_TEXT[lvl] : "var(--muted)", fontWeight: active ? 700 : 500 }}
                 >
                   {lvlTier?.tier_summary || "—"}
                 </p>
