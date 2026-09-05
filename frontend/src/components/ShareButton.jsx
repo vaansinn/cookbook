@@ -16,7 +16,7 @@ function ShareIcon() {
 // Web Share API where available (mobile browsers, mostly), copy-to-clipboard
 // fallback everywhere else. `url` is always public content — the recipe page
 // is public at Basic tier, and meal-plan share links are public by design.
-export default function ShareButton({ url, title, variant = "icon", className }) {
+export default function ShareButton({ url, title, variant = "icon", className, style }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
 
@@ -45,7 +45,7 @@ export default function ShareButton({ url, title, variant = "icon", className })
         aria-label={copied ? t("link_copied") : t("share")}
         title={t("share")}
         className={className || "shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center"}
-        style={{ borderColor: "var(--line)", color: "var(--muted)" }}
+        style={style || { borderColor: "var(--line)", color: "var(--muted)" }}
       >
         {copied ? <span aria-hidden="true">✓</span> : <ShareIcon />}
       </button>

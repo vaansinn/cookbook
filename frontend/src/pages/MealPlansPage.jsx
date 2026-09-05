@@ -14,6 +14,10 @@ import ChefHats from "../components/ChefHats";
 import { dishEmoji } from "../dishEmoji";
 
 const TIER_ORDER = ["basic", "intermediate", "advanced"];
+// Left-edge accent stripe + thumbnail tint on each dish row, matching the
+// tier-colour language established on the recipe page's board-rack tabs.
+const TIER_ACCENT = { basic: "var(--basic)", intermediate: "var(--inter)", advanced: "var(--hot)" };
+const TIER_ACCENT_SOFT = { basic: "var(--basic-soft)", intermediate: "var(--inter-soft)", advanced: "var(--hot-soft)" };
 
 // Mirrors access.py's tier_access() so the level picker doesn't offer a tier
 // the save call would just reject — see .claude/rules/security.md, the real
@@ -125,52 +129,88 @@ function PlanCard({ plan, dishTitle, onEdit, onRemove }) {
       .catch((err) => setErrorCode(err.response?.data?.code === "no_household" ? "no_household" : "generic"));
   };
 
+  const iconBtnClass = "shrink-0 w-[34px] h-[34px] rounded-full border-2 flex items-center justify-center text-sm";
+
   return (
     <>
-      <div className="font-display font-bold text-base" style={{ color: "var(--ink)" }}>{plan.name}</div>
-      <div className="text-xs font-semibold mt-0.5" style={{ color: "var(--muted)" }}>
-        {t("meal_plan_recipe_count", { n: plan.items.length })}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="font-display font-bold text-lg" style={{ color: "var(--ink)" }}>{plan.name}</div>
+          <span
+            className="font-display font-bold text-[10px] px-2.5 py-1 rounded-full whitespace-nowrap"
+            style={{ background: "var(--brand-soft)", color: "var(--brand-dk)" }}
+          >
+            {t("meal_plan_recipe_count", { n: plan.items.length })}
+          </span>
+        </div>
+        <div className="flex gap-1.5 shrink-0">
+          <ShareButton
+            url={`${window.location.origin}/plans/${plan.share_slug}`}
+            title={plan.name}
+            className={iconBtnClass}
+            style={{ borderColor: "var(--brand)", color: "var(--brand)" }}
+          />
+          <button onClick={onEdit} aria-label={t("meal_plan_edit")} title={t("meal_plan_edit")} className={iconBtnClass} style={{ borderColor: "var(--line)", color: "var(--muted)" }}>
+            ✎
+          </button>
+          <button
+            onClick={() => window.confirm(t("meal_plan_delete_confirm")) && onRemove()}
+            aria-label={t("meal_plan_delete")}
+            title={t("meal_plan_delete")}
+            className={iconBtnClass}
+            style={{ borderColor: "var(--line)", color: "var(--hot)" }}
+          >
+            ✕
+          </button>
+        </div>
       </div>
-      <div className="flex flex-col gap-1.5 mt-3">
+
+      <div className="my-3.5" style={{ height: 1, background: "var(--line)" }} />
+
+      <div className="flex flex-col gap-1.5">
         {plan.items.map((item, i) => (
-          <Link key={i} to={`/dish/${item.dish_slug}`} className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--ink)" }}>
-            <span aria-hidden="true">{dishEmoji(item.dish_slug)}</span>
+          <Link
+            key={i}
+            to={`/dish/${item.dish_slug}`}
+            className="relative flex items-center gap-2.5 rounded-2xl overflow-hidden pl-2 pr-3 py-2"
+            style={{ background: "var(--bg)" }}
+          >
+            <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: TIER_ACCENT[item.level] }} aria-hidden="true" />
+            <span
+              className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0 ml-1"
+              style={{ background: TIER_ACCENT_SOFT[item.level] }}
+              aria-hidden="true"
+            >
+              {dishEmoji(item.dish_slug)}
+            </span>
             <ChefHats level={item.level} />
-            <span className="flex-1">{dishTitle(item.dish_slug)}</span>
+            <span className="flex-1 text-sm font-bold min-w-0 truncate" style={{ color: "var(--ink)" }}>{dishTitle(item.dish_slug)}</span>
             <span aria-hidden="true" style={{ color: "var(--brand)" }}>→</span>
           </Link>
         ))}
       </div>
-      <div className="flex gap-2 mt-4">
-        <ShareButton
-          variant="text"
-          url={`${window.location.origin}/plans/${plan.share_slug}`}
-          title={plan.name}
-          className="btn-primary flex-1 text-sm py-2.5"
-        />
-        <button onClick={onEdit} className="btn-ghost text-sm py-2.5 px-4">{t("meal_plan_edit")}</button>
-        <button
-          onClick={() => window.confirm(t("meal_plan_delete_confirm")) && onRemove()}
-          className="btn-ghost text-sm py-2.5 px-4"
-          style={{ color: "var(--hot)" }}
-        >
-          {t("meal_plan_delete")}
-        </button>
+
+      <div className="my-3.5" style={{ height: 1, background: "var(--line)" }} />
+
+      <div className="text-[10px] font-bold uppercase mb-2" style={{ color: "var(--muted)", letterSpacing: "0.04em" }}>
+        {t("meal_plan_more_actions")}
       </div>
-      <button onClick={doAddToList} className="btn-ghost w-full mt-2 text-sm py-2.5">
-        {added ? t("added_to_list") : t("add_to_list")}
-      </button>
-      <div className="flex gap-2 mt-2">
-        <input
-          type="date"
-          className="field !py-2 text-sm flex-1"
-          value={applyDate}
-          onChange={(e) => setApplyDate(e.target.value)}
-          aria-label={t("planner_pick_date")}
-        />
-        <button onClick={doApplyWeek} className="btn-ghost text-sm py-2 px-4">
-          {applied ? t("meal_plan_apply_week_done") : t("meal_plan_apply_week")}
+      <div className="flex gap-2">
+        <button onClick={doAddToList} className="btn-ghost flex-1 text-xs py-2.5 px-2 flex items-center justify-center gap-1.5 whitespace-nowrap">
+          🧾 {added ? t("added_to_list") : t("meal_plan_grocery_btn")}
         </button>
+        <div className="flex-1 flex gap-1.5">
+          <input
+            type="date"
+            className="field !py-2 !px-2 text-xs w-[84px] shrink-0"
+            value={applyDate}
+            onChange={(e) => setApplyDate(e.target.value)}
+            aria-label={t("planner_pick_date")}
+          />
+          <button onClick={doApplyWeek} className="btn-ghost flex-1 text-xs py-2.5 px-2 flex items-center justify-center gap-1.5 whitespace-nowrap">
+            📅 {applied ? t("meal_plan_apply_week_done") : t("meal_plan_week_btn")}
+          </button>
+        </div>
       </div>
       {errorCode && (
         <p className="text-sm font-semibold mt-2" style={{ color: "var(--hot)" }}>
@@ -249,7 +289,7 @@ export default function MealPlansPage() {
 
           <ul className="space-y-3 mt-4">
             {plans.map((plan) => (
-              <li key={plan.id} className="card p-4">
+              <li key={plan.id} className="card p-4" style={{ boxShadow: "0 4px 0 var(--line)" }}>
                 {editingId === plan.id ? (
                   <CreatePlanForm
                     dishes={dishes}
