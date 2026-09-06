@@ -73,6 +73,7 @@ def create_app():
     from routes.glossary import glossary_bp
     from routes.favorites import favorites_bp
     from routes.meal_plans import meal_plans_bp
+    from routes.snapshots import snapshots_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(recipes_bp, url_prefix="/api")
     app.register_blueprint(groceries_bp, url_prefix="/api")
@@ -80,6 +81,7 @@ def create_app():
     app.register_blueprint(glossary_bp, url_prefix="/api")
     app.register_blueprint(favorites_bp, url_prefix="/api")
     app.register_blueprint(meal_plans_bp, url_prefix="/api")
+    app.register_blueprint(snapshots_bp, url_prefix="/api")
 
     # ── CLI: flask sync-recipes ───────────────────────────────────────────────
     # Re-parses content/recipes/**/*.md + content/foods.json into Postgres.
@@ -101,6 +103,31 @@ def create_app():
         from models import GlossaryEntry
         try:
             sync(db, GlossaryEntry)
+        except SyncError as e:
+            print(f"Sync failed: {e}")
+            raise SystemExit(1)
+
+    # ── CLI: flask sync-skills / flask sync-lessons ───────────────────────────
+    # Re-parses content/lessons/**/*.md into Postgres (models.py's Skill +
+    # Lesson tables). sync-lessons validates every lesson's recipe/step link
+    # against actually-synced RecipeTier data and aborts the whole sync (no
+    # partial publish) if any link doesn't resolve — see scripts/sync_learning.py.
+    @app.cli.command("sync-skills")
+    def sync_skills_cmd():
+        from scripts.sync_learning import sync_skills, SyncError
+        from models import Skill
+        try:
+            sync_skills(db, Skill)
+        except SyncError as e:
+            print(f"Sync failed: {e}")
+            raise SystemExit(1)
+
+    @app.cli.command("sync-lessons")
+    def sync_lessons_cmd():
+        from scripts.sync_learning import sync_lessons, SyncError
+        from models import Skill, Lesson, RecipeTier
+        try:
+            sync_lessons(db, Skill, Lesson, RecipeTier)
         except SyncError as e:
             print(f"Sync failed: {e}")
             raise SystemExit(1)

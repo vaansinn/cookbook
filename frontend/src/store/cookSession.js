@@ -12,8 +12,10 @@ import useAuthStore from "./useAuthStore";
 // per owner at a time. owner_namespace is the literal string "account" for a
 // signed-in user; there's no guest support yet (Wave 3), but the namespace
 // segment leaves room for a future "guest" value without a key-shape change.
-// The persisted record itself carries session_id/dish_slug/level/lang
-// (no snapshot_id yet - that arrives with a later wave's snapshot table).
+// The persisted record carries session_id/dish_slug/level/lang/snapshot_id
+// (fixed at session start per pilot-fixtures.md §4 - never mutated
+// mid-attempt) plus current_step_id (the one field expected to change
+// turn-by-turn as the user advances).
 const storageKey = (ownerId) => `cook_session:account:${ownerId}`;
 
 // Returns the session_id to use for this owner+dish+level+lang: the
@@ -23,7 +25,14 @@ const storageKey = (ownerId) => `cook_session:account:${ownerId}`;
 // it after a prior finish). ownerId is required - callers with no signed-in
 // owner (shouldn't happen; CookMode is behind RequireAuth) get an
 // unpersisted one-off id rather than throwing.
-export function getOrStartSession(ownerId, { dishSlug, level, lang }) {
+//
+// snapshotId is optional and only used when a NEW record is created (a
+// resumed record's snapshot_id is never overwritten by a later call - see
+// pilot-fixtures.md §4: it's fixed once captured at session start). Callers
+// that don't pass it (e.g. today's CookMode.jsx, unchanged in this pass)
+// keep working exactly as before - the return value is still just the
+// session_id string.
+export function getOrStartSession(ownerId, { dishSlug, level, lang, snapshotId } = {}) {
   if (!ownerId) return crypto.randomUUID();
   const key = storageKey(ownerId);
   try {
@@ -33,10 +42,48 @@ export function getOrStartSession(ownerId, { dishSlug, level, lang }) {
       return existing.session_id;
     }
     const sessionId = crypto.randomUUID();
-    localStorage.setItem(key, JSON.stringify({ session_id: sessionId, dish_slug: dishSlug, level, lang }));
+    localStorage.setItem(key, JSON.stringify({
+      session_id: sessionId,
+      dish_slug: dishSlug,
+      level,
+      lang,
+      snapshot_id: snapshotId ?? null,
+      current_step_id: null,
+    }));
     return sessionId;
   } catch {
     return crypto.randomUUID(); // storage unavailable - fall back to an unpersisted session
+  }
+}
+
+// Returns the full persisted record for the owner's in-progress session (or
+// null if there isn't one) - for a caller that needs more than the bare
+// session_id, e.g. resuming snapshot_id/current_step_id after a reload.
+export function getSessionRecord(ownerId) {
+  if (!ownerId) return null;
+  try {
+    const raw = localStorage.getItem(storageKey(ownerId));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Persists current_step_id as the user advances - the one field on the
+// record that changes turn-by-turn (pilot-fixtures.md §4). Never touches
+// dish_slug/level/lang/snapshot_id, which stay fixed for the life of the
+// attempt. A no-op if there's no in-progress record for this owner.
+export function setCurrentStep(ownerId, stepId) {
+  if (!ownerId) return;
+  const key = storageKey(ownerId);
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const existing = JSON.parse(raw);
+    existing.current_step_id = stepId;
+    localStorage.setItem(key, JSON.stringify(existing));
+  } catch {
+    // storage unavailable - nothing to persist
   }
 }
 

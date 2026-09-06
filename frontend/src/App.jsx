@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import useAuthStore from "./store/useAuthStore";
 import useSettingsStore from "./store/useSettingsStore";
 import Login from "./pages/Login";
@@ -10,6 +10,8 @@ import CookMode from "./pages/CookMode";
 import GroceryPage from "./pages/GroceryPage";
 import ProgressPage from "./pages/ProgressPage";
 import { GlossaryList, GlossaryDetail } from "./pages/GlossaryPage";
+import LessonPage from "./pages/LessonPage";
+import TeachingPilotMockups from "./pages/mockups/TeachingPilotMockups";
 import SettingsPage from "./pages/SettingsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import MealPlansPage from "./pages/MealPlansPage";
@@ -19,6 +21,20 @@ function RequireAuth({ children }) {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   if (!token) return <Navigate to="/login" replace />;
+  return children;
+}
+
+// Basic-tier cooking is reachable without an account (docs/contracts/
+// pilot-fixtures.md §5/§7 - mirrors how Basic recipe *viewing* is already
+// public, access.py's tier_access). Every other tier still requires
+// sign-in, same as before. This only unlocks the ROUTE for a guest; the
+// actual guest-facing Cook Mode/save-skip experience is Step 3, not built
+// here (CookMode.jsx is unchanged in this pass).
+function RequireAuthUnlessBasicCook({ children }) {
+  const token = useAuthStore((s) => s.token);
+  const [params] = useSearchParams();
+  const level = params.get("level") || "basic";
+  if (!token && level !== "basic") return <Navigate to="/login" replace />;
   return children;
 }
 
@@ -44,9 +60,9 @@ export default function App() {
         <Route
           path="/dish/:slug/cook"
           element={
-            <RequireAuth>
+            <RequireAuthUnlessBasicCook>
               <CookMode />
-            </RequireAuth>
+            </RequireAuthUnlessBasicCook>
           }
         />
         <Route
@@ -76,6 +92,9 @@ export default function App() {
         <Route path="/plans/:shareSlug" element={<SharedMealPlanPage />} />
         <Route path="/glossary" element={<GlossaryList />} />
         <Route path="/glossary/:slug" element={<GlossaryDetail />} />
+        <Route path="/lesson/:slug" element={<LessonPage />} />
+        {/* Step 2 review only (#47a mockups) - static/hardcoded, no nav entry, not part of the shipped flow. */}
+        <Route path="/mockups/teaching-pilot" element={<TeachingPilotMockups />} />
         <Route
           path="/settings"
           element={

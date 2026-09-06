@@ -32,7 +32,10 @@ def build_recipe_head(dish, tier):
         "recipeYield": f"{tier.serves} servings",
         "totalTime": f"PT{tier.time_min}M" if tier.time_min else None,
         "recipeIngredient": [i["text"] for i in (tier.ingredients or [])],
-        "recipeInstructions": [{"@type": "HowToStep", "text": s} for s in (tier.steps or [])],
+        # tier.steps may be structured ({"id", "text"}) since #35 - use the
+        # same compatibility serializer to_dict() uses so this JSON-LD block
+        # keeps getting plain instruction text either way.
+        "recipeInstructions": [{"@type": "HowToStep", "text": tier._step_text(s)} for s in (tier.steps or [])],
         "keywords": ", ".join(tier.tags or []),
     }
     if nutrition:

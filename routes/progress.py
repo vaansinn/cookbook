@@ -20,6 +20,12 @@ computed from nothing — purely so an already-open browser tab running an
 older frontend (pre-#32 badges, or pre-this-fix nudges) doesn't crash reading
 progress.badges/progress.nudges as arrays. Don't compute real values into
 either key again; that's the whole point of this reconciliation.
+
+log_cook's conflict-check compares the full (dish_slug, level, lang,
+snapshot_id) tuple per pilot-fixtures.md §6, not just (dish_id, level) —
+lang/snapshot_id are optional request fields so an un-upgraded client (or a
+request for a pre-Wave-3 dish with no snapshot concept yet) keeps working
+exactly as before, comparing against None on both sides.
 """
 
 from flask import Blueprint, request, jsonify
@@ -40,8 +46,22 @@ def _cook_log_dict(log):
         "session_id": log.session_id,
         "dish_slug": log.dish.slug,
         "level": log.level,
+        "lang": log.lang,
+        "snapshot_id": log.snapshot_id,
         "cooked_at": log.cooked_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
+
+
+def _matches(existing, dish, level, lang, snapshot_id):
+    """The full (dish_slug, level, lang, snapshot_id) comparison (contract
+    §6) — a session_id reused with this exact payload is a replay; anything
+    else is a conflict."""
+    return (
+        existing.dish_id == dish.id
+        and existing.level == level
+        and existing.lang == lang
+        and existing.snapshot_id == snapshot_id
+    )
 
 
 def _replay_response(existing):
@@ -70,6 +90,8 @@ def log_cook():
     data = request.get_json() or {}
     dish_slug, level = data.get("dish_slug"), data.get("level")
     session_id = data.get("session_id")
+    lang = data.get("lang")  # optional — un-upgraded clients don't send one yet
+    snapshot_id = data.get("snapshot_id")  # optional, same reason
     if not dish_slug or level not in TIER_ORDER:
         return jsonify({"error": "dish_slug and a valid level required"}), 400
 
@@ -87,11 +109,11 @@ def log_cook():
     if session_id:
         existing = CookLog.query.filter_by(user_id=user_id, session_id=session_id).first()
         if existing:
-            if existing.dish_id == dish.id and existing.level == level:
+            if _matches(existing, dish, level, lang, snapshot_id):
                 return _replay_response(existing)
             return _conflict_response(existing)
 
-    log = CookLog(user_id=user_id, dish_id=dish.id, level=level, session_id=session_id)
+    log = CookLog(user_id=user_id, dish_id=dish.id, level=level, session_id=session_id, lang=lang, snapshot_id=snapshot_id)
     db.session.add(log)
     try:
         db.session.commit()
@@ -104,7 +126,7 @@ def log_cook():
         existing = session_id and CookLog.query.filter_by(user_id=user_id, session_id=session_id).first()
         if not existing:
             raise
-        if existing.dish_id == dish.id and existing.level == level:
+        if _matches(existing, dish, level, lang, snapshot_id):
             return _replay_response(existing)
         return _conflict_response(existing)
 
