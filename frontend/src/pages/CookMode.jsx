@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
 import useAuthStore, { getAuthEpoch } from "../store/useAuthStore";
@@ -20,6 +20,14 @@ export default function CookMode() {
   const [tier, setTier] = useState(null);
   const [stepIdx, setStepIdx] = useState(0);
   const [timer, setTimer] = useState(null); // { total, left, running, done }
+
+  // Idempotency key (#48) for the eventual /cook-log call - minted once when
+  // this cook session starts (component mount), not on every render and not
+  // at Finish, so a retried Finish request replays instead of double-logging.
+  // Scoped to the lifetime of this mounted CookMode only; the fuller
+  // persist-across-refresh/guest-namespace lifecycle is a later task.
+  const sessionIdRef = useRef();
+  if (!sessionIdRef.current) sessionIdRef.current = crypto.randomUUID();
 
   useEffect(() => {
     // Clear any previously rendered (possibly premium) content immediately -
@@ -81,7 +89,7 @@ export default function CookMode() {
       return;
     }
     const requestEpoch = epoch;
-    logCook(slug, level)
+    logCook(slug, level, sessionIdRef.current)
       .then((res) => {
         // Account changed while the log was in flight - still leave Cook
         // Mode, but don't attribute this account's cook/badges to whoever
