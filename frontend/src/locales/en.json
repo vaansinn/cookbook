@@ -179,9 +179,6 @@
   "meal_plan_generated_name": "Chef's picks",
 
   "lesson_back": "← Back to cooking",
-  "lesson_success_cue_label": "Your success cue",
-  "lesson_if_too_hard_label": "If it's boiling too hard",
-  "lesson_if_nothing_label": "If nothing's happening",
   "lesson_next_practice_label": "Next practice",
   "lesson_next_practice_cta": "View recipe",
 
@@ -206,10 +203,8 @@
   "reflect_next_practice_dismiss": "Maybe later",
   "reflect_next_practice_cta": "Take me there",
 
-  "mockup_banner": "Static mockup for review — not wired to live data",
-  "mockup_tab_help": "Contextual help",
-  "mockup_tab_reflect": "Reflection",
-  "mockup_tab_lesson": "Lesson page",
+  "guest_cook_done_title": "Nice work!",
+  "guest_cook_done_hint": "Create an account to save your cooking history and reflect on what you practiced.",
 
   "api_needs_account": "Create a free account to use this tier.",
   "api_needs_premium": "This tier needs Premium."

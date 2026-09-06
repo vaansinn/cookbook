@@ -11,7 +11,6 @@ import GroceryPage from "./pages/GroceryPage";
 import ProgressPage from "./pages/ProgressPage";
 import { GlossaryList, GlossaryDetail } from "./pages/GlossaryPage";
 import LessonPage from "./pages/LessonPage";
-import TeachingPilotMockups from "./pages/mockups/TeachingPilotMockups";
 import SettingsPage from "./pages/SettingsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import MealPlansPage from "./pages/MealPlansPage";
@@ -93,8 +92,6 @@ export default function App() {
         <Route path="/glossary" element={<GlossaryList />} />
         <Route path="/glossary/:slug" element={<GlossaryDetail />} />
         <Route path="/lesson/:slug" element={<LessonPage />} />
-        {/* Step 2 review only (#47a mockups) - static/hardcoded, no nav entry, not part of the shipped flow. */}
-        <Route path="/mockups/teaching-pilot" element={<TeachingPilotMockups />} />
         <Route
           path="/settings"
           element={

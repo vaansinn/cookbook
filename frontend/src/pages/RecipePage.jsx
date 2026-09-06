@@ -360,7 +360,7 @@ export default function RecipePage() {
               </p>
             )}
             <button
-              onClick={() => navigate(user ? `/dish/${slug}/cook?level=${level}&serves=${serves}` : "/login")}
+              onClick={() => navigate(`/dish/${slug}/cook?level=${level}&serves=${serves}`)}
               className="btn-primary w-full mt-3"
             >
               {t("start_cooking")}

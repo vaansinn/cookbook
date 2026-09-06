@@ -178,6 +178,34 @@
   "meal_plan_generate": "Plan vorschlagen",
   "meal_plan_generated_name": "Chef-Empfehlung",
 
+  "lesson_back": "← Zurück zum Kochen",
+  "lesson_next_practice_label": "Nächste Übung",
+  "lesson_next_practice_cta": "Rezept ansehen",
+
+  "cook_help_cta": "Hilfe bei diesem Schritt?",
+  "cook_help_eyebrow": "Kontexthilfe",
+  "cook_help_close": "Zurück zum Schritt",
+  "cook_help_see_full_lesson": "Ganze Lektion ansehen",
+
+  "reflect_title": "Wie ist es gelaufen?",
+  "reflect_outcome_happy": "🙂 Zufrieden",
+  "reflect_outcome_mixed": "😐 Gemischt",
+  "reflect_outcome_need_help": "🤔 Brauchte Hilfe",
+  "reflect_practiced_label": "Ich habe {skill} geübt",
+  "reflect_confidence_title": "Wie sicher fühlst du dich dabei?",
+  "reflect_confidence_unknown": "Noch unsicher",
+  "reflect_confidence_wants_guidance": "Möchte mehr Anleitung",
+  "reflect_confidence_comfortable": "Fühle mich sicher",
+  "reflect_skip": "Später",
+  "reflect_save": "Reflexion speichern",
+  "reflect_saved": "Gespeichert — danke fürs Reflektieren!",
+  "reflect_next_practice_label": "Als Nächstes üben",
+  "reflect_next_practice_dismiss": "Vielleicht später",
+  "reflect_next_practice_cta": "Los geht's",
+
+  "guest_cook_done_title": "Gut gemacht!",
+  "guest_cook_done_hint": "Erstelle ein Konto, um deine Kochhistorie zu speichern und zu reflektieren, was du geübt hast.",
+
   "api_needs_account": "Erstelle ein kostenloses Konto, um diese Stufe zu nutzen.",
   "api_needs_premium": "Diese Stufe braucht Premium."
 }
