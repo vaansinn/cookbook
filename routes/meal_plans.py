@@ -182,12 +182,16 @@ def apply_plan_to_week(plan_id):
 @meal_plans_bp.route("/meal-plans/generate", methods=["POST"])
 @jwt_required()
 def generate_meal_plan():
-    """Progression-aware plan generation: most dishes at the highest tier the
-    user has cooked at least twice ('proven'), the last dish one tier above it
-    as the level-up nudge — mirroring the Progress page's nudge logic. Dishes
-    are picked for cuisine + meal-type variety. Tiers are clamped to what the
-    user's account can actually access, so a free account never gets an
-    advanced item generated into its plan."""
+    """Accessible plan generation: each dish is generated at the highest tier
+    the user has actually cooked *that specific dish* at (defaulting to
+    'basic' for a dish never cooked), clamped to what the user's account can
+    actually access — so a free account never gets an advanced item generated
+    into its plan regardless of cook history. Dishes are picked for cuisine +
+    meal-type variety. This replaced a global two-cooks-as-proven-tier
+    escalation (#32) that tallied cook history across every dish and applied
+    one level to the whole plan; there is no next-tier "level up" push here
+    any more — that nudge concept still lives in the Progress page's nudge
+    cards (_compute_nudges in routes/progress.py), unaffected by this fix."""
     user = User.query.get(_current_user_id())
     data = request.get_json() or {}
     name = (data.get("name") or "").strip() or "Chef's picks"
@@ -196,14 +200,13 @@ def generate_meal_plan():
     except (TypeError, ValueError):
         return jsonify({"error": "count must be a number"}), 400
 
-    cooked = {}
+    cooked_by_dish = {}
     for log in CookLog.query.filter_by(user_id=user.id).all():
-        cooked[log.level] = cooked.get(log.level, 0) + 1
-    proven = "basic"
-    for lvl in LEVELS:
-        if cooked.get(lvl, 0) >= 2:
-            proven = lvl
-    level_up = LEVELS[min(LEVELS.index(proven) + 1, len(LEVELS) - 1)]
+        cooked_by_dish.setdefault(log.dish_id, set()).add(log.level)
+
+    def target_level(dish):
+        levels = cooked_by_dish.get(dish.id)
+        return max(levels, key=LEVELS.index) if levels else "basic"
 
     def clamp(level, dish):
         idx = LEVELS.index(level)
@@ -233,9 +236,8 @@ def generate_meal_plan():
     plan = MealPlan(user_id=user.id, name=name)
     db.session.add(plan)
     db.session.flush()
-    for i, d in enumerate(picked):
-        target = level_up if i == len(picked) - 1 else proven
-        db.session.add(MealPlanItem(meal_plan_id=plan.id, dish_slug=d.slug, level=clamp(target, d)))
+    for d in picked:
+        db.session.add(MealPlanItem(meal_plan_id=plan.id, dish_slug=d.slug, level=clamp(target_level(d), d)))
     db.session.commit()
     return jsonify({"plan": plan.to_dict()}), 201
 

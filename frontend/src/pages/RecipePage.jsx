@@ -112,13 +112,6 @@ export default function RecipePage() {
         <div className="max-w-2xl mx-auto px-6 pt-4">
           <div className="rounded-2xl px-4 py-3 text-sm font-semibold" style={{ background: "var(--basic)", color: "var(--brand-ink)" }}>
             {t("cooked_logged")}
-            {cookToast.newBadges?.length > 0 && (
-              <div className="mt-1">
-                {cookToast.newBadges.map((b) => (
-                  <div key={b}>🎉 {t("new_badge_earned", { badge: t("badge_" + b) })}</div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       )}
