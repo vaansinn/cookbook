@@ -7,7 +7,7 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 
 Reconciled 2026-09-06 against GitHub main at dccd4db177336b7f52d992bb9a3dade681c61d1e. The original audit used local 6011faf; this published planning commit is based on dccd4db and preserves its newer application work. All new work below is planned, not implemented. Verify the current checkout before implementation. Details: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Agent dispatch: [AGENT_HANDOFFS.md](AGENT_HANDOFFS.md).
 
-**Teaching-pilot dispatch status** (multi-agent, per the dispatch plan and `AGENT_HANDOFFS.md`'s first-assignments table): Wave 1 shipped — #50, #33a (pending culinary review), #47a. Wave 2 (#48/#32, sequenced — both touch `routes/progress.py`/`CookLog`): #48 shipped; #32 in progress, building on #48's merged migration head. #34a–#38a/#39a haven't started yet — queued for Wave 3, after #32 lands.
+**Teaching-pilot dispatch status** (multi-agent, per the dispatch plan and `AGENT_HANDOFFS.md`'s first-assignments table): Wave 1 shipped — #50, #33a (pending culinary review), #47a. Wave 2 (#48/#32, sequenced — both touch `routes/progress.py`/`CookLog`): #48 shipped; #32 code-complete and verified (backend + frontend + locales, on top of #48's merged migration head), but `ProgressPage.jsx`'s new cook-history UI still needs the "Preview Ends the Turn" approval pass before #32 counts as fully shipped. #34a–#38a/#39a haven't started yet — queued for Wave 3, after #32 lands.
 
 ### Existing work retained
 
@@ -28,7 +28,7 @@ Scope/estimates are in IMPLEMENTATION_PLAN.md section 5. “a/b” identify boun
 
 | Task | Deliverable | Responsibility | Dependencies | Sequence |
 |---|---|---|---|---|
-| #32 | Retire rewards/escalation; useful history | Teaching | #48; coordinate #47a | In progress — #48 shipped, building on its merged migration head |
+| #32 | Retire rewards/escalation; useful history | Teaching | #48; coordinate #47a | Code-complete, verified (commit 9a7930f) — awaiting ProgressPage.jsx preview/approval before "shipped" |
 | #33 | a: one dish/lesson; b: three dishes/five skills | Content | None; b follows #39a corrections | a: content drafted (lentil-bolognese/simmering + `simmer` glossary entry, EN/DE), pending culinary review |
 | #34 | a: lesson sync/links; b: fuller paths | Teaching | #33a, #47a; no #40 | a active |
 | #35 | a: contextual steps/snapshots; b: richer metadata | Teaching | #33a, #34a, #47a; no #40 | a active |
