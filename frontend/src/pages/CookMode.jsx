@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
+import useAuthStore, { getAuthEpoch } from "../store/useAuthStore";
 import { useT } from "../i18n";
 import { fetchDish } from "../api/recipes";
 import { logCook } from "../api/progress";
@@ -12,6 +13,7 @@ export default function CookMode() {
   const navigate = useNavigate();
   const t = useT();
   const language = useSettingsStore((s) => s.language);
+  const epoch = useAuthStore((s) => s.epoch);
   const level = params.get("level") || "basic";
   const serves = parseInt(params.get("serves"), 10) || 2;
 
@@ -20,7 +22,13 @@ export default function CookMode() {
   const [timer, setTimer] = useState(null); // { total, left, running, done }
 
   useEffect(() => {
+    // Clear any previously rendered (possibly premium) content immediately -
+    // an account switch/logout must not leave the old account's cook step
+    // on screen while access is re-checked under the new account.
+    setTier(null);
+    const requestEpoch = epoch;
     fetchDish(slug, language).then((d) => {
+      if (getAuthEpoch() !== requestEpoch) return; // account changed since this request started
       const t = d.tiers[level];
       if (t?.locked) {
         navigate(`/dish/${slug}`, { replace: true });
@@ -28,7 +36,7 @@ export default function CookMode() {
       }
       setTier(t);
     });
-  }, [slug, level, language]);
+  }, [slug, level, language, epoch]);
 
   useEffect(() => {
     if (!timer || !timer.running) return;
@@ -72,8 +80,15 @@ export default function CookMode() {
       setStepIdx((i) => i + 1);
       return;
     }
+    const requestEpoch = epoch;
     logCook(slug, level)
-      .then((res) => navigate(`/dish/${slug}`, { state: { cooked: true, newBadges: res.new_badges } }))
+      .then((res) => {
+        // Account changed while the log was in flight - still leave Cook
+        // Mode, but don't attribute this account's cook/badges to whoever
+        // is logged in now.
+        if (getAuthEpoch() !== requestEpoch) { navigate(`/dish/${slug}`); return; }
+        navigate(`/dish/${slug}`, { state: { cooked: true, newBadges: res.new_badges } });
+      })
       .catch(() => navigate(`/dish/${slug}`));
   };
   const goBack = () => {

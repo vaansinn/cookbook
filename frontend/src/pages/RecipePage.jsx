@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
-import useAuthStore from "../store/useAuthStore";
+import useAuthStore, { getAuthEpoch } from "../store/useAuthStore";
 import { useT } from "../i18n";
 import { fetchDish } from "../api/recipes";
 import { addRecipeToList } from "../api/groceries";
@@ -33,6 +33,7 @@ export default function RecipePage() {
   const t = useT();
   const language = useSettingsStore((s) => s.language);
   const user = useAuthStore((s) => s.user);
+  const epoch = useAuthStore((s) => s.epoch);
   const [cookToast, setCookToast] = useState(location.state?.cooked ? location.state : null);
 
   useEffect(() => {
@@ -64,10 +65,15 @@ export default function RecipePage() {
   useEffect(() => { if (user && !favoritesLoaded) loadFavorites(); }, [user]);
 
   const loadDish = () => {
+    // Clear whatever's on screen immediately - if this reload was triggered
+    // by an account switch/logout, a previous account's (possibly premium)
+    // content must not keep sitting there while the new request is in flight.
     setDish(null);
     setDishError(false);
+    const requestEpoch = epoch;
     fetchDish(slug, language)
       .then((d) => {
+        if (getAuthEpoch() !== requestEpoch) return; // account changed since this request started
         setDish(d);
         const firstAvailable = TIER_ORDER.find((l) => d.tiers[l]);
         setLevel(firstAvailable);
@@ -75,10 +81,15 @@ export default function RecipePage() {
         setDoneSteps({});
         setDonePrep({});
       })
-      .catch(() => setDishError(true));
+      .catch(() => {
+        if (getAuthEpoch() !== requestEpoch) return;
+        setDishError(true);
+      });
   };
 
-  useEffect(loadDish, [slug, language]);
+  // Reload on account change too (login/logout/switch/session-expiry), not
+  // just slug/language - see loadDish's epoch guard above.
+  useEffect(loadDish, [slug, language, epoch]);
 
   if (dishError) {
     return (
