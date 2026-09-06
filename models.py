@@ -307,7 +307,20 @@ class CookLog(db.Model):
     level      = db.Column(db.String(20), nullable=False)
     cooked_at  = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+    # Client-generated idempotency key (#48) - a UUID minted once per cook
+    # session so a retried/double-tapped Finish resolves to the same row
+    # instead of creating a second one. Nullable: existing rows predate this
+    # column and stay valid legacy history, and a client that doesn't send
+    # one yet just inserts like before (see unique constraint below - two
+    # NULLs never collide). Never fabricate one for old rows.
+    session_id = db.Column(db.String(64), nullable=True)
+
     dish = db.relationship("Dish")
+
+    # Narrow on purpose: (user_id, session_id) only, not also dish/level/lang.
+    # A session_id reused with a different payload is a conflict to reject
+    # (routes/progress.py:log_cook), not a second row to allow.
+    __table_args__ = (db.UniqueConstraint("user_id", "session_id", name="uq_user_session_cooklog"),)
 
 
 class BadgeAward(db.Model):
