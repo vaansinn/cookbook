@@ -155,19 +155,32 @@ boolean the user affirmatively set, never a computed default.
 
 These two are never mixed under one storage key.
 
-The session key is **not** bare `(dish_slug, level)`. The full identity a
+The session key is **not** bare `(dish_slug, level)`. The lookup key a
 session is keyed by is:
 
 ```
-(owner_id, session_id, dish_slug, level, lang, snapshot_id, current_step_id)
+(owner_namespace, owner_id, session_id)
 ```
 
-— where `owner_id` is the account's `user_id` for signed-in users or the
-guest namespace id for guests. `session_id` alone disambiguates two separate
-attempts at the same dish/level/lang; `lang` disambiguates two language
-attempts; `snapshot_id` pins the exact content; `current_step_id` (a
-`step_id` per section 2) is the only thing that changes turn-by-turn as the
-user moves through the cook.
+— where `owner_namespace` is `"account"` for a signed-in user or `"guest"`
+for a guest (so the two are never comparable, even if a numeric `owner_id`
+and a guest id ever collided), `owner_id` is the account's `user_id` for
+signed-in users or the guest namespace id for guests, and `session_id` alone
+disambiguates two separate attempts by the same owner at the same
+dish/level/lang.
+
+`dish_slug`, `level`, `lang`, `snapshot_id`, and `current_step_id` are
+**fields on** the stored record, not part of what identifies it — a value
+that changes as a side effect of using the record (as `current_step_id`
+does, every time the user advances a step) can't also be part of the key
+used to look that same record up. Of these fields, `dish_slug`/`level`/
+`lang`/`snapshot_id` are fixed once captured at session start, for the life
+of one cook attempt — they identify *what* is being cooked and from *which*
+content, and never change turn-by-turn. Only `current_step_id` and
+completion/reflection state are expected to change as the user progresses.
+A deliberate switch to a different recipe/tier starts a new attempt (a new
+`session_id`), never a silent mutation of the existing record's recipe/
+snapshot fields.
 
 **`session_id` minting.** A new `session_id` is generated only for a
 deliberate new cook — the user explicitly chose "Start cooking" / "Cook
@@ -358,7 +371,7 @@ or signed-in:
   "dish_slug": "chickpea-tikka-masala",
   "level": "basic",
   "lang": "en",
-  "reason": "You just practiced keeping a steady simmer — try it again here."
+  "reason": "Try keeping a steady simmer in another dish."
 }
 ```
 
@@ -366,7 +379,13 @@ or signed-in:
   reference the user is actually eligible to open (never a locked tier as
   the only suggestion).
 - `reason`: a short authored string explaining *why* this is being
-  suggested — not a generic "try this next," and not computed/opaque.
+  suggested — not a generic "try this next," and not computed/opaque. The
+  example above is deliberately neutral/outcome-agnostic: section 3 makes
+  `practiced_skill_confirmed` optional and skippable, so the default reason
+  text must never presume practice happened when it might not have (i.e.
+  never phrase it as "you just practiced X"). Personalized "you practiced
+  X" phrasing is only appropriate once `practiced_skill_confirmed` is
+  actually `true` for that session — never as the default/fallback wording.
 - Always skippable/dismissable: the user can ignore it and browse normally;
   it is a suggestion, never a required next step, and dismissing it must not
   affect the already-saved cook or reflection in any way.
