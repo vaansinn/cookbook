@@ -5,6 +5,15 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 
 ## Open
 
+- #50 — Service worker + stale-account isolation fix (in progress). `sw.js`'s API cache currently replays entitlement-varying `/api/dishes/<slug>` responses across account switches with no auth check; also closing the gap where an in-flight request from a stale account can silently repopulate a store or `RecipePage`/`CookMode`'s component state after logout/login. See `IMPLEMENTATION_PLAN.md`/`AGENT_HANDOFFS.md` and the dispatch plan for the full brief.
+- #48 — Idempotent cook logging (in progress). Client-generated `session_id`, unique on `(user_id, session_id)`, so a retried "Done cooking" POST doesn't duplicate `CookLog` rows. Depends on #50 landing first only insofar as both touch shared review order, not files.
+- #32 — Retire XP/streak/badges → plain cook history (in progress). Also fixes a real bug in `generate_meal_plan` (global instead of per-dish tier tally) and replaces the level-validation use of `XP_PER_LEVEL`. Sequenced after #48 (both touch `routes/progress.py`/`CookLog`).
+- #33a — One dish/one lesson content (in progress): lentil-bolognese simmer skill, EN/DE, plus the missing `simmer` glossary entry.
+- #47a — Pilot fixture contract (in progress): Skill/Lesson/snapshot/session/reflection shapes other pilot work implements against.
+- #39a — First-observation materials + beginner observation (not started — gated on culinary review of #33a's content, then 1-2 beginners).
+- #34a–#38a — Thin end-to-end teaching flow (not started — depends on #32, #33a, #47a): Skill/Lesson sync, content snapshot, contextual help in Cook Mode, reflection, guest cooking for Basic tier, one next-practice link. No repertoire dashboard, no recommendation engine, no nav change this slice.
+- #40, #47b, #51–#58 — Later teaching/personal-library/nutrition/events work, explicitly deferred per `AGENT_HANDOFFS.md` until a release is chosen; not part of this dispatch.
+
 - #28 — Trust signal near the recipe title: "Cooked N times", sourced from existing `cook_logs` data (no new tracking). From the UX teardown video review.
 - #29 — Sticky mini-header on the recipe page: dish title + active tier stays visible once you scroll past the top of a long recipe. From the same review.
 - #30 — Sticky bottom action bar on the recipe page: "Add to grocery list" / "Start cooking" pinned to the viewport instead of buried after the full ingredient/instruction list. From the same review.
