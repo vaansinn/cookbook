@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
 import useAuthStore, { getAuthEpoch } from "../store/useAuthStore";
+import { getOrStartSession, completeSession } from "../store/cookSession";
 import { useT } from "../i18n";
 import { fetchDish } from "../api/recipes";
 import { logCook } from "../api/progress";
@@ -14,26 +15,30 @@ export default function CookMode() {
   const t = useT();
   const language = useSettingsStore((s) => s.language);
   const epoch = useAuthStore((s) => s.epoch);
+  const userId = useAuthStore((s) => s.user?.id);
   const level = params.get("level") || "basic";
   const serves = parseInt(params.get("serves"), 10) || 2;
 
   const [tier, setTier] = useState(null);
   const [stepIdx, setStepIdx] = useState(0);
   const [timer, setTimer] = useState(null); // { total, left, running, done }
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
-  // Idempotency key (#48) for the eventual /cook-log call - minted once when
-  // this cook session starts (component mount), not on every render and not
-  // at Finish, so a retried Finish request replays instead of double-logging.
-  // Scoped to the lifetime of this mounted CookMode only; the fuller
-  // persist-across-refresh/guest-namespace lifecycle is a later task.
-  const sessionIdRef = useRef();
-  if (!sessionIdRef.current) sessionIdRef.current = crypto.randomUUID();
+  // Idempotency key (#48) for the /cook-log call. Resolved (not always
+  // minted) whenever the dish/level/lang/owner identity is known - reused
+  // from localStorage on a refresh or remount of an in-progress cook, only
+  // freshly minted for a genuinely new/again cook (see useCookSessionStore).
+  const sessionIdRef = useRef(null);
 
   useEffect(() => {
     // Clear any previously rendered (possibly premium) content immediately -
     // an account switch/logout must not leave the old account's cook step
     // on screen while access is re-checked under the new account.
     setTier(null);
+    setSaveError(false);
+    setSaving(false);
+    sessionIdRef.current = userId ? getOrStartSession(userId, { dishSlug: slug, level, lang: language }) : null;
     const requestEpoch = epoch;
     fetchDish(slug, language).then((d) => {
       if (getAuthEpoch() !== requestEpoch) return; // account changed since this request started
@@ -44,7 +49,7 @@ export default function CookMode() {
       }
       setTier(t);
     });
-  }, [slug, level, language, epoch]);
+  }, [slug, level, language, epoch, userId]);
 
   useEffect(() => {
     if (!timer || !timer.running) return;
@@ -88,16 +93,38 @@ export default function CookMode() {
       setStepIdx((i) => i + 1);
       return;
     }
+    attemptFinish();
+  };
+
+  // Reattempted by the retry button on failure, reusing the same
+  // sessionIdRef - never minting a new one - so a flaky first attempt
+  // replays via #48's idempotency key instead of double-logging.
+  const attemptFinish = () => {
+    setSaveError(false);
+    setSaving(true);
     const requestEpoch = epoch;
+    // Defensive fallback: the owner identity should always be resolved by
+    // Finish (a full cook takes far longer than the auth check on mount),
+    // but if it somehow isn't, mint once and keep reusing it for any retry
+    // rather than leaving session_id null on every attempt.
+    if (!sessionIdRef.current) sessionIdRef.current = crypto.randomUUID();
     logCook(slug, level, sessionIdRef.current)
       .then(() => {
         // Account changed while the log was in flight - still leave Cook
         // Mode, but don't attribute this account's cook/badges to whoever
         // is logged in now.
         if (getAuthEpoch() !== requestEpoch) { navigate(`/dish/${slug}`); return; }
+        completeSession(userId); // saved - next cook of this dish/level mints a fresh session
         navigate(`/dish/${slug}`, { state: { cooked: true } });
       })
-      .catch(() => navigate(`/dish/${slug}`));
+      .catch(() => {
+        if (getAuthEpoch() !== requestEpoch) { navigate(`/dish/${slug}`); return; }
+        // A real failure (network error, 409 conflict, 5xx) - never treat
+        // this like success. Stay on the Finish screen with a visible
+        // retry instead of silently losing the cook.
+        setSaving(false);
+        setSaveError(true);
+      });
   };
   const goBack = () => {
     setTimer(null);
@@ -152,10 +179,21 @@ export default function CookMode() {
         )}
       </div>
 
+      {saveError && (
+        <p className="text-sm font-semibold text-center px-8 mb-2" style={{ color: "var(--hot)" }}>
+          {t("error_generic")}
+        </p>
+      )}
       <div className="flex gap-2.5 px-5 pb-6">
-        <button onClick={goBack} className="btn-ghost flex-1">← {t("cook_back")}</button>
-        <button onClick={goNext} className="btn-primary flex-1">
-          {stepIdx < tier.steps.length - 1 ? `${t("cook_next")} →` : t("cook_finish")}
+        <button onClick={goBack} className="btn-ghost flex-1" disabled={saving}>← {t("cook_back")}</button>
+        <button onClick={saveError ? attemptFinish : goNext} className="btn-primary flex-1" disabled={saving}>
+          {saving
+            ? t("loading")
+            : saveError
+            ? t("error_retry")
+            : stepIdx < tier.steps.length - 1
+            ? `${t("cook_next")} →`
+            : t("cook_finish")}
         </button>
       </div>
     </div>
