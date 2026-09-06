@@ -71,6 +71,36 @@ def make_tier(db, dish_slug, level, lang="en", steps=None, title=None):
     return dish, tier
 
 
+def make_lesson(db, slug, skill_slug, dish_slug, level, step_id, next_practice=None):
+    """Creates (or reuses) a Skill and attaches one Lesson to it, mirroring
+    scripts/sync_learning.py's shape closely enough for route tests that
+    don't need the sync script itself. next_practice, when given, is
+    (dish_slug, level, reason_en, reason_de)."""
+    from models import Skill, Lesson
+    skill = Skill.query.filter_by(slug=skill_slug).first()
+    if not skill:
+        skill = Skill(slug=skill_slug)
+        db.session.add(skill)
+        db.session.flush()
+    lesson = Lesson(
+        slug=slug,
+        skill=skill,
+        title={"en": slug.title(), "de": slug.title()},
+        body={"en": f"{slug} body (en)", "de": f"{slug} body (de)"},
+        dish_slug=dish_slug,
+        level=level,
+        step_id=step_id,
+    )
+    if next_practice:
+        np_dish, np_level, reason_en, reason_de = next_practice
+        lesson.next_practice_dish_slug = np_dish
+        lesson.next_practice_level = np_level
+        lesson.next_practice_reason = {"en": reason_en, "de": reason_de}
+    db.session.add(lesson)
+    db.session.commit()
+    return skill, lesson
+
+
 def auth_header(app, user_id):
     from flask_jwt_extended import create_access_token
     with app.app_context():

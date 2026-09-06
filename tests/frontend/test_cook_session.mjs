@@ -10,9 +10,11 @@
 // ESM script using assert + a localStorage polyfill (installed before the
 // zustand-backed store modules are imported, since useAuthStore.js reads
 // localStorage at module-eval time). Run:
-//   cd frontend && node ../tests/frontend/test_cook_session.mjs
+//   cd frontend && node --experimental-loader ../tests/frontend/extensionlessLoader.mjs ../tests/frontend/test_cook_session.mjs
 // (needs `npm install` first so zustand/axios resolve - same prerequisite
-// `npm run build` already has.)
+// `npm run build` already has. The loader flag is required - Node's ESM
+// resolver can't otherwise resolve this app's own extensionless relative
+// imports, e.g. useAuthStore.js's `import api from "../api/client"`.)
 import assert from "node:assert/strict";
 import { installFakeLocalStorage } from "./fakeLocalStorage.mjs";
 
