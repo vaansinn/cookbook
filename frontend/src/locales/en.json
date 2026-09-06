@@ -178,6 +178,39 @@
   "meal_plan_generate": "Suggest a plan",
   "meal_plan_generated_name": "Chef's picks",
 
+  "lesson_back": "← Back to cooking",
+  "lesson_success_cue_label": "Your success cue",
+  "lesson_if_too_hard_label": "If it's boiling too hard",
+  "lesson_if_nothing_label": "If nothing's happening",
+  "lesson_next_practice_label": "Next practice",
+  "lesson_next_practice_cta": "View recipe",
+
+  "cook_help_cta": "Need help with this step?",
+  "cook_help_eyebrow": "Contextual help",
+  "cook_help_close": "Back to step",
+  "cook_help_see_full_lesson": "See the full lesson",
+
+  "reflect_title": "How did it go?",
+  "reflect_outcome_happy": "🙂 Happy with it",
+  "reflect_outcome_mixed": "😐 Mixed",
+  "reflect_outcome_need_help": "🤔 Needed help",
+  "reflect_practiced_label": "I practiced {skill}",
+  "reflect_confidence_title": "How confident do you feel with this?",
+  "reflect_confidence_unknown": "Still unsure",
+  "reflect_confidence_wants_guidance": "Want more guidance",
+  "reflect_confidence_comfortable": "Feeling comfortable",
+  "reflect_skip": "Skip for now",
+  "reflect_save": "Save reflection",
+  "reflect_saved": "Saved — thanks for reflecting!",
+  "reflect_next_practice_label": "Try this next",
+  "reflect_next_practice_dismiss": "Maybe later",
+  "reflect_next_practice_cta": "Take me there",
+
+  "mockup_banner": "Static mockup for review — not wired to live data",
+  "mockup_tab_help": "Contextual help",
+  "mockup_tab_reflect": "Reflection",
+  "mockup_tab_lesson": "Lesson page",
+
   "api_needs_account": "Create a free account to use this tier.",
   "api_needs_premium": "This tier needs Premium."
 }
