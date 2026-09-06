@@ -9,7 +9,10 @@ the Phase 1 gate (register, log in, switch language/theme).
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from app import db, bcrypt
-from models import User, CookLog, BadgeAward, HouseholdMember, Household, GroceryList, GroceryItem, PlanEntry
+from models import (
+    User, CookLog, BadgeAward, HouseholdMember, Household, GroceryList, GroceryItem, PlanEntry,
+    CookReflection, SkillConfidence,
+)
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -87,6 +90,8 @@ def export_account():
 
     logs = CookLog.query.filter_by(user_id=user_id).all()
     badges = BadgeAward.query.filter_by(user_id=user_id).all()
+    reflections = CookReflection.query.filter_by(user_id=user_id).all()
+    skill_confidences = SkillConfidence.query.filter_by(user_id=user_id).all()
     membership = HouseholdMember.query.filter_by(user_id=user_id).first()
 
     plan_entries, grocery_items = [], []
@@ -103,6 +108,8 @@ def export_account():
             for l in logs
         ],
         "badges": [{"slug": b.badge_slug, "earned_at": b.earned_at.isoformat()} for b in badges],
+        "cook_reflections": [r.to_dict() for r in reflections],
+        "skill_confidences": [c.to_dict() for c in skill_confidences],
         "household": membership.household.to_dict() if membership else None,
         "plan_entries_added": [e.to_dict() for e in plan_entries],
         "grocery_items_added": [i.to_dict() for i in grocery_items],
@@ -114,7 +121,7 @@ def export_account():
 def delete_account():
     """
     Deletes the user's own personal data unconditionally (login, cook history,
-    badges). Shared household data (grocery list, plan) is only deleted if
+    badges, reflections/confidence). Shared household data (grocery list, plan) is only deleted if
     this was the household's last member — otherwise it's left intact for
     the remaining member(s), since it isn't solely this user's data.
     """
@@ -123,6 +130,8 @@ def delete_account():
     if not user:
         return jsonify({"error": "User not found"}), 404
 
+    CookReflection.query.filter_by(user_id=user_id).delete()
+    SkillConfidence.query.filter_by(user_id=user_id).delete()
     CookLog.query.filter_by(user_id=user_id).delete()
     BadgeAward.query.filter_by(user_id=user_id).delete()
 

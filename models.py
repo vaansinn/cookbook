@@ -39,6 +39,18 @@ Table overview:
   lessons           — one contextual-help page per skill, linked to a single
                       exact recipe step via (dish_slug, level, lang, step_id)
                       (pilot-fixtures.md §2) — see scripts/sync_learning.py
+  cook_reflections  — optional, additive per-cook reflection (pilot-fixtures.md
+                      §3/§10/§12/§13) — outcome/practiced_skill_confirmed/
+                      confidence, one row per CookLog, never a precondition
+                      for the CookLog row itself. skill_slug is the skill *as
+                      pinned* for that cook (client-supplied from its local
+                      session pin, §9/§10), never re-derived from today's
+                      live Lesson/Skill linkage.
+  skill_confidences — one row per (user, Skill): the user's *current*
+                      confidence, independent of any one reflection (§10).
+                      Submitting confidence via a reflection also writes here;
+                      a later direct PUT /api/me/skills/<slug> edit only ever
+                      touches this table, never a past CookReflection row.
 """
 
 from app import db
@@ -481,4 +493,75 @@ class Lesson(db.Model):
             "lang": lang,
             "step_id": self.step_id,
             "next_practice": next_practice,
+        }
+
+
+class CookReflection(db.Model):
+    """Optional, additive per-cook reflection (pilot-fixtures.md §3/§10/§12/
+    §13) — never a precondition for the CookLog row it's attached to; skipping
+    it leaves that row exactly as saved. One row per (user, CookLog): the
+    unique constraint is what routes/reflections.py's create-or-update logic
+    reacts to (same "insert, catch IntegrityError, re-read" shape as
+    CookLog/RecipeContentSnapshot elsewhere in this codebase).
+
+    `outcome`/`practiced_skill_confirmed`/`confidence` are three genuinely
+    independent optional fields (§3) - each nullable with no default, so
+    "never answered" (NULL) is distinguishable from an explicit `false`.
+    `skill_slug` is the skill *as pinned* for that cook (client-supplied, from
+    its local session pin captured at session start per §9) - never
+    re-resolved from today's live Lesson/Skill linkage, so a later re-pointed
+    lesson/skill never reinterprets what a past reflection meant (§10)."""
+    __tablename__ = "cook_reflections"
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    cook_log_id = db.Column(db.Integer, db.ForeignKey("cook_logs.id"), nullable=False)
+
+    skill_slug = db.Column(db.String(80), nullable=True)
+    outcome    = db.Column(db.String(20), nullable=True)   # "happy" | "mixed" | "need_help" | null
+    practiced_skill_confirmed = db.Column(db.Boolean, nullable=True)  # tri-state: null = never answered
+    confidence = db.Column(db.String(20), nullable=True)   # "unknown" | "wants_guidance" | "comfortable" | null
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    cook_log = db.relationship("CookLog")
+
+    __table_args__ = (db.UniqueConstraint("user_id", "cook_log_id", name="uq_user_cooklog_reflection"),)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "cook_log_id": self.cook_log_id,
+            "skill_slug": self.skill_slug,
+            "outcome": self.outcome,
+            "practiced_skill_confirmed": self.practiced_skill_confirmed,
+            "confidence": self.confidence,
+            "updated_at": self.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ") if self.updated_at else None,
+        }
+
+
+class SkillConfidence(db.Model):
+    """The user's *current* confidence in a Skill (pilot-fixtures.md §10) -
+    one row per (user, Skill), editable any time via PUT /api/me/skills/<slug>
+    independent of any specific cook/reflection. Submitting `confidence`
+    through a CookReflection also writes here (routes/reflections.py); a
+    later direct edit here never reaches back and rewrites what a past
+    CookReflection recorded — that stays a historical record of what was said
+    at that cook."""
+    __tablename__ = "skill_confidences"
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    skill_id   = db.Column(db.Integer, db.ForeignKey("skills.id"), nullable=False)
+    confidence = db.Column(db.String(20), nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    skill = db.relationship("Skill")
+
+    __table_args__ = (db.UniqueConstraint("user_id", "skill_id", name="uq_user_skill_confidence"),)
+
+    def to_dict(self):
+        return {
+            "skill": self.skill.slug if self.skill else None,
+            "confidence": self.confidence,
+            "updated_at": self.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ") if self.updated_at else None,
         }

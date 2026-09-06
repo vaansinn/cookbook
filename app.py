@@ -74,6 +74,8 @@ def create_app():
     from routes.favorites import favorites_bp
     from routes.meal_plans import meal_plans_bp
     from routes.snapshots import snapshots_bp
+    from routes.lessons import lessons_bp
+    from routes.reflections import reflections_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(recipes_bp, url_prefix="/api")
     app.register_blueprint(groceries_bp, url_prefix="/api")
@@ -82,6 +84,8 @@ def create_app():
     app.register_blueprint(favorites_bp, url_prefix="/api")
     app.register_blueprint(meal_plans_bp, url_prefix="/api")
     app.register_blueprint(snapshots_bp, url_prefix="/api")
+    app.register_blueprint(lessons_bp, url_prefix="/api")
+    app.register_blueprint(reflections_bp, url_prefix="/api")
 
     # ── CLI: flask sync-recipes ───────────────────────────────────────────────
     # Re-parses content/recipes/**/*.md + content/foods.json into Postgres.
