@@ -82,18 +82,6 @@ export default function ProgressPage() {
             <p className="text-sm mt-8" style={{ color: "var(--muted)" }}>{t("progress_empty")}</p>
           )}
 
-          {progress.nudges.map((n) => (
-            <div key={n.dish_slug} className="rounded-2xl p-4 mt-6" style={{ background: "var(--hot-soft)" }}>
-              <div className="font-display font-bold text-sm" style={{ color: "var(--hot-dk)" }}>{t("nudge_title")}</div>
-              <p className="text-sm mt-1.5 mb-3">
-                {t("nudge_body", { dish: n.dish_title, from: t("tier_" + n.from_level), to: t("tier_" + n.to_level) })}
-              </p>
-              <Link to={`/dish/${n.dish_slug}`} className="btn-primary block text-center text-sm py-2.5" style={{ background: "var(--hot)", boxShadow: "0 4px 0 var(--hot-dk)" }}>
-                {t("nudge_button", { to: t("tier_" + n.to_level) })}
-              </Link>
-            </div>
-          ))}
-
           {progress.history.length > 0 && (
             <>
               <h2 className="font-display font-bold text-lg mt-6 mb-2.5" style={{ color: "var(--ink)" }}>{t("progress_history_title")}</h2>

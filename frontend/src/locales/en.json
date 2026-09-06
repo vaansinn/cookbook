@@ -112,9 +112,6 @@
 
   "progress_dishes_cooked": "{n} dishes cooked",
   "progress_history_title": "Cook history",
-  "nudge_title": "Ready to level up?",
-  "nudge_body": "You've cooked {dish} on {from} twice. Try {to} next.",
-  "nudge_button": "Try {to}",
   "progress_empty": "Cook a dish to start tracking your progress.",
 
   "glossary_title": "Glossary",

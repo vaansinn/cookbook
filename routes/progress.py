@@ -1,61 +1,37 @@
 """
-routes/progress.py — Cook logging, cook history, and progression nudges.
+routes/progress.py — Cook logging and cook history.
 
-Nothing here is stored directly except the raw cook_logs rows — dishes_cooked,
-history, and nudges are all recomputed from that table on every request.
-Slower than caching, but it can never drift out of sync with reality, which
-matters more at this scale (see .claude/rules/architecture.md philosophy:
-derive, don't duplicate).
+Nothing here is stored directly except the raw cook_logs rows — dishes_cooked
+and history are recomputed from that table on every request. Slower than
+caching, but it can never drift out of sync with reality, which matters more
+at this scale (see .claude/rules/architecture.md philosophy: derive, don't
+duplicate).
 
-XP, streaks, and badges were retired in #32 (see IMPLEMENTATION_PLAN.md) —
-this route now surfaces plain cook history instead of reward mechanics.
+XP, streaks, and badges were retired in #32 (see IMPLEMENTATION_PLAN.md).
+Count-based auto-progression nudges (the #32-era "cooked this tier twice ->
+suggest the next one") were retired in this reconciliation for the same
+reason: business.md's agreed direction rules out automatic mastery, not just
+XP/streaks/badges. This route now surfaces plain cook history only.
 BadgeAward rows are left alone (routes/auth.py still reads them for GDPR
 export/delete) but nothing here writes new ones any more.
+
+get_progress still returns "badges": [] and "nudges": [] — permanently empty,
+computed from nothing — purely so an already-open browser tab running an
+older frontend (pre-#32 badges, or pre-this-fix nudges) doesn't crash reading
+progress.badges/progress.nudges as arrays. Don't compute real values into
+either key again; that's the whole point of this reconciliation.
 """
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from app import db
-from models import CookLog, Dish, RecipeTier, User
+from models import CookLog, Dish, User
 from access import tier_access
 
 progress_bp = Blueprint("progress", __name__)
 
 TIER_ORDER = ["basic", "intermediate", "advanced"]
-
-
-def _compute_nudges(logs, lang):
-    """A dish cooked >=2x at its highest-tried level, with a next tier that
-    exists but hasn't been cooked yet, becomes a nudge to try that next tier."""
-    by_dish = {}
-    for log in logs:
-        by_dish.setdefault(log.dish_id, []).append(log)
-
-    nudges = []
-    for dish_id, dish_logs in by_dish.items():
-        levels_cooked = {l.level for l in dish_logs}
-        highest = max(levels_cooked, key=TIER_ORDER.index)
-        idx = TIER_ORDER.index(highest)
-        if idx >= len(TIER_ORDER) - 1:
-            continue  # already at advanced, nothing further to nudge toward
-        next_level = TIER_ORDER[idx + 1]
-        if next_level in levels_cooked:
-            continue
-        count_at_highest = sum(1 for l in dish_logs if l.level == highest)
-        if count_at_highest < 2:
-            continue
-        dish = dish_logs[0].dish
-        tier = RecipeTier.query.filter_by(dish_id=dish_id, level=next_level, lang=lang).first()
-        if not tier:
-            continue  # next tier doesn't exist in this language yet
-        nudges.append({
-            "dish_slug": dish.slug, "dish_title": tier.title,
-            "from_level": highest, "to_level": next_level,
-            "last_cooked": max(l.cooked_at for l in dish_logs).isoformat(),
-        })
-    nudges.sort(key=lambda n: n["last_cooked"], reverse=True)
-    return nudges[:3]
 
 
 def _cook_log_dict(log):
@@ -143,11 +119,12 @@ def log_cook():
 @jwt_required()
 def get_progress():
     user_id = int(get_jwt_identity())
-    lang = request.args.get("lang", "en")
     logs = CookLog.query.filter_by(user_id=user_id).order_by(CookLog.cooked_at.desc()).all()
 
     return jsonify({
         "dishes_cooked": len({l.dish_id for l in logs}),
         "history": [_cook_log_dict(l) for l in logs],
-        "nudges": _compute_nudges(logs, lang),
+        # Permanently empty - see module docstring. Never computed again.
+        "badges": [],
+        "nudges": [],
     })

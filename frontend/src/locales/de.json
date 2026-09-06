@@ -112,9 +112,6 @@
 
   "progress_dishes_cooked": "{n} Gerichte gekocht",
   "progress_history_title": "Kochverlauf",
-  "nudge_title": "Bereit für die nächste Stufe?",
-  "nudge_body": "Du hast {dish} zweimal auf {from} gekocht. Probier als Nächstes {to}.",
-  "nudge_button": "{to} probieren",
   "progress_empty": "Koch ein Gericht, um deinen Fortschritt zu verfolgen.",
 
   "glossary_title": "Glossar",
