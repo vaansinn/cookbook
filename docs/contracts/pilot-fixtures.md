@@ -392,6 +392,235 @@ or signed-in:
 
 ---
 
+## 8. Guest session identity
+
+Extends section 4's identity model (`owner_namespace`/`owner_id`/`session_id`)
+and section 5's snapshot-reuse rule to fix how "guest" is actually realized
+on the client — not just that it's a distinct namespace.
+
+- A guest gets `owner_namespace = "guest"` and an `owner_id` that is a
+  client-generated UUID (the guest id) — never `null`/`0` masquerading as an
+  account id (section 4's existing rule).
+- The guest id is stored under its own **fixed** `localStorage` key, wholly
+  separate from any account's storage — generated once and reused for the
+  lifetime of that browser/guest, never read from or written into an
+  account's key and vice versa. (`frontend/src/store/cookSession.js`'s
+  existing key-shape comment already reserves the `guest` namespace segment
+  for this — see the note there on `cook_session:account:<owner_id>`.)
+- The per-attempt storage identity is the **same**
+  `(owner_namespace, owner_id, session_id)` triple section 4 establishes for
+  signed-in accounts — a guest's in-progress cook is looked up and resumed
+  exactly the same way, just under `owner_namespace = "guest"`.
+- **Refresh resumes exactly like a signed-in user's.** A guest's page reload
+  must resume the same `snapshot_id`/`current_step_id` from the persisted
+  record. There is no special-cased "guests don't get to resume" path —
+  section 1's "one legitimate re-fetch: a page reload" rule and section 5's
+  snapshot-reuse rule apply identically to a guest read.
+- **Sign-in never inherits guest state.** If a guest later creates an
+  account or signs in on the same browser, nothing from the guest's stored
+  attempt(s) is read, migrated, or attached to the new account — this
+  sharpens section 5's existing "nothing is migrated or uploaded" rule to
+  explicitly cover the *session* record too, not only reflection/confidence
+  data. The account's own storage starts empty, as if that browser had never
+  cooked as a guest at all.
+- **Guest completion never touches the reflection/cook-log backend.**
+  Finishing a cook as a guest is a client-side-only branch: it never calls
+  `POST /api/cook-log` (section 6) or any reflection endpoint (section 10)
+  with a placeholder/guest identity. This is a routing decision made before
+  any request is built, not a request the backend happens to reject — there
+  is no guest-shaped payload for those endpoints at all.
+
+The exact `localStorage` key name/generation timing is still left to the
+implementing slice (see "Explicitly undecided" below) — this section fixes
+the *shape* (namespace value, UUID, fixed-and-separate key, reuse-not-
+regenerate, no migration on sign-in), not the literal string.
+
+---
+
+## 9. Pinning the lesson content a session actually showed
+
+Section 1 already explains why a cook session stores full recipe content,
+not a hash, at session start: a resumed session must redisplay the *actual
+instructions the user cooked from*, even if the live recipe is edited
+afterward. The identical problem exists one level up, for the contextual
+teaching content (the `Lesson` shown alongside a step, section 2) — and the
+fix is the same shape of fix.
+
+**The gap.** A resumed content snapshot (section 1) correctly redisplays the
+frozen recipe steps. But if the `Lesson` linked to one of those steps is
+edited after the session started — copy improved, a success cue reworded,
+an example changed — a resumed session would show *today's* lesson text
+next to *yesterday's* frozen recipe. That's exactly the inconsistency the
+snapshot mechanism exists to prevent, applied here to teaching content
+instead of recipe content, and it is not automatically covered by section
+1's recipe-content fix alone.
+
+**Requirement.** The full lesson content actually shown to the user at
+session start must be retained **immutably** — either embedded directly in
+the content snapshot, or referenced through its own immutable stored record
+(a lesson-content snapshot, parallel to section 1's
+`recipe_content_snapshots`). A digest of the lesson body does not satisfy
+this, for the same reason section 1 rules out a recipe-content hash: a
+digest can only prove two things were equal, it cannot hand back the
+content to redisplay.
+
+**What resumption must do.** A resumed session's contextual help must read
+what was pinned for that session at its start — never perform a live
+`Lesson` lookup by slug/step_id at resume time. The exact schema (embedded
+on the recipe snapshot vs. its own `lesson_content_snapshots` table vs.
+something else) is left to the implementing agent; this section fixes the
+non-negotiable behavior, not the storage shape. Section 10 below relies on
+this same pinned reference for resolving `practiced_skill_confirmed`.
+
+---
+
+## 10. Confidence is separate from reflection, with an explicit interaction rule
+
+Section 3 already distinguishes three independent fields on a reflection:
+`outcome`, `practiced_skill_confirmed`, and `confidence`. This section
+extends that distinction to fix where the *authoritative* confidence value
+lives and exactly how the two interact.
+
+**Two places confidence can be written:**
+
+| Source | Scope | Meaning |
+|---|---|---|
+| `PUT /api/me/skills/<slug>` (dedicated endpoint, referenced in section 3 and #37) | One row per `(user, Skill)` | The user's *current* confidence in that skill — the authoritative value shown anywhere "your current confidence" appears. Editable any time, independent of any specific cook. |
+| `confidence` on a `CookReflection` (section 3) | One row per reflection | The confidence *assessed at that cook's submission* — a point-in-time record of what the user said right after that specific cook, not the authoritative current value. |
+
+**The interaction rule:**
+- Submitting `confidence` through a reflection **also updates** current
+  confidence (the `Skill`-scoped row above) — a completed cook is a natural
+  moment to update it, so the write is not confined to the reflection row
+  alone.
+- A later, separate edit via `PUT /api/me/skills/<slug>` updates **only**
+  current confidence. It never reaches back and rewrites what a past
+  `CookReflection` recorded — that row stays a historical record of what was
+  said at that cook, even after the user's current confidence has since
+  moved on.
+- **This side effect fires only on a genuinely new confidence submission,
+  never on a mechanical retry of an already-saved reflection.** Retrying a
+  reflection whose save already succeeded (the same double-tap/flaky-network
+  case section 6 handles for the cook-log save, extended to reflections in
+  section 13) must not reapply that reflection's old confidence value on top
+  of whatever current confidence has since become via an independent, later
+  edit. Concretely: "replaying an existing reflection" (the save already
+  happened; this request is a retry of the same submission) and "submitting
+  a new/edited confidence value" (a genuinely new write) must be treated as
+  distinct operations by the implementation, even when both arrive at the
+  same endpoint — the same "decide it transactionally, don't rely on client
+  state" discipline section 6 requires for cook-log idempotency applies here
+  to *whether the current-confidence side effect fires at all*, not just to
+  whether a duplicate row gets created.
+
+**Resolving against pinned content, not the live record.** A reflection's
+own `practiced_skill_confirmed` must resolve against the skill *as pinned
+for that cook* (section 9) — whichever `Lesson`/`Skill` reference was
+actually shown during that session — never whatever the live `Lesson`/
+`Skill` linkage happens to be by the time the reflection is submitted or
+read back later. If a lesson's skill or step link is repointed after the
+cook, a past reflection's `practiced_skill_confirmed` still means
+"confirmed for the skill shown at the time," never silently reinterpreted
+against today's linkage.
+
+---
+
+## 11. The lesson API contract
+
+Two request shapes resolve to the same underlying `Lesson`:
+- **By lesson slug** — a standalone lesson page (see `LessonPage.jsx`'s
+  mockup), e.g. `GET /api/lessons/<slug>`.
+- **By reference** — the exact 4-tuple `(dish_slug, level, lang, step_id)`
+  from section 2, for in-cook contextual help.
+
+Both paths must resolve to the identical `Lesson` row when they name the
+same lesson — there is no separate "in-cook" copy of a lesson's content.
+
+**Language mismatch: falls back to `en`, never 404s.** If a lesson request
+names a `lang` with no authored content for that lesson, the response falls
+back to the lesson's `en` copy rather than 404ing. A recipe can 404 on a
+missing tier/language (there's genuinely no `RecipeTier` row to serve), but
+a lesson that exists in one language and not the other still has
+*something* useful to show — a hard 404 mid-cook on contextual help would
+be a worse experience than showing it in English. (This mirrors
+`sync_learning.py`'s own shape: `title`/`body` are keyed by language on one
+`Lesson` row, so a missing language is a gap in that dict, not a missing
+row.)
+
+**Tier/premium access.** `Lesson` itself has no tier column (`models.py`) —
+a lesson response respects the same tier/premium check `access.py` applies
+to the recipe it's attached to (see the top-level project's "Access is
+three-tiered" note), resolved via the linked `RecipeTier`'s `level` — i.e.
+`tier_access(lesson.level, user)` using the `dish_slug`/`level` the lesson's
+own recipe/step link names (section 2). A lesson attached to an `advanced`
+step is gated exactly like the `advanced` recipe it belongs to, re-checked
+on every read — the same "entitlement is re-checked on every read, not just
+at creation" rule section 1 states for recipe snapshots.
+
+**Next-practice suggestion filtering.** Any next-practice suggestion
+returned alongside a lesson (the `next_practice` block `sync_learning.py`
+parses, section 7's shape) is filtered to a `dish_slug`/`level`/`lang` the
+*current* requester can actually open, via that same `tier_access()` check.
+If no eligible suggestion exists for this requester (e.g. the authored
+next-practice target is `advanced` and the requester isn't premium), the
+suggestion is omitted from the response entirely — never returned as a
+locked tile, and never substituted with a broken/guessed link.
+
+---
+
+## 12. Checkbox semantics — `practiced_skill_confirmed`
+
+Restates and sharpens section 3's existing rule with an explicit
+implementation note: a `practiced_skill_confirmed` checkbox that starts
+unchecked and is never touched by the user must submit as absent/null in
+the reflection payload — never `false`. `false` means "the user was asked
+and said no"; unanswered means the question was never affirmatively
+answered at all, and section 3 already forbids treating those as the same
+thing.
+
+**Implementation note.** A naive `useState(false)` for this control
+conflates "never answered" with "explicitly unchecked" — both read as
+`false`. The control's touched/untouched state must be tracked as a fact
+independent of its checked state (e.g. a three-state `null`/`true`/`false`
+value, or a separate `touched` boolean alongside the checked flag), and the
+payload must send `null`/absent unless the user actually interacted with
+it.
+
+---
+
+## 13. Recovery/edge-case acceptance criteria
+
+An implementation of this contract must satisfy all of the following:
+
+- **Refresh between cook-log save and reflection.** A refresh after the
+  cook-log save (section 6) succeeds but before reflection is submitted
+  must not lose the saved cook: the saved `CookLog` row stays saved, and
+  reflection is still offered or resumable against the right cook — never
+  re-prompted as if the cook itself needs re-saving, and never silently
+  dropped.
+- **Failed reflection submission.** A reflection submission that fails
+  (network error, 5xx) must surface a visible retry — the same pattern
+  section 4 already requires for a failed cook-log save — never silently
+  dropped with no user-visible sign anything went wrong.
+- **Duplicate reflection submissions.** Two submissions of the same
+  reflection (a retry after a slow or ambiguous response) must produce one
+  reflection row, not two — the same idempotency discipline section 6
+  applies to `cook_logs`, applied here to reflections.
+- **Partial edits don't clobber other fields.** Editing an already-submitted
+  reflection to change only `confidence` must not reset `outcome` or
+  `practiced_skill_confirmed` to null — an edit touches only the field(s)
+  actually submitted in that edit, per section 3's "each is
+  optional/independent" rule.
+- **Pre-snapshot legacy records degrade, never crash or fabricate.**
+  Resuming a session whose persisted record predates the snapshot mechanism
+  (or otherwise has no `snapshot_id`) degrades to "source content unknown"
+  — the same rule section 1 already states for pre-snapshot `CookLog` rows,
+  applied here to session records generally. It must never crash, and must
+  never fabricate a snapshot for content it can no longer prove was
+  actually shown.
+
+---
+
 ## Explicitly undecided — do not guess past this
 
 - **Who generates `session_id`.** This doc assumes client-generated UUID
@@ -401,10 +630,14 @@ or signed-in:
 - **Exact `outcome` enum values** beyond the three named in the product plan
   (`happy` / `mixed` / `need_help`) — confirm final copy/keys with the
   content agent (#33a) before locking the column's allowed values.
-- **Guest namespace mechanics** (how the guest id is generated/stored,
-  e.g. `localStorage` key shape) — belongs to whichever slice implements the
-  guest-side client state (#36a/#37a), not to this contract; this doc only
-  fixes that it must be a *distinct* namespace, never `user_id`-shaped.
+- **Guest namespace mechanics — narrowed by section 8.** Section 8 now fixes
+  the *shape* (`owner_namespace = "guest"`, a client-generated UUID, its own
+  fixed and separate `localStorage` key, reuse-not-regenerate, no migration
+  on sign-in). What's still left to whichever slice implements the
+  guest-side client state (#36a/#37a): the literal `localStorage` key name
+  and exactly when the guest id is first generated (first Basic recipe view
+  vs. first "Start cooking" tap, etc.) — cosmetic choices within section 8's
+  fixed shape, not open questions about the shape itself.
 - **Step data shape pre-#35.** Section 2 assumes structured steps with a
   `step_id` field exist by the time lesson-step links are validated. Until
   #35a lands, `RecipeTier.steps` is `list[str]` with no stable ID — #34a's

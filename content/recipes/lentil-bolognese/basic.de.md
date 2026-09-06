@@ -25,9 +25,9 @@ tags: [pasta, lentils, tomato-based, iron-rich, quick, jar-sauce]
 
 ## Instructions
 1. Linsen abspülen, dann in einem Topf mit der doppelten Menge Wasser 12-15 Min. köcheln, bis sie weich sind. Abgießen. {#rinse-and-simmer}
-2. Währenddessen die Spaghetti in Salzwasser al dente kochen.
-3. Die Glas-Sauce mit den Kräutern in einer weiten Pfanne 3-4 Min. erhitzen. Die gekochten Linsen unterrühren.
-4. Die Pasta abgießen und direkt in die Sauce geben. Servieren.
+2. Währenddessen die Spaghetti in Salzwasser al dente kochen. {#boil-the-pasta}
+3. Die Glas-Sauce mit den Kräutern in einer weiten Pfanne 3-4 Min. erhitzen. Die gekochten Linsen unterrühren. {#heat-sauce-and-combine}
+4. Die Pasta abgießen und direkt in die Sauce geben. Servieren. {#toss-and-serve}
 
 ## Notes
 - Das Glas übernimmt die Würzarbeit — vor dem Nachsalzen probieren.
