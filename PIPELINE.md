@@ -5,6 +5,24 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 
 ## Open
 
+### #60 — Mobile-first adaptive UI structure and redesign (planned)
+
+User-requested plan, 2026-09-07: [implementation steps](docs/mobile-first-redesign-plan.md).
+One shared application/controller with phone-first cooking, sticky Ingredients /
+Method tabs, wide side-by-side recipe content, adaptive library and management
+screens. #60a–#60h define dependencies, bounded ownership and acceptance checks;
+no application implementation or agent dispatch has started. #60a now has a
+verified baseline (45 backend tests, 4 frontend scripts, production build) and a
+revised recipe/Cook Mode [prototype and evidence](docs/mobile-first-baseline.md).
+Visual approval and remaining supporting-screen baseline capture are pending;
+#60a is not complete. Exact responsive visuals require approval before UI code.
+#29/#30 are coordinated through #60c;
+#45 contributes layout/navigation presentation only, not feature removal.
+Structured per-step ingredient quantities (#60g) are a separately gated follow-on;
+the responsive release retains full ingredient access without waiting for it.
+Existing access, snapshot/session/reflection contracts and human/environment gates
+remain intact. No automatic commit, merge, push or deployment.
+
 ### Teaching-pilot hardening — existing #34a–#38a/#48/#50 (uncommitted worktree)
 
 User-approved continuation on `codex/teaching-pilot-hardening`, based on `d787ddc`.
