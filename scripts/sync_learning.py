@@ -26,6 +26,13 @@ import yaml
 CONTENT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "content")
 LESSONS_DIR = os.path.join(CONTENT_DIR, "lessons")
 
+# This repo's target languages are EN+DE only (code-style.md/architecture.md)
+# - same assumption find_lesson_files()'s "<lang>.md" filename regex already
+# hardcodes. A lesson slug missing either language must never sync at all
+# (see the validation pass in sync_lessons): a single-language sync would
+# silently overwrite a previously-complete bilingual Lesson row.
+REQUIRED_LANGS = ("en", "de")
+
 NEXT_PRACTICE_RE = re.compile(r"\n(next_practice:\n(?:[ \t]+.*\n?)*)$")
 
 
@@ -181,6 +188,9 @@ def sync_lessons(db, Skill, Lesson, RecipeTier, verbose=print):
     # Validation pass FIRST, for every lesson, before any db.session.add —
     # a broken link anywhere aborts the whole sync, nothing gets published.
     for slug, data in by_slug.items():
+        missing = [lang for lang in REQUIRED_LANGS if lang not in data["title"]]
+        if missing:
+            raise SyncError(f"lessons/{slug}: missing required language(s) {missing} — refusing to sync a partial translation over a possibly-complete existing Lesson row")
         for lang in data["title"]:
             _resolve_step(data["dish_slug"], data["level"], lang, data["step_id"], RecipeTier, Dish, f"lessons/{slug}/{lang}.md")
         if data["next_practice"]:

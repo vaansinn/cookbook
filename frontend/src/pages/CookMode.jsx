@@ -114,7 +114,7 @@ export default function CookMode() {
         // Mode, but don't attribute this account's cook/badges to whoever
         // is logged in now.
         if (getAuthEpoch() !== requestEpoch) { navigate(`/dish/${slug}`); return; }
-        completeSession(userId); // saved - next cook of this dish/level mints a fresh session
+        completeSession(userId, sessionIdRef.current); // saved - next cook of this dish/level mints a fresh session
         navigate(`/dish/${slug}`, { state: { cooked: true } });
       })
       .catch(() => {

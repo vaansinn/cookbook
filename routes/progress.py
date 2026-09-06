@@ -32,7 +32,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from app import db
-from models import CookLog, Dish, User
+from models import CookLog, Dish, RecipeContentSnapshot, User
 from access import tier_access
 
 progress_bp = Blueprint("progress", __name__)
@@ -102,6 +102,17 @@ def log_cook():
     allowed, reason = tier_access(level, User.query.get(user_id))
     if not allowed:
         return jsonify({"error": "This tier needs an upgrade", "code": f"needs_{reason}"}), 403
+
+    # snapshot_id, when sent at all, must actually be the snapshot for this
+    # exact (dish_slug, level, lang) - otherwise a cook could be logged
+    # against another tier's frozen content (e.g. a Basic cook-log request
+    # pointing at an Advanced snapshot). Legacy callers that send no
+    # snapshot_id at all are unaffected - this only validates a value that's
+    # actually present, before it's ever attached to a CookLog row below.
+    if snapshot_id is not None:
+        snapshot = RecipeContentSnapshot.query.get(snapshot_id)
+        if not snapshot or (snapshot.dish_slug, snapshot.level, snapshot.lang) != (dish_slug, level, lang):
+            return jsonify({"error": "snapshot_id does not match dish_slug/level/lang"}), 400
 
     # Idempotency key path (#48). A request with no session_id at all keeps
     # today's behavior - a plain insert, no replay/conflict bookkeeping -
