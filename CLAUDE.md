@@ -2,6 +2,12 @@
 
 Adapted from the Clea wedding-planner workflow (`D:\Projects\meal-planner`) — same house rules, new subject.
 
+## Current direction — updated 2026-09-06
+
+The agreed direction is cooking education through useful practice history, optional confidence and personal repertoire—not XP, streaks, reward badges or automatic mastery. First delivery is one dish/technique with contextual help and early beginner observation. Variable meaningful recipe versions, private personal recipes/variations and dinner events are retained later release choices, not pilot prerequisites.
+
+This is **planned direction, not implemented behavior**: existing mechanics and three-tier access still exist until their assigned changes ship. Preserve current entitlements, approved visual language and unrelated safety/workflow rules. Use [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for scope/dependencies, [AGENT_HANDOFFS.md](AGENT_HANDOFFS.md) for bounded assignments and PIPELINE.md for status. Newer direction here supersedes historical reward/progression descriptions.
+
 ## Rule Files
 Detailed rules live in `.claude/rules/`. Apply the relevant file(s) for every task:
 
@@ -42,5 +48,5 @@ Don't front-load speculative setup — installing every dependency, running a fu
 ### One Point at a Time, Unless Told Otherwise
 When a user gives multiple points in one message, work through them in the order given. Don't skip past a stalled or harder point to spend the turn on an easier one — finish or genuinely exhaust the current point first, unless the user explicitly says to move on or asks for a plan spanning all of them.
 
-## Product context
+## Current implementation context — transition pending
 Recipe Drawer teaches cooking through three difficulty tiers of the same dish (Basic/Intermediate/Advanced), Duolingo-style progress mechanics, shared household grocery lists, and computed nutrition. Full feature map and phased roadmap: see the blueprint artifact linked from `PIPELINE.md` and the `project-cookbook-site` memory. Access is three-tiered (P6, shipped): Basic is public to anonymous visitors, Intermediate needs any account, Advanced needs `user.plan == "premium"` — enforced server-side in `access.py`, not just hidden in the UI. Stripe/checkout isn't built yet; premium is a manually-set flag.

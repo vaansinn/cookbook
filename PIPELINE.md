@@ -5,14 +5,11 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 
 ## Open
 
-- #50 — Service worker + stale-account isolation fix (in progress). `sw.js`'s API cache currently replays entitlement-varying `/api/dishes/<slug>` responses across account switches with no auth check; also closing the gap where an in-flight request from a stale account can silently repopulate a store or `RecipePage`/`CookMode`'s component state after logout/login. See `IMPLEMENTATION_PLAN.md`/`AGENT_HANDOFFS.md` and the dispatch plan for the full brief.
-- #48 — Idempotent cook logging (in progress). Client-generated `session_id`, unique on `(user_id, session_id)`, so a retried "Done cooking" POST doesn't duplicate `CookLog` rows. Depends on #50 landing first only insofar as both touch shared review order, not files.
-- #32 — Retire XP/streak/badges → plain cook history (in progress). Also fixes a real bug in `generate_meal_plan` (global instead of per-dish tier tally) and replaces the level-validation use of `XP_PER_LEVEL`. Sequenced after #48 (both touch `routes/progress.py`/`CookLog`).
-- #33a — One dish/one lesson content (in progress): lentil-bolognese simmer skill, EN/DE, plus the missing `simmer` glossary entry.
-- #47a — Pilot fixture contract (in progress): Skill/Lesson/snapshot/session/reflection shapes other pilot work implements against.
-- #39a — First-observation materials + beginner observation (not started — gated on culinary review of #33a's content, then 1-2 beginners).
-- #34a–#38a — Thin end-to-end teaching flow (not started — depends on #32, #33a, #47a): Skill/Lesson sync, content snapshot, contextual help in Cook Mode, reflection, guest cooking for Basic tier, one next-practice link. No repertoire dashboard, no recommendation engine, no nav change this slice.
-- #40, #47b, #51–#58 — Later teaching/personal-library/nutrition/events work, explicitly deferred per `AGENT_HANDOFFS.md` until a release is chosen; not part of this dispatch.
+Reconciled 2026-09-06 against GitHub main at dccd4db177336b7f52d992bb9a3dade681c61d1e. The original audit used local 6011faf; this published planning commit is based on dccd4db and preserves its newer application work. All new work below is planned, not implemented. Verify the current checkout before implementation. Details: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Agent dispatch: [AGENT_HANDOFFS.md](AGENT_HANDOFFS.md).
+
+**Wave 1 of the teaching-pilot dispatch is in flight** (multi-agent, per the dispatch plan and `AGENT_HANDOFFS.md`'s first-assignments table): #50 implemented and engineering-verified (not yet merged to this branch's integration head), #33a content drafted, #47a fixture contract drafted. See each row's Sequence below for current status; none of #32/#48/#34a–#38a/#39a have started yet.
+
+### Existing work retained
 
 - #28 — Trust signal near the recipe title: "Cooked N times", sourced from existing `cook_logs` data (no new tracking). From the UX teardown video review.
 - #29 — Sticky mini-header on the recipe page: dish title + active tier stays visible once you scroll past the top of a long recipe. From the same review.
@@ -21,7 +18,56 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 
 - #26 — Natural-language meal-plan prep via the Claude API. New JWT-required backend route (`POST /api/meal-plans/generate-nl`) that sends the user's free-text request ("3 easy vegetarian dinners for the week") plus the dish catalog (slug, cuisine, meal type, diet flags, allergens, time, per-tier kcal + summaries) to Claude with a strict structured-output schema (dish slugs as an enum of the real catalog, levels enum'd), then feeds the result through the existing `_validate_items` + `tier_access` path so the AI can only *propose* — the same server-side validation that guards manual plan creation disposes. Python SDK (`anthropic`), key via `ANTHROPIC_API_KEY` Heroku config var only (security.md), catalog block prompt-cached, model `claude-opus-5`. Frontend: free-text input on `/plans` next to the existing non-AI "Suggest a plan" (which stays as the fallback when the API is down/unconfigured). Needs: user to set the API key on Heroku, mockup preview of the input UI, and a decision on per-user request limits (rate limiting is otherwise deferred to P5).
 
-- #20 — Variable tier counts: whether every dish stays fixed at exactly 3 tiers (Basic/Intermediate/Advanced) or some dishes could have fewer/more. Carved out of #19 once the tab visual restyle shipped separately (see below) — this half is still undecided. **Flagged per `business.md`**: "Tier tabs are the future paywall boundary. Any change to tab structure has payment-gating implications even before Stripe is wired up." Proposed direction discussed with the user but not yet confirmed: derive access from a tier's *position* in a dish's own tier list rather than its name (position 0 free, 1 needs account, 2+ needs premium) — reuses the existing 3-tier pricing model instead of inventing a new paid tier before Stripe/pricing exists. Touches `access.py`'s `tier_access()`, the recipe content pipeline, and all 90 existing recipe tiers. Needs a decision before any data-model work.
+
+
+Disposition notes: #26 stays optional catalog-based planning, not generic recipe generation; verify provider/model at implementation time. #28 is recommended for deferral pending a product decision and reliable logging. #29–#31 remain independent usability work. Their inclusion does not imply that unimplemented features are shipped.
+
+### Active package and retained roadmap
+
+Scope/estimates are in IMPLEMENTATION_PLAN.md section 5. “a/b” identify bounded slices, not newly allocated IDs. Only the active package is the proposed first implementation release; future rows are not automatic agent assignments.
+
+| Task | Deliverable | Responsibility | Dependencies | Sequence |
+|---|---|---|---|---|
+| #32 | Retire rewards/escalation; useful history | Teaching | #48; coordinate #47a | Not started — queued after #48 (both touch `routes/progress.py`/`CookLog`) |
+| #33 | a: one dish/lesson; b: three dishes/five skills | Content | None; b follows #39a corrections | a: content drafted (lentil-bolognese/simmering + `simmer` glossary entry, EN/DE), pending culinary review |
+| #34 | a: lesson sync/links; b: fuller paths | Teaching | #33a, #47a; no #40 | a active |
+| #35 | a: contextual steps/snapshots; b: richer metadata | Teaching | #33a, #34a, #47a; no #40 | a active |
+| #36 | a: lesson/help flow; b: prep/timers | Teaching | #34a, #35a, #50 | a active |
+| #37 | a: optional reflection/practice/confidence; b: broader state | Teaching | #34a, #35a, #48, #50 | a active |
+| #38 | a: authored next practice; b: fuller learning suggestions | Teaching | #36a, #37a | a active |
+| #39 | a: early observation; b: expanded validation | Content/review | Prepare now; observe first usable slice, not whole tasks | a active |
+| #40 | Full version/revision identities and variable versions | Future release | #47b, #44 preserve-current-access mapping | Later; not pilot gate |
+| #41 | a: solo first-write; b: shopping conveniences | Reliability/planning | a: current ownership; #50 private-flow release checks | Independent a |
+| #42 | Preferences/discovery filters | Future release | #34 for skills; current recipe refs until #40 | Later |
+| #43 | Learning-aware bundles and reliable planning | Future release | #38b where used, #41, #42, #49; no #40 gate | Later |
+| #44 | Access and copied-recipe policy | Product/review | Current grants unchanged; approve changes separately | Future policy |
+| #45 | Navigation/supporting-feature simplification | Future UI | #39 findings; preserve current entries in pilot | Later |
+| #46 | Expand curriculum from observed needs | Content | #39 evidence | Later |
+| #47 | a: base/pilot fixtures; b: full later domain contract | Teaching/review | None; independent fixes need not wait | a: fixture contract drafted (`docs/contracts/pilot-fixtures.md`) — snapshot/step-identity/reflection/session/guest shapes for #34a–#38a and #48 to build against; b later |
+| #48 | Replay-safe cook logging | Reliability | None for existing refs; #35 snapshot integration when ready | Not started |
+| #49 | a: current plan/list correctness; b: event adapter | Reliability/planning | a: current refs; b: chosen #55 interface | Independent a; b later |
+| #50 | Fix explicit API caching and account-session isolation | Reliability | None; actual worker fix and old-cache eviction | Implemented + engineering-verified (real two-account browser test); pending merge to this branch's integration head |
+| #51 | Private personal recipe library/editor | Future library | #40, #47b, #49, #50 | Later release |
+| #52 | Photo scan to reviewed private recipe | Future import | #51, #54 interface, #50; provider approval/setup | Later |
+| #53 | Personal variations/history/comparisons | Future library | #40, #47b, #51; #44 premium-copy policy | Later |
+| #54 | Ingredient tools/nutrition coverage/units | Future ingredients | #47b quantity contract, #40 payload; #58 optional only | Later |
+| #55 | Curated dinner events from existing bundles | Future events | #49b, #50, lightweight snapshot facility; #41a if needed; no #40/#51 | Separately selectable |
+| #56 | Manual event prep then timing | Future events | #55; #35/#36 optional step/timer integration | Later |
+| #57 | Retire compatibility per consumer inventory | Review/feature owner | Prose: #35; version fields: #40; separate gates | Cleanup |
+
+Start #50 implementation, #33a/#39a materials and #47a fixtures in parallel; then reliable completion/history and one end-to-end #34a–#38a flow. Observe one or two beginners as soon as that slice is usable, correct it, then expand. #41a/#49a and existing usability/hardening work can proceed independently. No full version/library/event dependency for the pilot. Use a verified current base, not the historical 6011faf audit snapshot.
+
+### Deferred — ID retained
+
+- #58 — External import adapters. Not active implementation scope. Revisit only for a concrete unmet need with a bounded estimate, current official-provider verification, required #51/#54 interfaces and approved configuration/cost. Keep the historical source inventory; do not activate all archived integrations.
+
+### Superseded specifications — not shipped
+
+- #20 — Variable tier counts: consolidated into #40 and #47. Its prior position-based pricing suggestion was not approved; preserve current grants through explicit metadata while #44 records policy. Keep this ID/history; do not implement a second version migration.
+
+### Numbering correction
+
+The earlier local learning draft incorrectly reused #16–#30. Those draft tasks are now #32–#46 (old draft ID + 16); shipped tasks keep their original IDs. Additional shared-foundation/library/import/event tasks occupy #47–#58. See LEARNING_PLAN.md for the old-draft mapping. Highest allocated ID: #58; recheck the shared branch before assigning more.
 
 ## Already shipped
 
