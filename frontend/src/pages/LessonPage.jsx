@@ -5,7 +5,7 @@ import { useT } from "../i18n";
 import { getLessonBySlug } from "../api/lessons";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
-import LessonBody from "../components/LessonBody";
+import LessonBody, { stripMd } from "../components/LessonBody";
 
 // Real GET /api/lessons/<slug> wiring (docs/contracts/pilot-fixtures.md §11).
 // Same body-as-cards visual approved in the Step 2 mockup - see LessonBody.
@@ -64,7 +64,7 @@ export default function LessonPage() {
             <p className="font-display font-bold text-sm uppercase tracking-wide" style={{ color: "var(--brand)" }}>
               {t("lesson_next_practice_label")}
             </p>
-            <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>{lesson.next_practice.reason}</p>
+            <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>{stripMd(lesson.next_practice.reason)}</p>
             <Link
               to={`/dish/${lesson.next_practice.dish_slug}`}
               className="btn-primary inline-block mt-3 text-sm py-2.5 px-4"

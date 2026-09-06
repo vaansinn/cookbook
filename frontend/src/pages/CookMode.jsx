@@ -12,7 +12,7 @@ import { getLessonByRef } from "../api/lessons";
 import { logCook } from "../api/progress";
 import { submitReflection } from "../api/reflections";
 import { parseSeconds, fmtSecs, beep } from "../utils/timer";
-import LessonBody from "../components/LessonBody";
+import LessonBody, { stripMd } from "../components/LessonBody";
 
 // Cook Mode - the step-by-step cook flow, contextual help (pilot-fixtures.md
 // §2/§9/§11) and the post-Finish reflection/next-practice screen (§3/§7/§10/
@@ -516,7 +516,7 @@ function DoneScreen({ t, isGuest, reflected, nextPractice, dishSlug }) {
         <div className="card px-4 py-4 mt-6 max-w-sm w-full text-left">
           <p className="font-display font-bold text-xs uppercase tracking-wide" style={{ color: "var(--brand)" }}>{t("reflect_next_practice_label")}</p>
           <p className="font-display font-semibold mt-1" style={{ color: "var(--ink)" }}>{titleizeSlug(nextPractice.dish_slug)}</p>
-          <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>{nextPractice.reason}</p>
+          <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>{stripMd(nextPractice.reason)}</p>
           <div className="flex gap-2 mt-3">
             <button onClick={() => setDismissed(true)} className="btn-ghost flex-1 text-sm py-2.5">{t("reflect_next_practice_dismiss")}</button>
             <Link to={`/dish/${nextPractice.dish_slug}`} className="btn-primary flex-1 text-sm py-2.5 text-center">{t("reflect_next_practice_cta")}</Link>

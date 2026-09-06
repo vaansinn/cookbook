@@ -9,7 +9,10 @@
 const CARD_BG = ["var(--basic-soft)", "var(--inter-soft)"];
 const CARD_FG = ["var(--basic-dk)", "var(--inter-dk)"];
 
-const stripMd = (s) => s.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1");
+// Also used by LessonPage.jsx/CookMode.jsx for the shorter authored strings
+// that carry the same lightweight markdown (next_practice.reason) but don't
+// need the full card treatment above.
+export const stripMd = (s) => s.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1");
 
 export default function LessonBody({ body }) {
   const paragraphs = (body || "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
