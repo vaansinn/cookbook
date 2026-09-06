@@ -3,23 +3,33 @@ import { Link } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
 import { useT } from "../i18n";
 import { getProgress } from "../api/progress";
+import { fetchDishes } from "../api/recipes";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
 import BottomNav from "../components/BottomNav";
+import ChefHats from "../components/ChefHats";
+import { dishEmoji } from "../dishEmoji";
 
-const BADGE_ICON = { first_dish: "🍳", first_advanced: "🌶️", five_cuisines: "🌍", week_streak: "🔥" };
+// Same tier-colour language as MealPlansPage's dish rows (visual-design.md —
+// basic/intermediate/advanced map to the mild/amber/hot accent tokens).
+const TIER_ACCENT = { basic: "var(--basic)", intermediate: "var(--inter)", advanced: "var(--hot)" };
+const TIER_ACCENT_SOFT = { basic: "var(--basic-soft)", intermediate: "var(--inter-soft)", advanced: "var(--hot-soft)" };
 
 export default function ProgressPage() {
   const t = useT();
   const language = useSettingsStore((s) => s.language);
   const [progress, setProgress] = useState(null);
   const [loadError, setLoadError] = useState(false);
+  const [dishes, setDishes] = useState([]);
 
   const load = () => {
     setLoadError(false);
     getProgress(language).then(setProgress).catch(() => setLoadError(true));
   };
   useEffect(load, [language]);
+  useEffect(() => { fetchDishes({ lang: language }).then(setDishes).catch(() => {}); }, [language]);
+
+  const dishTitle = (slug) => dishes.find((d) => d.slug === slug)?.summary?.title || slug;
 
   if (loadError) {
     return (
@@ -41,9 +51,9 @@ export default function ProgressPage() {
     );
   }
 
-  const pct = progress.next_level_xp
-    ? Math.min(100, Math.round((progress.xp / progress.next_level_xp) * 100))
-    : 100;
+  const dateLocale = language === "de" ? "de-DE" : "en-US";
+  const formatDate = (iso) =>
+    new Date(iso).toLocaleDateString(dateLocale, { year: "numeric", month: "short", day: "numeric" });
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
@@ -57,43 +67,18 @@ export default function ProgressPage() {
             className="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-4xl mt-1"
             style={{ background: "linear-gradient(180deg, var(--inter), var(--inter-dk))", boxShadow: "0 5px 0 var(--inter-dk)" }}
           >
-            🔥
+            🍽️
           </div>
           <div className="font-display font-bold text-2xl mt-2" style={{ color: "var(--ink)" }}>
-            {progress.streak_days} {t("progress_streak")}
+            {t("nav_progress")}
           </div>
-          <div className="text-sm font-semibold" style={{ color: "var(--muted)" }}>{t("progress_streak_sub")}</div>
+          <div className="text-sm font-semibold" style={{ color: "var(--muted)" }}>
+            {t("progress_dishes_cooked", { n: progress.dishes_cooked })}
+          </div>
         </div>
 
-        <div className="max-w-lg mx-auto px-6">
-          <div className="flex justify-between text-xs font-bold mt-4 mb-1.5" style={{ color: "var(--muted)" }}>
-            <span>Lv{progress.level_number} · {progress.level_name}</span>
-            <span>{progress.next_level_xp ? t("progress_level_xp", { xp: progress.xp, next: progress.next_level_xp }) : t("progress_level_max", { xp: progress.xp })}</span>
-          </div>
-          <div className="rounded-full h-2.5 overflow-hidden" style={{ background: "var(--line)" }}>
-            <div className="h-full" style={{ width: `${pct}%`, background: "var(--inter)" }} />
-          </div>
-          <p className="text-xs font-semibold mt-1.5" style={{ color: "var(--muted)" }}>{t("progress_dishes_cooked", { n: progress.dishes_cooked })}</p>
-
-          <h2 className="font-display font-bold text-lg mt-6 mb-2.5" style={{ color: "var(--ink)" }}>{t("progress_badges")}</h2>
-          <div className="grid grid-cols-4 gap-2.5">
-            {progress.badges.map((b) => (
-              <div
-                key={b.slug}
-                className="aspect-square rounded-2xl flex items-center justify-center text-2xl"
-                style={
-                  b.earned
-                    ? { background: "var(--basic-soft)", boxShadow: "0 3px 0 var(--line)" }
-                    : { background: "var(--locked-soft)", color: "var(--locked)", opacity: 0.7 }
-                }
-                title={t("badge_" + b.slug)}
-              >
-                {b.earned ? BADGE_ICON[b.slug] : "🔒"}
-              </div>
-            ))}
-          </div>
-
-          {progress.nudges.length === 0 && progress.dishes_cooked === 0 && (
+        <div className="max-w-lg mx-auto px-6 pb-4">
+          {progress.dishes_cooked === 0 && (
             <p className="text-sm mt-8" style={{ color: "var(--muted)" }}>{t("progress_empty")}</p>
           )}
 
@@ -108,6 +93,37 @@ export default function ProgressPage() {
               </Link>
             </div>
           ))}
+
+          {progress.history.length > 0 && (
+            <>
+              <h2 className="font-display font-bold text-lg mt-6 mb-2.5" style={{ color: "var(--ink)" }}>{t("progress_history_title")}</h2>
+              <div className="flex flex-col gap-1.5">
+                {progress.history.map((entry) => (
+                  <Link
+                    key={entry.id}
+                    to={`/dish/${entry.dish_slug}`}
+                    className="card relative flex items-center gap-2.5 overflow-hidden pl-2 pr-3 py-2.5"
+                  >
+                    <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: TIER_ACCENT[entry.level] }} aria-hidden="true" />
+                    <span
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0 ml-1"
+                      style={{ background: TIER_ACCENT_SOFT[entry.level] }}
+                      aria-hidden="true"
+                    >
+                      {dishEmoji(entry.dish_slug)}
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="flex items-center gap-1.5">
+                        <ChefHats level={entry.level} />
+                        <span className="text-sm font-bold truncate" style={{ color: "var(--ink)" }}>{dishTitle(entry.dish_slug)}</span>
+                      </span>
+                      <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>{formatDate(entry.cooked_at)}</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
       <BottomNav />

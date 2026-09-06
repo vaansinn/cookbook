@@ -90,12 +90,12 @@ export default function CookMode() {
     }
     const requestEpoch = epoch;
     logCook(slug, level, sessionIdRef.current)
-      .then((res) => {
+      .then(() => {
         // Account changed while the log was in flight - still leave Cook
         // Mode, but don't attribute this account's cook/badges to whoever
         // is logged in now.
         if (getAuthEpoch() !== requestEpoch) { navigate(`/dish/${slug}`); return; }
-        navigate(`/dish/${slug}`, { state: { cooked: true, newBadges: res.new_badges } });
+        navigate(`/dish/${slug}`, { state: { cooked: true } });
       })
       .catch(() => navigate(`/dish/${slug}`));
   };

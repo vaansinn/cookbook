@@ -1,86 +1,28 @@
 """
-routes/progress.py — Cook logging, streaks, XP, badges, and progression nudges.
+routes/progress.py — Cook logging, cook history, and progression nudges.
 
-Nothing here is stored directly except the raw cook_logs rows — streak, XP,
-level, and badge-earned status are all recomputed from that table on every
-request. Slower than caching, but it can never drift out of sync with
-reality, which matters more at this scale (see .claude/rules/architecture.md
-philosophy: derive, don't duplicate).
+Nothing here is stored directly except the raw cook_logs rows — dishes_cooked,
+history, and nudges are all recomputed from that table on every request.
+Slower than caching, but it can never drift out of sync with reality, which
+matters more at this scale (see .claude/rules/architecture.md philosophy:
+derive, don't duplicate).
+
+XP, streaks, and badges were retired in #32 (see IMPLEMENTATION_PLAN.md) —
+this route now surfaces plain cook history instead of reward mechanics.
+BadgeAward rows are left alone (routes/auth.py still reads them for GDPR
+export/delete) but nothing here writes new ones any more.
 """
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime, timedelta
 from sqlalchemy.exc import IntegrityError
 from app import db
-from models import CookLog, BadgeAward, Dish, RecipeTier, User
+from models import CookLog, Dish, RecipeTier, User
 from access import tier_access
 
 progress_bp = Blueprint("progress", __name__)
 
-XP_PER_LEVEL = {"basic": 10, "intermediate": 20, "advanced": 35}
 TIER_ORDER = ["basic", "intermediate", "advanced"]
-
-# (xp_threshold, level_name) — level_name is shown once total XP reaches threshold
-LEVEL_TITLES = [
-    (0, "Kitchen Newbie"),
-    (100, "Home Cook"),
-    (300, "Confident Cook"),
-    (600, "Kitchen Pro"),
-    (1000, "Head Chef"),
-    (1600, "Master of the Pass"),
-]
-
-BADGE_SLUGS = ["first_dish", "first_advanced", "five_cuisines", "week_streak"]
-
-
-def _compute_streak(logs):
-    dates = sorted({log.cooked_at.date() for log in logs}, reverse=True)
-    if not dates:
-        return 0
-    today = datetime.utcnow().date()
-    if dates[0] not in (today, today - timedelta(days=1)):
-        return 0
-    cursor = dates[0]
-    date_set = set(dates)
-    streak = 0
-    while cursor in date_set:
-        streak += 1
-        cursor -= timedelta(days=1)
-    return streak
-
-
-def _compute_level(total_xp):
-    level_number, level_name, next_threshold = 1, LEVEL_TITLES[0][1], LEVEL_TITLES[1][0]
-    for i, (threshold, name) in enumerate(LEVEL_TITLES):
-        if total_xp >= threshold:
-            level_number, level_name = i + 1, name
-            next_threshold = LEVEL_TITLES[i + 1][0] if i + 1 < len(LEVEL_TITLES) else None
-    return level_number, level_name, next_threshold
-
-
-def _check_badges(user_id, logs):
-    """Awards any badge whose condition is newly met. Returns the slugs newly earned."""
-    already = {b.badge_slug for b in BadgeAward.query.filter_by(user_id=user_id).all()}
-    cuisines = {log.dish.cuisine for log in logs if log.dish and log.dish.cuisine}
-    streak = _compute_streak(logs)
-
-    earned_now = set()
-    if logs:
-        earned_now.add("first_dish")
-    if any(log.level == "advanced" for log in logs):
-        earned_now.add("first_advanced")
-    if len(cuisines) >= 5:
-        earned_now.add("five_cuisines")
-    if streak >= 7:
-        earned_now.add("week_streak")
-
-    new_slugs = earned_now - already
-    for slug in new_slugs:
-        db.session.add(BadgeAward(user_id=user_id, badge_slug=slug))
-    if new_slugs:
-        db.session.commit()
-    return new_slugs
 
 
 def _compute_nudges(logs, lang):
@@ -152,7 +94,7 @@ def log_cook():
     data = request.get_json() or {}
     dish_slug, level = data.get("dish_slug"), data.get("level")
     session_id = data.get("session_id")
-    if not dish_slug or level not in XP_PER_LEVEL:
+    if not dish_slug or level not in TIER_ORDER:
         return jsonify({"error": "dish_slug and a valid level required"}), 400
 
     dish = Dish.query.filter_by(slug=dish_slug).first()
@@ -190,12 +132,10 @@ def log_cook():
             return _replay_response(existing)
         return _conflict_response(existing)
 
-    new_badges = _check_badges(user_id, CookLog.query.filter_by(user_id=user_id).all())
     return jsonify({
         "status": "created",
         "cook_log": _cook_log_dict(log),
         "logged": True,
-        "new_badges": sorted(new_badges),
     }), 201
 
 
@@ -204,20 +144,10 @@ def log_cook():
 def get_progress():
     user_id = int(get_jwt_identity())
     lang = request.args.get("lang", "en")
-    logs = CookLog.query.filter_by(user_id=user_id).all()
-
-    total_xp = sum(XP_PER_LEVEL[l.level] for l in logs)
-    level_number, level_name, next_threshold = _compute_level(total_xp)
-    streak = _compute_streak(logs)
-    earned = {b.badge_slug for b in BadgeAward.query.filter_by(user_id=user_id).all()}
+    logs = CookLog.query.filter_by(user_id=user_id).order_by(CookLog.cooked_at.desc()).all()
 
     return jsonify({
-        "streak_days": streak,
-        "xp": total_xp,
-        "level_number": level_number,
-        "level_name": level_name,
-        "next_level_xp": next_threshold,
         "dishes_cooked": len({l.dish_id for l in logs}),
-        "badges": [{"slug": s, "earned": s in earned} for s in BADGE_SLUGS],
+        "history": [_cook_log_dict(l) for l in logs],
         "nudges": _compute_nudges(logs, lang),
     })
