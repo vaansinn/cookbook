@@ -96,7 +96,7 @@ export default function RecipePage() {
   if (dishError) {
     return (
       <div className="min-h-screen p-8" style={{ background: "var(--bg)" }}>
-        <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+        <p className="text-sm font-semibold" style={{ color: "var(--danger)" }}>{t("error_generic")}</p>
         <button onClick={loadDish} className="btn-ghost text-sm py-2 px-4 mt-3">{t("error_retry")}</button>
       </div>
     );
@@ -112,7 +112,7 @@ export default function RecipePage() {
     <div className="min-h-screen pb-16" style={{ background: "var(--bg)" }}>
       {cookToast && (
         <div className="max-w-2xl mx-auto px-6 pt-4">
-          <div className="rounded-2xl px-4 py-3 text-sm font-semibold" style={{ background: "var(--basic)", color: "var(--brand-ink)" }}>
+          <div className="rounded-2xl px-4 py-3 text-sm font-semibold" style={{ background: "var(--success)", color: "var(--success-ink)" }}>
             {t("cooked_logged")}
           </div>
         </div>
@@ -324,7 +324,7 @@ export default function RecipePage() {
                 <ul className="space-y-1.5">
                   {tier.notes.map((n, i) => (
                     <li key={i} className="text-sm pl-4 relative">
-                      <span className="absolute left-0" style={{ color: "var(--plum, var(--hot))" }}>·</span>
+                      <span className="absolute left-0" style={{ color: "var(--brand)" }}>·</span>
                       <GlossaryLinkedText text={n} entries={glossary} />
                     </li>
                   ))}
@@ -351,7 +351,7 @@ export default function RecipePage() {
               {addedToList ? t("added_to_list") : t("add_to_list")}
             </button>
             {listErrorCode && (
-              <p className="text-sm font-semibold text-center mt-2" style={{ color: "var(--hot)" }}>
+              <p className="text-sm font-semibold text-center mt-2" style={{ color: "var(--danger)" }}>
                 {listErrorCode === "no_household" ? (
                   <>{t("list_add_needs_household")} <Link to="/groceries" style={{ color: "var(--brand)", textDecoration: "underline" }}>{t("list_add_setup_link")}</Link></>
                 ) : listErrorCode === "needs_account" ? (

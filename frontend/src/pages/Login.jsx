@@ -38,7 +38,7 @@ export default function Login() {
         <form onSubmit={submit} className="mt-6 space-y-3">
           <input className="field" type="email" placeholder={t("auth_email")} value={email} onChange={(e) => setEmail(e.target.value)} required />
           <input className="field" type="password" placeholder={t("auth_password")} value={password} onChange={(e) => setPassword(e.target.value)} required />
-          {err && <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{err}</p>}
+          {err && <p className="text-sm font-semibold" style={{ color: "var(--danger)" }}>{err}</p>}
           <button className="btn-primary w-full" type="submit">{t("auth_login_button")}</button>
         </form>
         <Link to="/register" className="block mt-5 text-sm font-semibold text-center" style={{ color: "var(--brand)" }}>

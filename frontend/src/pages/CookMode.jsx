@@ -286,7 +286,7 @@ function CookAttempt() {
             className="mt-6 rounded-full px-5 py-2.5 font-bold text-sm"
             style={
               timer.done
-                ? { background: "var(--hot)", color: "var(--brand-ink)" }
+                ? { background: "var(--attention)", color: "var(--attention-ink)" }
                 : { background: "var(--basic)", color: "var(--brand-ink)", boxShadow: "0 4px 0 var(--basic-dk)" }
             }
           >
@@ -296,7 +296,7 @@ function CookAttempt() {
       </div>
 
       {saveError && (
-        <p className="text-sm font-semibold text-center px-8 mb-2" style={{ color: "var(--hot)" }}>
+        <p className="text-sm font-semibold text-center px-8 mb-2" style={{ color: "var(--danger)" }}>
           {t("error_generic")}
         </p>
       )}

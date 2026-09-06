@@ -221,7 +221,7 @@ export default function Home() {
         <div className="mt-5 flex flex-col gap-3">
           {dishesError && (
             <div className="mt-2">
-              <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+              <p className="text-sm font-semibold" style={{ color: "var(--danger)" }}>{t("error_generic")}</p>
               <button onClick={loadDishes} className="btn-ghost text-sm py-2 px-4 mt-2">{t("error_retry")}</button>
             </div>
           )}

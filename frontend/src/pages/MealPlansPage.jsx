@@ -91,7 +91,7 @@ function CreatePlanForm({ dishes, allowedLvls, onSave, onCancel, initial }) {
         })}
       </ul>
 
-      {error && <p className="text-sm mt-2 font-semibold" style={{ color: "var(--hot)" }}>{error}</p>}
+      {error && <p className="text-sm mt-2 font-semibold" style={{ color: "var(--danger)" }}>{error}</p>}
 
       <div className="flex gap-2 mt-4">
         <button onClick={save} disabled={!name.trim() || saving} className="btn-primary flex-1 text-sm py-2.5 disabled:opacity-50">{t("meal_plan_save")}</button>
@@ -158,7 +158,7 @@ function PlanCard({ plan, dishTitle, onEdit, onRemove }) {
             aria-label={t("meal_plan_delete")}
             title={t("meal_plan_delete")}
             className={iconBtnClass}
-            style={{ borderColor: "var(--line)", color: "var(--hot)" }}
+            style={{ borderColor: "var(--line)", color: "var(--danger)" }}
           >
             ✕
           </button>
@@ -213,7 +213,7 @@ function PlanCard({ plan, dishTitle, onEdit, onRemove }) {
         </div>
       </div>
       {errorCode && (
-        <p className="text-sm font-semibold mt-2" style={{ color: "var(--hot)" }}>
+        <p className="text-sm font-semibold mt-2" style={{ color: "var(--danger)" }}>
           {errorCode === "no_household" ? (
             <>{t("list_add_needs_household")} <Link to="/groceries" style={{ color: "var(--brand)", textDecoration: "underline" }}>{t("list_add_setup_link")}</Link></>
           ) : (
@@ -264,7 +264,7 @@ export default function MealPlansPage() {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
         <div className="flex-1 p-8">
-          <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+          <p className="text-sm font-semibold" style={{ color: "var(--danger)" }}>{t("error_generic")}</p>
           <button onClick={doLoad} className="btn-ghost text-sm py-2 px-4 mt-3">{t("error_retry")}</button>
         </div>
         <BottomNav />
@@ -326,7 +326,7 @@ export default function MealPlansPage() {
                 <button onClick={() => setCreating(true)} className="btn-primary flex-1">{t("meal_plan_new")}</button>
               </div>
               {generateError && (
-                <p className="text-sm font-semibold -mt-6 mb-8" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+                <p className="text-sm font-semibold -mt-6 mb-8" style={{ color: "var(--danger)" }}>{t("error_generic")}</p>
               )}
             </>
           )}

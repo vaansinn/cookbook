@@ -2,12 +2,12 @@
 // scripts/sync_learning.py - see models.Lesson.body) as the card layout
 // approved in the Step 2 mockup (TeachingPilotMockups.jsx / LessonPage.jsx):
 // a "**Label**: text" paragraph becomes a labelled card (success-cue/
-// if-too-hard colouring, cycling through the tier palette), any other
+// if-too-hard guidance, using the same neutral teaching treatment), any other
 // paragraph renders as plain body text. Shared between LessonPage.jsx and
 // CookMode.jsx's contextual-help panel so both read the same lesson content
 // the same way.
-const CARD_BG = ["var(--basic-soft)", "var(--inter-soft)"];
-const CARD_FG = ["var(--basic-dk)", "var(--inter-dk)"];
+const CARD_BG = ["var(--brand-soft)", "var(--brand-soft)"];
+const CARD_FG = ["var(--brand-dk)", "var(--brand-dk)"];
 
 // Also used by LessonPage.jsx/CookMode.jsx for the shorter authored strings
 // that carry the same lightweight markdown (next_practice.reason) but don't

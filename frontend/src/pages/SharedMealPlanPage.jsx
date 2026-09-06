@@ -36,7 +36,7 @@ export default function SharedMealPlanPage() {
 
         {loadError && (
           <div className="mt-6">
-            <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+            <p className="text-sm font-semibold" style={{ color: "var(--danger)" }}>{t("error_generic")}</p>
             <button onClick={load} className="btn-ghost text-sm py-2 px-4 mt-2">{t("error_retry")}</button>
           </div>
         )}

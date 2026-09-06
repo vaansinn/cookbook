@@ -88,7 +88,7 @@ export default function ReflectionEditor({ cookLogId, onDone, onContinue }) {
           </>}
         </fieldset>
       </>}
-      {(error || pending) && <p role="alert" className="text-sm mt-4" style={{ color: "var(--hot)" }}>{t(error === "conflict" ? "reflection_conflict" : pending ? "reflection_ambiguous" : "error_generic")}</p>}
+      {(error || pending) && <p role="alert" className="text-sm mt-4" style={{ color: "var(--danger)" }}>{t(error === "conflict" ? "reflection_conflict" : pending ? "reflection_ambiguous" : "error_generic")}</p>}
       <div className="flex flex-col gap-3 mt-5">
         {row ? <button className="btn-primary" disabled={busy} onClick={save}>{t(busy ? "loading" : pending ? "error_retry" : "reflect_save")}</button> : <button className="btn-ghost" onClick={() => setReload((n) => n + 1)}>{t("error_retry")}</button>}
         <button className="btn-ghost" disabled={busy} onClick={onContinue}>{t("reflection_continue")}</button>

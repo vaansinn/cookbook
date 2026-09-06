@@ -40,7 +40,7 @@ export default function Register() {
           <input className="field" type="text" placeholder={t("auth_display_name")} value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
           <input className="field" type="email" placeholder={t("auth_email")} value={email} onChange={(e) => setEmail(e.target.value)} required />
           <input className="field" type="password" placeholder={t("auth_password")} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-          {err && <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{err}</p>}
+          {err && <p className="text-sm font-semibold" style={{ color: "var(--danger)" }}>{err}</p>}
           <button className="btn-primary w-full" type="submit">{t("auth_register_button")}</button>
         </form>
         <Link to="/login" className="block mt-5 text-sm font-semibold text-center" style={{ color: "var(--brand)" }}>

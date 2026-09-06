@@ -88,7 +88,7 @@ export default function GroceryPage() {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
         <div className="flex-1 p-8">
-          <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+          <p className="text-sm font-semibold" style={{ color: "var(--danger)" }}>{t("error_generic")}</p>
           <button onClick={loadAll} className="btn-ghost text-sm py-2 px-4 mt-3">{t("error_retry")}</button>
         </div>
         <BottomNav />
@@ -125,7 +125,7 @@ export default function GroceryPage() {
               />
               <button onClick={doJoin} className="btn-ghost px-4">{t("household_join_button")}</button>
             </div>
-            {joinError && <p className="text-sm mt-2 font-semibold" style={{ color: "var(--hot)" }}>{joinError}</p>}
+            {joinError && <p className="text-sm mt-2 font-semibold" style={{ color: "var(--danger)" }}>{joinError}</p>}
           </div>
         </div>
         <BottomNav />
@@ -154,7 +154,7 @@ export default function GroceryPage() {
 
           {items.length > 0 && (
             <div className="rounded-full h-2.5 mt-4 overflow-hidden" style={{ background: "var(--line)" }}>
-              <div className="h-full" style={{ width: `${(doneCount / items.length) * 100}%`, background: "var(--basic)" }} />
+              <div className="h-full" style={{ width: `${(doneCount / items.length) * 100}%`, background: "var(--success)" }} />
             </div>
           )}
           <p className="text-xs font-semibold mt-1.5" style={{ color: "var(--muted)" }}>
@@ -180,7 +180,7 @@ export default function GroceryPage() {
                 <button
                   onClick={() => toggleItem(item)}
                   className="w-5 h-5 rounded-md border-2 mt-0.5 shrink-0 flex items-center justify-center text-xs font-bold"
-                  style={{ borderColor: "var(--basic)", background: item.checked ? "var(--basic)" : "transparent", color: "var(--brand-ink)" }}
+                  style={{ borderColor: "var(--success)", background: item.checked ? "var(--success)" : "transparent", color: "var(--success-ink)" }}
                   aria-label={item.checked ? t("grocery_item_checked") : t("grocery_item_unchecked")}
                 >
                   {item.checked ? "✓" : ""}

@@ -1,9 +1,8 @@
 /*
  * index.css — theme tokens + global styles.
- * Palette and type pairing carried over from the approved Phase 0 mockup:
- * Baloo 2 (display) + Plus Jakarta Sans (body/UI), tomato/basil/amber/hot-chili
- * accent set, tier colour = spice heat (basic=mild green, intermediate=amber,
- * advanced=hot red).
+ * Approved enamel-blue palette. Typography remains Baloo 2 + Plus Jakarta Sans.
+ * Tier names are compatibility aliases, not traffic-light or spice-heat colors.
+ * Success, danger and attention have independent semantic tokens.
  */
 
 @tailwind base;
@@ -12,32 +11,35 @@
 
 @layer base {
   /*
-   * Accent shades are calibrated, not just picked: every "main" tone below
-   * passes WCAG AA (>=4.5:1) as white text on the fill (light mode) or as
-   * --brand-ink text on the fill (dark mode) — verified with the actual sRGB
-   * relative-luminance formula, not eyeballed. --*-dk is the same contract
+   * Brand/tier fills pair with --brand-ink; semantic fills pair with their own
+   * --*-ink token (including dark text on citrus attention). Text pairs pass
+   * WCAG AA (>=4.5:1), checked by tests/frontend/test_palette.mjs using the sRGB
+   * relative-luminance formula. --*-dk is the same contract
    * for text placed *on* var(--card) (e.g. an inactive-but-selected tier tab)
    * and doubles as the button drop-shadow colour. --*-soft tints are always
    * paired with --ink text, never with white, so they're unconstrained.
    */
   :root {
-    --bg: #FFFBF3; --card: #FFFFFF; --ink: #2A2118; --muted: #766E61;
-    --brand: #B24A2A; --brand-dk: #7F351E; --brand-ink: #FFFFFF; --brand-soft: #FFE4D6;
-    --basic: #2C7537; --basic-dk: #1F5427; --basic-soft: #E1F3E2;
-    --inter: #8F6423; --inter-dk: #68481A; --inter-soft: #FBEBD1;
-    --hot: #A03128; --hot-dk: #72231D; --hot-soft: #FBE0DC;
-    --locked: #6B685C; --locked-soft: #F1ECE0;
-    --line: #F0E8D8;
+    --bg: #F7F7F2; --card: #FFFFFF; --ink: #232A2D; --muted: #626C70;
+    --brand: #284C65; --brand-dk: #1D394D; --brand-ink: #FFFFFF; --brand-soft: #E9F0F3;
+    --basic: var(--brand); --basic-dk: var(--brand-dk); --basic-soft: var(--brand-soft);
+    --inter: var(--brand); --inter-dk: var(--brand-dk); --inter-soft: var(--brand-soft);
+    --hot: var(--brand); --hot-dk: var(--brand-dk); --hot-soft: var(--brand-soft);
+    --success: #2C7537; --success-ink: #FFFFFF;
+    --danger: #A03128; --danger-dk: #72231D; --danger-soft: #FBE0DC; --danger-ink: #FFFFFF;
+    --attention: #E5BD57; --attention-ink: #292624;
+    --locked: #626C70; --locked-soft: #ECEFEE;
+    --line: #DCE1E2;
   }
 
   html.dark {
-    --bg: #1C160F; --card: #271F16; --ink: #F5EEE1; --muted: #B0A490;
-    --brand: #FF8557; --brand-dk: #D9532A; --brand-ink: #1C0C04; --brand-soft: #3D2416;
-    --basic: #65C978; --basic-dk: #3C8F4B; --basic-soft: #1E3320;
-    --inter: #F2BC63; --inter-dk: #F2BC63; --inter-soft: #3A2C13;
-    --hot: #F27C6E; --hot-dk: #F27C6E; --hot-soft: #3D2119;
-    --locked: #8A8270; --locked-soft: #2A2318;
-    --line: #382E20;
+    --bg: #1D2121; --card: #262B2B; --ink: #F1F2ED; --muted: #B4BDB8;
+    --brand: #A5CBE1; --brand-dk: #8BB6CF; --brand-ink: #1D2121; --brand-soft: #26343D;
+    --success: #65C978; --success-ink: #1D2121;
+    --danger: #F27C6E; --danger-dk: #F2AA94; --danger-soft: #3D2B26; --danger-ink: #1D2121;
+    --attention: #E5BD57; --attention-ink: #292624;
+    --locked: #B4BDB8; --locked-soft: #303737;
+    --line: #3B4242;
   }
 
   body {

@@ -57,7 +57,7 @@ function History() {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
         <div className="flex-1 p-8">
-          <p className="text-sm font-semibold" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
+          <p className="text-sm font-semibold" style={{ color: "var(--danger)" }}>{t("error_generic")}</p>
           <button onClick={load} className="btn-ghost text-sm py-2 px-4 mt-3">{t("error_retry")}</button>
         </div>
         <BottomNav />

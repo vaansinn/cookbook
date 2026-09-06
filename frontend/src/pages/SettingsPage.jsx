@@ -68,14 +68,14 @@ export default function SettingsPage() {
           <button onClick={doExport} className="btn-ghost w-full text-sm py-2.5">{t("settings_export_button")}</button>
         </div>
 
-        <div className="rounded-3xl border-2 p-4 mt-4" style={{ background: "var(--hot-soft)", borderColor: "var(--hot-soft)" }}>
-          <div className="font-display font-bold text-sm" style={{ color: "var(--hot-dk)" }}>{t("settings_delete_title")}</div>
+        <div className="rounded-3xl border-2 p-4 mt-4" style={{ background: "var(--danger-soft)", borderColor: "var(--danger-soft)" }}>
+          <div className="font-display font-bold text-sm" style={{ color: "var(--danger-dk)" }}>{t("settings_delete_title")}</div>
           <p className="text-sm mt-1.5 mb-3">{t("settings_delete_desc")}</p>
 
-          {error && <p className="text-sm font-semibold mb-2" style={{ color: "var(--hot)" }}>{error}</p>}
+          {error && <p className="text-sm font-semibold mb-2" style={{ color: "var(--danger)" }}>{error}</p>}
 
           {!confirmingDelete ? (
-            <button onClick={() => setConfirmingDelete(true)} className="w-full text-sm py-2.5 rounded-2xl border-2 font-display font-bold" style={{ borderColor: "var(--hot)", color: "var(--hot-dk)" }}>
+            <button onClick={() => setConfirmingDelete(true)} className="w-full text-sm py-2.5 rounded-2xl border-2 font-display font-bold" style={{ borderColor: "var(--danger)", color: "var(--danger-dk)" }}>
               {t("settings_delete_button")}
             </button>
           ) : (
@@ -83,7 +83,7 @@ export default function SettingsPage() {
               <p className="text-sm font-semibold mb-3">{t("settings_delete_confirm")}</p>
               <div className="flex gap-2">
                 <button onClick={() => setConfirmingDelete(false)} className="btn-ghost flex-1 text-sm py-2.5">{t("settings_cancel")}</button>
-                <button onClick={doDelete} className="flex-1 text-sm py-2.5 rounded-2xl font-display font-bold" style={{ background: "var(--hot)", color: "var(--brand-ink)", boxShadow: "0 4px 0 var(--hot-dk)" }}>
+                <button onClick={doDelete} className="flex-1 text-sm py-2.5 rounded-2xl font-display font-bold" style={{ background: "var(--danger)", color: "var(--danger-ink)", boxShadow: "0 4px 0 var(--danger-dk)" }}>
                   {t("settings_delete_confirm_button")}
                 </button>
               </div>
