@@ -12,6 +12,8 @@ any other future internal caller need the same capture/reuse + auth logic.
 import hashlib
 import json
 
+from sqlalchemy.exc import IntegrityError
+
 from app import db
 from models import Dish, RecipeContentSnapshot
 from access import tier_access
@@ -34,7 +36,11 @@ def capture_or_reuse_snapshot(dish_slug, level, lang):
     if not tier:
         return None, "tier_not_found"
 
-    content = tier.to_dict(full=True)
+    # raw_steps=True: keep structured {"id","text"} steps intact so a step_id
+    # can still be matched against this frozen snapshot later (pilot-fixtures
+    # §2) - to_dict()'s default flattens steps to plain strings for every
+    # other caller, which would erase the id permanently at capture time.
+    content = tier.to_dict(full=True, raw_steps=True)
     digest = _digest(content)
 
     existing = RecipeContentSnapshot.query.filter_by(
@@ -45,7 +51,21 @@ def capture_or_reuse_snapshot(dish_slug, level, lang):
 
     row = RecipeContentSnapshot(dish_slug=dish_slug, level=level, lang=lang, content=content, content_digest=digest)
     db.session.add(row)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        # Lost the race to a concurrent identical capture - the unique
+        # constraint on (dish_slug, level, lang, content_digest) is what
+        # actually closes this, not the pre-check above. Re-read and reuse
+        # the row the other request just inserted instead of letting the
+        # 500 through (same pattern as routes/progress.py's log_cook).
+        db.session.rollback()
+        existing = RecipeContentSnapshot.query.filter_by(
+            dish_slug=dish_slug, level=level, lang=lang, content_digest=digest
+        ).first()
+        if not existing:
+            raise
+        return existing, None
     return row, None
 
 

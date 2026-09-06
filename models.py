@@ -149,13 +149,21 @@ class RecipeTier(db.Model):
         real, authored step_ids on this tier. Never used to serve step text."""
         return {s["id"] for s in (self.steps or []) if isinstance(s, dict) and s.get("id")}
 
-    def to_dict(self, full=True):
+    def to_dict(self, full=True, raw_steps=False):
         """full=False returns the paywall teaser shape: prep/ingredients/
         nutrition stay complete (they're the "what you'd need to buy"
         preview), but steps are cut to the first one and notes are
         withheld, with steps_total telling the frontend how much more
-        there is so the fade UI can say "N more steps" accurately."""
-        steps = [self._step_text(s) for s in (self.steps or [])]
+        there is so the fade UI can say "N more steps" accurately.
+
+        raw_steps=True keeps structured {"id", "text"} steps intact instead
+        of flattening them through _step_text() - only for callers that need
+        to preserve step_id (snapshots.py's capture_or_reuse_snapshot, so a
+        frozen snapshot can still be matched against step_id later). Every
+        other caller (routes/recipes.py, seo.py's own direct _step_text use,
+        RecipePage.jsx/RecipesPage via the API) keeps getting plain strings -
+        this parameter changes nothing for them since it defaults to False."""
+        steps = list(self.steps or []) if raw_steps else [self._step_text(s) for s in (self.steps or [])]
         return {
             "level": self.level,
             "lang": self.lang,
