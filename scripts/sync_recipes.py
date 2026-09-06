@@ -72,6 +72,21 @@ def parse_ingredient_line(line, path, line_no, foods):
     return {"qty_g": qty_g, "text": display, "food_slug": food_slug}
 
 
+# Optional trailing "{#step-id}" annotation on an instruction line (#35 /
+# pilot-fixtures.md §2) — a stable id set by the recipe author, stripped from
+# the display text before storage. Absent on any dish/tier not yet converted
+# for this pilot: those steps store {"id": None, "text": ...} rather than a
+# synthesized id (never an array index) — see models.RecipeTier.step_ids().
+STEP_ID_RE = re.compile(r"^(.*?)\s*\{#([a-z0-9-]+)\}\s*$")
+
+
+def parse_step_line(text):
+    m = STEP_ID_RE.match(text)
+    if m:
+        return {"id": m.group(2), "text": m.group(1)}
+    return {"id": None, "text": text}
+
+
 def parse_body(body, path, foods):
     lines = body.split("\n")
     section = None
@@ -96,7 +111,7 @@ def parse_body(body, path, foods):
         elif section == "ing" and re.match(r"^[-*]\s+", line):
             ingredients.append(parse_ingredient_line(re.sub(r"^[-*]\s+", "", line), path, i, foods))
         elif section == "steps" and re.match(r"^\d+[.)]\s+", line):
-            steps.append(re.sub(r"^\d+[.)]\s+", "", line))
+            steps.append(parse_step_line(re.sub(r"^\d+[.)]\s+", "", line)))
         elif section == "notes" and re.match(r"^[-*]\s+", line):
             notes.append(re.sub(r"^[-*]\s+", "", line))
 
