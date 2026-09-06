@@ -54,14 +54,22 @@ export function completeSession(ownerId) {
 
 // Same private-state boundary useFavoritesStore already enforces for its
 // own state: drop the persisted cook session on every account change
-// (login, logout, switch, session expiry) - keyed on epoch rather than user
-// identity, so even a same-user re-login clears a stale in-progress session
-// rather than silently resuming it. Tracks the owner id from *before* the
-// change, since that's whose storage needs clearing.
-let lastOwnerId = useAuthStore.getState().user?.id ?? null;
+// (login, logout, switch, session expiry), so even a same-user re-login
+// clears a stale in-progress session rather than silently resuming it.
+//
+// This compares prevState.user directly rather than tracking a separate
+// module-level "last owner" variable: init()'s successful /auth/me check
+// (a returning user with an already-valid token) sets `user` WITHOUT
+// bumping `epoch`, so a variable seeded once at module-load time (before
+// that async check resolves) would stay stuck at its initial null and
+// never get updated by an epoch-keyed subscription - meaning a returning
+// user's session would silently fail to clear on their next logout. Using
+// zustand's own prevState/state pair sidesteps that entirely: it reflects
+// the actual state at each transition regardless of when this module first
+// evaluated, so a real prior owner is never missed.
 useAuthStore.subscribe((state, prevState) => {
-  if (state.epoch !== prevState.epoch && lastOwnerId != null) {
-    completeSession(lastOwnerId);
+  const prevOwnerId = prevState.user?.id ?? null;
+  if (prevOwnerId != null && prevOwnerId !== (state.user?.id ?? null)) {
+    completeSession(prevOwnerId);
   }
-  lastOwnerId = state.user?.id ?? null;
 });
