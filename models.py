@@ -30,6 +30,15 @@ Table overview:
                       plan_entries: this is a curated set to share out, not a
                       household's dated week schedule
   meal_plan_items   — one dish+tier in a meal plan
+  recipe_content_snapshots — immutable capture of a RecipeTier's full content
+                      at the moment a cook session started, so a cook can be
+                      replayed later even if the live recipe changed since
+                      (docs/contracts/pilot-fixtures.md §1). Reused by digest
+                      when unchanged, never updated in place.
+  skills            — a named technique a lesson teaches (e.g. "simmering")
+  lessons           — one contextual-help page per skill, linked to a single
+                      exact recipe step via (dish_slug, level, lang, step_id)
+                      (pilot-fixtures.md §2) — see scripts/sync_learning.py
 """
 
 from app import db
@@ -103,7 +112,15 @@ class RecipeTier(db.Model):
 
     prep         = db.Column(db.JSON, default=list)  # list[str]
     ingredients  = db.Column(db.JSON, default=list)  # list[{qty, unit, text, food_slug|null}]
-    steps        = db.Column(db.JSON, default=list)  # list[str]
+    # list[str] for any tier/dish not yet converted to structured steps, or
+    # list[{"id": step_id|null, "text": str}] once #35 has converted it (see
+    # scripts/sync_recipes.py). `id` is null except where a dish/tier has real
+    # authored step_ids (lentil-bolognese Basic EN+DE, for the #47a pilot) —
+    # never a synthesized one (no array index). _step_text() below is the
+    # compatibility serializer: to_dict() always hands back plain strings so
+    # existing consumers (CookMode.jsx's parseSeconds, RecipePage.jsx's
+    # Instructions section) don't need to know this shape exists.
+    steps        = db.Column(db.JSON, default=list)
     notes        = db.Column(db.JSON, default=list)  # list[str]
 
     # Computed at sync time from ingredients × food_items — never hand-edited.
@@ -119,13 +136,26 @@ class RecipeTier(db.Model):
             "kcal": (self.nutrition or {}).get("kcal"),
         }
 
+    @staticmethod
+    def _step_text(step):
+        """Compatibility serializer (#35 / pilot-fixtures.md §2): a step is
+        either a legacy plain string or a structured {"id", "text"} dict —
+        every external reader (this to_dict, and therefore CookMode.jsx /
+        RecipePage.jsx) only ever sees the plain text either way."""
+        return step["text"] if isinstance(step, dict) else step
+
+    def step_ids(self):
+        """Internal use only (sync-time lesson-link validation) — the set of
+        real, authored step_ids on this tier. Never used to serve step text."""
+        return {s["id"] for s in (self.steps or []) if isinstance(s, dict) and s.get("id")}
+
     def to_dict(self, full=True):
         """full=False returns the paywall teaser shape: prep/ingredients/
         nutrition stay complete (they're the "what you'd need to buy"
         preview), but steps are cut to the first one and notes are
         withheld, with steps_total telling the frontend how much more
         there is so the fade UI can say "N more steps" accurately."""
-        steps = self.steps or []
+        steps = [self._step_text(s) for s in (self.steps or [])]
         return {
             "level": self.level,
             "lang": self.lang,
@@ -299,6 +329,28 @@ class MealPlanItem(db.Model):
         return {"dish_slug": self.dish_slug, "level": self.level}
 
 
+class RecipeContentSnapshot(db.Model):
+    """Server-authorized, immutable capture of a RecipeTier's full content at
+    the moment a cook session started (pilot-fixtures.md §1). A hash alone
+    can't redisplay content later, so this stores the whole thing — not a
+    digest of it. Never updated in place once inserted; content_digest exists
+    only to decide whether an existing row already represents this exact
+    content, so a retried/repeated capture of unchanged content reuses the
+    same row instead of inserting a duplicate (see the unique constraint)."""
+    __tablename__ = "recipe_content_snapshots"
+    id             = db.Column(db.Integer, primary_key=True)
+    dish_slug      = db.Column(db.String(80), nullable=False)
+    level          = db.Column(db.String(20), nullable=False)
+    lang           = db.Column(db.String(5), nullable=False)
+    content        = db.Column(db.JSON, nullable=False)  # RecipeTier.to_dict(full=True) at capture time
+    content_digest = db.Column(db.String(64), nullable=False)
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("dish_slug", "level", "lang", "content_digest", name="uq_snapshot_content"),
+    )
+
+
 class CookLog(db.Model):
     __tablename__ = "cook_logs"
     id         = db.Column(db.Integer, primary_key=True)
@@ -315,7 +367,16 @@ class CookLog(db.Model):
     # NULLs never collide). Never fabricate one for old rows.
     session_id = db.Column(db.String(64), nullable=True)
 
-    dish = db.relationship("Dish")
+    # Added for pilot-fixtures.md §6 — widen the conflict-check from bare
+    # (dish_id, level) to the full (dish_slug, level, lang, snapshot_id).
+    # Nullable for the same reason session_id is: pre-Wave-3 rows (and any
+    # client that hasn't upgraded yet) never had these, and that's legacy
+    # history, never backfilled with a guessed value.
+    lang        = db.Column(db.String(5), nullable=True)
+    snapshot_id = db.Column(db.Integer, db.ForeignKey("recipe_content_snapshots.id"), nullable=True)
+
+    dish     = db.relationship("Dish")
+    snapshot = db.relationship("RecipeContentSnapshot")
 
     # Narrow on purpose: (user_id, session_id) only, not also dish/level/lang.
     # A session_id reused with a different payload is a conflict to reject
@@ -349,4 +410,67 @@ class GlossaryEntry(db.Model):
             "title": (self.names or {}).get(lang, self.slug),
             "body": (self.body or {}).get(lang, ""),
             "trigger_words": self.trigger_words or [],
+        }
+
+
+class Skill(db.Model):
+    """A named technique a Lesson teaches (e.g. "simmering"). Deliberately
+    thin for this pilot slice — it's the parent a future per-user
+    SkillPractice/confidence record (contract §3, #37's PUT /api/me/skills/
+    <slug>) will hang off of; that endpoint is a later slice, not built here."""
+    __tablename__ = "skills"
+    id         = db.Column(db.Integer, primary_key=True)
+    slug       = db.Column(db.String(80), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    lessons = db.relationship("Lesson", backref="skill", cascade="all, delete-orphan")
+
+
+class Lesson(db.Model):
+    """One contextual-help page per skill (content/lessons/<slug>/{en,de}.md).
+    Recipe/step link (pilot-fixtures.md §2) is the 4-tuple (dish_slug, level,
+    lang, step_id) — dish_slug/level/step_id are one fixed recipe moment
+    regardless of language (this pilot's only lesson explains the same step
+    in both EN and DE); lang is implicit in the title/body/next_practice_
+    reason dict lookup, and scripts/sync_learning.py validates the full
+    4-tuple per language against actually-synced RecipeTier step data before
+    ever publishing a lesson, never a "closest match" fallback."""
+    __tablename__ = "lessons"
+    id       = db.Column(db.Integer, primary_key=True)
+    skill_id = db.Column(db.Integer, db.ForeignKey("skills.id"), nullable=False)
+    slug     = db.Column(db.String(80), unique=True, nullable=False)  # URL slug, /lesson/<slug>
+    title    = db.Column(db.JSON, default=dict)  # {"en": "Simmering", "de": "Köcheln"}
+    body     = db.Column(db.JSON, default=dict)  # {"en": "...", "de": "..."}
+
+    dish_slug = db.Column(db.String(80), nullable=False)
+    level     = db.Column(db.String(20), nullable=False)
+    step_id   = db.Column(db.String(80), nullable=False)
+
+    # Next-practice suggestion (contract §7) — one target recipe regardless
+    # of language, reason text localized. Nullable: a lesson need not carry one.
+    next_practice_dish_slug = db.Column(db.String(80), nullable=True)
+    next_practice_level     = db.Column(db.String(20), nullable=True)
+    next_practice_reason    = db.Column(db.JSON, default=dict)  # {"en": "...", "de": "..."}
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self, lang="en"):
+        next_practice = None
+        if self.next_practice_dish_slug:
+            next_practice = {
+                "dish_slug": self.next_practice_dish_slug,
+                "level": self.next_practice_level,
+                "lang": lang,
+                "reason": (self.next_practice_reason or {}).get(lang, ""),
+            }
+        return {
+            "slug": self.slug,
+            "skill": self.skill.slug if self.skill else None,
+            "title": (self.title or {}).get(lang, self.slug),
+            "body": (self.body or {}).get(lang, ""),
+            "dish_slug": self.dish_slug,
+            "level": self.level,
+            "lang": lang,
+            "step_id": self.step_id,
+            "next_practice": next_practice,
         }
