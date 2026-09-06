@@ -8,3 +8,5 @@ static/
 frontend/dist/
 .netlify/
 .claude/worktrees/
+.worktrees/
+artifacts/

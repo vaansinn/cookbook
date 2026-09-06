@@ -43,8 +43,8 @@ Table overview:
                       §3/§10/§12/§13) — outcome/practiced_skill_confirmed/
                       confidence, one row per CookLog, never a precondition
                       for the CookLog row itself. skill_slug is the skill *as
-                      pinned* for that cook (client-supplied from its local
-                      session pin, §9/§10), never re-derived from today's
+                      pinned* for that cook (derived from its server-retained
+                      snapshot, §9/§10), never re-derived from today's
                       live Lesson/Skill linkage.
   skill_confidences — one row per (user, Skill): the user's *current*
                       confidence, independent of any one reflection (§10).
@@ -507,8 +507,8 @@ class CookReflection(db.Model):
     `outcome`/`practiced_skill_confirmed`/`confidence` are three genuinely
     independent optional fields (§3) - each nullable with no default, so
     "never answered" (NULL) is distinguishable from an explicit `false`.
-    `skill_slug` is the skill *as pinned* for that cook (client-supplied, from
-    its local session pin captured at session start per §9) - never
+    `skill_slug` is derived from the cook's server-retained snapshot, never
+    trusted from a client or inferred from completion. It is never
     re-resolved from today's live Lesson/Skill linkage, so a later re-pointed
     lesson/skill never reinterprets what a past reflection meant (§10)."""
     __tablename__ = "cook_reflections"
@@ -520,6 +520,7 @@ class CookReflection(db.Model):
     outcome    = db.Column(db.String(20), nullable=True)   # "happy" | "mixed" | "need_help" | null
     practiced_skill_confirmed = db.Column(db.Boolean, nullable=True)  # tri-state: null = never answered
     confidence = db.Column(db.String(20), nullable=True)   # "unknown" | "wants_guidance" | "comfortable" | null
+    revision = db.Column(db.Integer, nullable=False, default=1, server_default="1")
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -536,8 +537,22 @@ class CookReflection(db.Model):
             "outcome": self.outcome,
             "practiced_skill_confirmed": self.practiced_skill_confirmed,
             "confidence": self.confidence,
+            "revision": self.revision,
             "updated_at": self.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ") if self.updated_at else None,
         }
+
+
+class ReflectionMutation(db.Model):
+    """Successful account-scoped write receipt; replay never reapplies side effects."""
+    __tablename__ = "reflection_mutations"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    mutation_id = db.Column(db.String(36), nullable=False)
+    cook_log_id = db.Column(db.Integer, db.ForeignKey("cook_logs.id"), nullable=False)
+    request_digest = db.Column(db.String(64), nullable=False)
+    result = db.Column(db.JSON, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    __table_args__ = (db.UniqueConstraint("user_id", "mutation_id", name="uq_reflection_mutation"),)
 
 
 class SkillConfidence(db.Model):

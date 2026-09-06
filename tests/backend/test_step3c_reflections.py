@@ -121,6 +121,7 @@ class ReflectionCycleTest(unittest.TestCase):
         # Edit ONLY confidence.
         resp = self.client.post("/api/reflections", json={
             "cook_log_id": cook_log["id"], "confidence": "comfortable",
+            "mutation_id": str(uuid.uuid4()), "expected_revision": 1,
         }, headers=self.headers)
         self.assertEqual(resp.status_code, 200)
         reflection = resp.get_json()["reflection"]
@@ -138,7 +139,11 @@ class ReflectionCycleTest(unittest.TestCase):
     def test_skip_leaves_no_reflection_row_at_all(self):
         cook_log = self._log_cook()
         resp = self.client.get(f"/api/cook-log/{cook_log['id']}/reflection", headers=self.headers)
-        self.assertEqual(resp.status_code, 404, "skipping must leave no row, not a row with everything defaulted")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.get_json()["revision"], 0)
+        with self.app.app_context():
+            from models import CookReflection
+            self.assertEqual(CookReflection.query.count(), 0, "context read must not create a row")
 
     def test_reflection_endpoint_requires_ownership(self):
         cook_log = self._log_cook()

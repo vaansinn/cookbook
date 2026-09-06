@@ -10,9 +10,10 @@ import api from "./client";
 // checkbox must submit as absent, not false).
 export const submitReflection = (payload) => api.post("/reflections", payload).then((r) => r.data);
 
-// Resumable state after a refresh (§13) - 404 means "no reflection yet",
-// which callers treat as "show the fresh form", not an error.
-export const getReflection = (cookLogId) => api.get(`/cook-log/${cookLogId}/reflection`).then((r) => r.data);
+// Resumable state: revision zero is an unanswered reflection (no row created).
+// 404 means the cook itself is unavailable, not merely an unanswered form.
+export const getReflection = (cookLogId, signal) => api.get(`/cook-log/${cookLogId}/reflection`, { signal }).then((r) => r.data);
+export const getSkillConfidences = (signal) => api.get('/me/skills', { signal }).then((r) => r.data);
 
 export const getSkillConfidence = (slug) => api.get(`/me/skills/${slug}`).then((r) => r.data);
 export const putSkillConfidence = (slug, confidence) => api.put(`/me/skills/${slug}`, { confidence }).then((r) => r.data);

@@ -31,7 +31,9 @@ export default function RecipePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const t = useT();
-  const language = useSettingsStore((s) => s.language);
+  const settingsLanguage = useSettingsStore((s) => s.language);
+  const requested = new URLSearchParams(location.search);
+  const language = ["en", "de"].includes(requested.get("lang")) ? requested.get("lang") : settingsLanguage;
   const user = useAuthStore((s) => s.user);
   const epoch = useAuthStore((s) => s.epoch);
   const [cookToast, setCookToast] = useState(location.state?.cooked ? location.state : null);
@@ -75,7 +77,7 @@ export default function RecipePage() {
       .then((d) => {
         if (getAuthEpoch() !== requestEpoch) return; // account changed since this request started
         setDish(d);
-        const firstAvailable = TIER_ORDER.find((l) => d.tiers[l]);
+        const firstAvailable = d.tiers[requested.get("level")] ? requested.get("level") : TIER_ORDER.find((l) => d.tiers[l]);
         setLevel(firstAvailable);
         setServes(d.tiers[firstAvailable]?.serves);
         setDoneSteps({});
@@ -360,7 +362,7 @@ export default function RecipePage() {
               </p>
             )}
             <button
-              onClick={() => navigate(`/dish/${slug}/cook?level=${level}&serves=${serves}`)}
+              onClick={() => navigate(`/dish/${slug}/cook?level=${level}&lang=${language}&serves=${serves}`)}
               className="btn-primary w-full mt-3"
             >
               {t("start_cooking")}

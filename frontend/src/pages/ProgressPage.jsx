@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
 import { useT } from "../i18n";
@@ -8,6 +8,10 @@ import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
 import BottomNav from "../components/BottomNav";
 import ChefHats from "../components/ChefHats";
+import useAuthStore, { getAuthEpoch } from "../store/useAuthStore";
+import ReflectionEditor from "../components/ReflectionEditor";
+import { getSkillConfidences, putSkillConfidence } from "../api/reflections";
+import { createRequestScope } from "../utils/requestScope";
 import { dishEmoji } from "../dishEmoji";
 
 // Same tier-colour language as MealPlansPage's dish rows (visual-design.md —
@@ -16,18 +20,36 @@ const TIER_ACCENT = { basic: "var(--basic)", intermediate: "var(--inter)", advan
 const TIER_ACCENT_SOFT = { basic: "var(--basic-soft)", intermediate: "var(--inter-soft)", advanced: "var(--hot-soft)" };
 
 export default function ProgressPage() {
+  const epoch = useAuthStore((s) => s.epoch);
+  const initialized = useAuthStore((s) => s.initialized);
+  const user = useAuthStore((s) => s.user);
+  const language = useSettingsStore((s) => s.language);
+  const t = useT();
+  if (!initialized || !user) return <p className="p-8">{t("loading")}</p>;
+  return <History key={`${epoch}:${user.id}:${language}`} />;
+}
+function History() {
   const t = useT();
   const language = useSettingsStore((s) => s.language);
   const [progress, setProgress] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [dishes, setDishes] = useState([]);
 
-  const load = () => {
+  const epoch = useAuthStore((s) => s.epoch);
+  const [retry, setRetry] = useState(0);
+  const [skills, setSkills] = useState([]);
+  const [editing, setEditing] = useState(null);
+  const load = () => setRetry((n) => n + 1);
+  useEffect(() => {
+    const scope = createRequestScope(() => getAuthEpoch() === epoch);
     setLoadError(false);
-    getProgress(language).then(setProgress).catch(() => setLoadError(true));
-  };
-  useEffect(load, [language]);
-  useEffect(() => { fetchDishes({ lang: language }).then(setDishes).catch(() => {}); }, [language]);
+    Promise.all([getProgress(language, scope.signal), getSkillConfidences(scope.signal), fetchDishes({ lang: language }, scope.signal)])
+      .then(([history, states, recipes]) => {
+        if (!scope.current()) return;
+        setProgress(history); setSkills(states); setDishes(recipes);
+      }).catch(() => { if (scope.current()) setLoadError(true); });
+    return scope.cancel;
+  }, [language, epoch, retry]);
 
   const dishTitle = (slug) => dishes.find((d) => d.slug === slug)?.summary?.title || slug;
 
@@ -77,7 +99,14 @@ export default function ProgressPage() {
           </div>
         </div>
 
-        <div className="max-w-lg mx-auto px-6 pb-4">
+        <div className="max-w-lg mx-auto px-6 pb-28">
+          <section className="mt-5" aria-labelledby="current-confidence">
+            <h2 id="current-confidence" className="font-display font-bold text-lg">{t("confidence_current")}</h2>
+            <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{t("confidence_current_hint")}</p>
+            {skills.map((state) => <ConfidenceRow key={state.skill} state={state} />)}
+          </section>
+          {editing && <ReflectionEditor key={editing} cookLogId={editing}
+            onDone={() => { setEditing(null); load(); }} onContinue={() => { setEditing(null); load(); }} />}
           {progress.dishes_cooked === 0 && (
             <p className="text-sm mt-8" style={{ color: "var(--muted)" }}>{t("progress_empty")}</p>
           )}
@@ -87,8 +116,8 @@ export default function ProgressPage() {
               <h2 className="font-display font-bold text-lg mt-6 mb-2.5" style={{ color: "var(--ink)" }}>{t("progress_history_title")}</h2>
               <div className="flex flex-col gap-1.5">
                 {progress.history.map((entry) => (
+                  <div key={entry.id}>
                   <Link
-                    key={entry.id}
                     to={`/dish/${entry.dish_slug}`}
                     className="card relative flex items-center gap-2.5 overflow-hidden pl-2 pr-3 py-2.5"
                   >
@@ -108,6 +137,8 @@ export default function ProgressPage() {
                       <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>{formatDate(entry.cooked_at)}</span>
                     </span>
                   </Link>
+                  <button className="chip mt-1 mb-3" onClick={() => setEditing(entry.id)}>{t("reflection_edit")}</button>
+                  </div>
                 ))}
               </div>
             </>
@@ -117,4 +148,38 @@ export default function ProgressPage() {
       <BottomNav />
     </div>
   );
+}
+
+function ConfidenceRow({ state }) {
+  const t = useT();
+  const epoch = useAuthStore((s) => s.epoch);
+  const [value, setValue] = useState(state.confidence || "unknown");
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState(null);
+  const scopeRef = useRef(null);
+  useEffect(() => {
+    const scope = createRequestScope(() => getAuthEpoch() === epoch);
+    scopeRef.current = scope;
+    return scope.cancel;
+  }, [epoch]);
+  useEffect(() => { setValue(state.confidence || "unknown"); }, [state.confidence]);
+  const save = async () => {
+    const scope = scopeRef.current;
+    if (busy) return;
+    setBusy(true); setStatus(null);
+    try {
+      await putSkillConfidence(state.skill, value);
+      if (scope.current()) setStatus("saved");
+    } catch { if (scope.current()) setStatus("error"); }
+    finally { if (scope.current()) setBusy(false); }
+  };
+  return <div className="card p-4 mt-3">
+    <label className="font-bold text-sm">{state.skill === "simmering" ? t("skill_simmering") : state.skill}
+      <select aria-label={state.skill === "simmering" ? t("skill_simmering") : state.skill} className="btn-ghost w-full mt-2" value={value} disabled={busy} onChange={(e) => { setValue(e.target.value); setStatus(null); }}>
+        {["unknown", "wants_guidance", "comfortable"].map((v) => <option key={v} value={v}>{t(`reflect_confidence_${v}`)}</option>)}
+      </select>
+    </label>
+    <button className="btn-primary mt-3 w-full" disabled={busy} onClick={save}>{t(busy ? "loading" : "confidence_save")}</button>
+    {status && <p role="status" className="text-sm mt-2">{t(status === "saved" ? "confidence_saved" : "error_generic")}</p>}
+  </div>;
 }

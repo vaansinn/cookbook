@@ -17,10 +17,8 @@ import useAuthStore from "./useAuthStore";
 // key - and the complete absence of any guest->account copy path anywhere in
 // this module). Each record carries session_id/dish_slug/level/lang/
 // snapshot_id (fixed at session start per pilot-fixtures.md §4 - never
-// mutated mid-attempt) plus current_step_id and pinned_lessons (the fields
-// expected to change/populate as the user progresses through/opens help for
-// this specific attempt - pinned_lessons is set once, at first population,
-// same immutability rule as snapshot_id: see setPinnedLessons below).
+// mutated mid-attempt) plus current_step_id and saved cook identity.
+// Teaching content is retained only by the server snapshot, not local storage.
 //
 // A separate per-owner index key maps dish/level/lang -> the session_id of
 // the current attempt for that combo, so a bare mount (CookMode.jsx doesn't
@@ -84,15 +82,32 @@ const comboKey = (dishSlug, level, lang) => `${dishSlug}:${level}:${lang}`;
 // snapshotId is optional and only used when a NEW record is created (a
 // resumed record's snapshot_id is never overwritten by a later call - see
 // pilot-fixtures.md §4: it's fixed once captured at session start).
-export function getOrStartSession(ownerId, { dishSlug, level, lang, snapshotId, ns = "account" } = {}) {
+export function getOrStartSession(ownerId, { dishSlug, level, lang, snapshotId, ns = "account", forceNew = false, attemptId } = {}) {
   if (!ownerId) return crypto.randomUUID();
   try {
     const index = readIndex(ns, ownerId);
     const combo = comboKey(dishSlug, level, lang);
+    const matches = (record) => record && record.dish_slug === dishSlug && record.level === level && record.lang === lang;
+    if (!forceNew && attemptId && matches(getSessionRecord(ownerId, attemptId, ns))) return attemptId;
+    // Adopt the previous owner-only format once, preserving idempotency identity.
+    const oldKey = `cook_session:${ns}:${ownerId}`;
+    const oldRaw = ns === "account" && localStorage.getItem(oldKey);
+    if (!forceNew && oldRaw) {
+      let old;
+      try { old = JSON.parse(oldRaw); } catch { old = null; }
+      if (matches(old) && (old.owner_id == null || String(old.owner_id) === String(ownerId))
+          && (old.snapshot_id == null || (Number.isInteger(old.snapshot_id) && old.snapshot_id > 0))
+          && typeof old.session_id === "string" && /^[a-zA-Z0-9-]{1,64}$/.test(old.session_id)) {
+        localStorage.setItem(recordKey(ns, ownerId, old.session_id), JSON.stringify({ ...old, capture_pending: false }));
+        localStorage.setItem(indexKey(ns, ownerId), JSON.stringify({ ...index, [combo]: old.session_id }));
+        localStorage.removeItem(oldKey);
+        return old.session_id;
+      }
+    }
     const existingSessionId = index[combo];
-    if (existingSessionId) {
+    if (!forceNew && existingSessionId) {
       const raw = localStorage.getItem(recordKey(ns, ownerId, existingSessionId));
-      if (raw) return existingSessionId; // in-progress attempt for this exact combo - resume it
+      if (raw && matches(JSON.parse(raw))) return existingSessionId;
     }
     const sessionId = crypto.randomUUID();
     localStorage.setItem(recordKey(ns, ownerId, sessionId), JSON.stringify({
@@ -101,8 +116,8 @@ export function getOrStartSession(ownerId, { dishSlug, level, lang, snapshotId, 
       level,
       lang,
       snapshot_id: snapshotId ?? null,
+      capture_pending: snapshotId == null,
       current_step_id: null,
-      pinned_lessons: null,
     }));
     writeIndex(ns, ownerId, { ...index, [combo]: sessionId });
     return sessionId;
@@ -113,7 +128,7 @@ export function getOrStartSession(ownerId, { dishSlug, level, lang, snapshotId, 
 
 // Returns the full persisted record for one specific attempt (or null if
 // there isn't one) - for a caller that needs more than the bare session_id,
-// e.g. resuming snapshot_id/current_step_id/pinned_lessons after a reload.
+// e.g. resuming snapshot_id/current_step_id after a reload.
 export function getSessionRecord(ownerId, sessionId, ns = "account") {
   if (!ownerId || !sessionId) return null;
   try {
@@ -157,27 +172,7 @@ export function setSessionSnapshot(ownerId, sessionId, snapshotId, ns = "account
     const existing = JSON.parse(raw);
     if (existing.snapshot_id != null) return; // already pinned - never overwritten
     existing.snapshot_id = snapshotId;
-    localStorage.setItem(key, JSON.stringify(existing));
-  } catch {
-    // storage unavailable - nothing to persist
-  }
-}
-
-// Pins the full lesson content actually shown at session start (pilot-
-// fixtures.md §9) - a map of step_id -> lesson dict (GET /api/lessons/by-ref
-// responses), fetched once for a NEW session and never live-looked-up again
-// for a resumed one (see CookMode.jsx). Immutable once set, same guard as
-// setSessionSnapshot above, for the same reason: a resumed session must read
-// exactly what was pinned, never today's edited lesson copy.
-export function setPinnedLessons(ownerId, sessionId, lessons, ns = "account") {
-  if (!ownerId || !sessionId) return;
-  const key = recordKey(ns, ownerId, sessionId);
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return;
-    const existing = JSON.parse(raw);
-    if (existing.pinned_lessons != null) return; // already pinned - never overwritten
-    existing.pinned_lessons = lessons;
+    existing.capture_pending = false;
     localStorage.setItem(key, JSON.stringify(existing));
   } catch {
     // storage unavailable - nothing to persist
@@ -236,7 +231,7 @@ function clearAllSessions(ownerId, ns = "account") {
   try {
     const prefix = ownerPrefix(ns, ownerId);
     Object.keys(localStorage)
-      .filter((k) => k.startsWith(prefix))
+      .filter((k) => k.startsWith(prefix) || k === `cook_session:${ns}:${ownerId}` || k.startsWith(`reflection_pending:${ownerId}:`))
       .forEach((k) => localStorage.removeItem(k));
   } catch {
     // ignore - nothing to clear

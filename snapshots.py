@@ -15,7 +15,7 @@ import json
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-from models import Dish, RecipeContentSnapshot
+from models import Dish, RecipeTier, Lesson, Skill, RecipeContentSnapshot
 from access import tier_access
 
 
@@ -29,18 +29,49 @@ def capture_or_reuse_snapshot(dish_slug, level, lang):
     (dish_slug, level, lang, content_digest) if one exists, otherwise insert.
     Returns (snapshot, error) — error is one of "dish_not_found"/"tier_not_found"
     when there's no such content to capture, snapshot is None in that case."""
-    dish = Dish.query.filter_by(slug=dish_slug).first()
-    if not dish:
-        return None, "dish_not_found"
-    tier = next((t for t in dish.tiers if t.level == level and t.lang == lang), None)
-    if not tier:
-        return None, "tier_not_found"
+    # One SQL statement reads recipe, lesson and skill columns from the same
+    # database statement snapshot (including PostgreSQL READ COMMITTED).
+    rows = db.session.execute(
+        db.select(RecipeTier, Lesson, Skill)
+        .join(Dish, RecipeTier.dish_id == Dish.id)
+        .outerjoin(Lesson, (Lesson.dish_slug == Dish.slug) & (Lesson.level == RecipeTier.level))
+        .outerjoin(Skill, Skill.id == Lesson.skill_id)
+        .where(Dish.slug == dish_slug, RecipeTier.level == level, RecipeTier.lang == lang)
+        .execution_options(populate_existing=True)
+    ).all()
+    if not rows:
+        return None, "tier_not_found" if Dish.query.filter_by(slug=dish_slug).first() else "dish_not_found"
+    tier = rows[0][0]
 
     # raw_steps=True: keep structured {"id","text"} steps intact so a step_id
     # can still be matched against this frozen snapshot later (pilot-fixtures
     # §2) - to_dict()'s default flattens steps to plain strings for every
     # other caller, which would erase the id permanently at capture time.
     content = tier.to_dict(full=True, raw_steps=True)
+    content["schema_version"] = 2
+    content["lessons"] = {}
+    # The existing parser emits {id: null, text: ...} for unannotated recipes.
+    # Preserve them; only authored IDs participate in link validation.
+    ids = [step["id"] for step in tier.steps if isinstance(step, dict) and step.get("id") is not None]
+    if any(not isinstance(sid, str) or not sid for sid in ids) or len(ids) != len(set(ids)):
+        return None, "invalid_teaching_content"
+    for _, lesson, skill in rows:
+        if lesson is None:
+            continue
+        if lesson.step_id not in ids or not skill or lesson.step_id in content["lessons"]:
+            return None, "invalid_teaching_content"
+        if lang not in (lesson.title or {}) or lang not in (lesson.body or {}):
+            return None, "invalid_teaching_content"
+        # Don't lazy-load a relationship after the consistent statement above.
+        content["lessons"][lesson.step_id] = {
+            "slug": lesson.slug, "skill": skill.slug, "title": lesson.title[lang],
+            "body": lesson.body[lang], "dish_slug": dish_slug, "level": level,
+            "lang": lang, "step_id": lesson.step_id,
+            "next_practice": ({"dish_slug": lesson.next_practice_dish_slug,
+                "level": lesson.next_practice_level, "lang": lang,
+                "reason": (lesson.next_practice_reason or {}).get(lang, "")}
+                if lesson.next_practice_dish_slug else None),
+        }
     digest = _digest(content)
 
     existing = RecipeContentSnapshot.query.filter_by(

@@ -1,192 +1,179 @@
-"""
-routes/reflections.py — Cook reflection + current-skill-confidence endpoints.
-
-docs/contracts/pilot-fixtures.md §3/§10/§12/§13. Signed-in only — guests never
-call these (§5/§8: a guest cook is entirely client-side, no server round-trip
-for reflection at all).
-
-POST /api/reflections is a single create-or-update endpoint (one row per
-(user_id, cook_log_id), enforced by CookReflection's unique constraint) that
-has to tell apart two situations arriving at the same URL (§10):
-  - a mechanical retry of an already-saved reflection (network hiccup,
-    double-tap) — must produce exactly one row (§13) and must NOT re-fire the
-    current-confidence side effect with a stale value, and
-  - a genuinely new/edited field — must persist it and, for `confidence`
-    specifically, also update the user's current-skill-confidence row (§10).
-The two are told apart by comparing each *present* field in the request
-against what's already stored: if nothing actually changed, it's a replay.
-Fields simply absent from the request body are left untouched (partial edit,
-§13) — this is why every field is read with a sentinel rather than `.get(k)`
-defaulting to None, so "not sent" and "sent as null" stay distinguishable.
-"""
+"""Owner-scoped, revision-checked reflection writes with durable retry receipts."""
+import hashlib
+import json
+from uuid import UUID
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy.exc import IntegrityError
 from app import db
-from models import CookLog, CookReflection, Skill, SkillConfidence
+from models import CookLog, CookReflection, Skill, SkillConfidence, ReflectionMutation, User
 
 reflections_bp = Blueprint("reflections", __name__)
-
-_UNSET = object()  # distinguishes "field absent from payload" from "field sent as null"
-
-REFLECTION_FIELDS = ("outcome", "practiced_skill_confirmed", "confidence")
-
-
-def _reflection_dict(row):
-    return row.to_dict()
+FIELDS = ("outcome", "practiced_skill_confirmed", "confidence")
+CONFIDENCES = ("unknown", "wants_guidance", "comfortable")
+OUTCOMES = ("happy", "mixed", "need_help")
 
 
-def _apply_current_confidence(user_id, skill_slug, confidence):
-    """§10: writes/updates the user's *current* confidence for skill_slug.
-    Silently a no-op if skill_slug doesn't resolve to a real Skill — a dish
-    with no attached lesson has no skill to speak of, and the reflection row
-    itself still saved fine regardless."""
-    if not skill_slug or not confidence:
-        return
-    skill = Skill.query.filter_by(slug=skill_slug).first()
+def _skill(cook):
+    content = cook.snapshot.content if cook.snapshot else {}
+    if content.get("schema_version", 0) < 2:
+        return None
+    skills = {lesson.get("skill") for lesson in content.get("lessons", {}).values() if lesson.get("skill")}
+    return next(iter(skills)) if len(skills) == 1 else None
+
+
+def _context(cook, row):
+    data = row.to_dict() if row else {"cook_log_id": cook.id, "revision": 0,
+        "outcome": None, "practiced_skill_confirmed": None, "confidence": None}
+    data["focus_skill"] = _skill(cook)
+    if not row:
+        data["skill_slug"] = data["focus_skill"]
+    return data
+
+
+def _lock_user(user_id):
+    # Portable write lock before reads: PostgreSQL row lock; SQLite writer lock.
+    # All confidence/reflection writes take this lock in the same order.
+    return db.session.execute(db.update(User).where(User.id == user_id).values(id=User.id)).rowcount
+
+
+def _set_confidence(user_id, slug, value):
+    skill = Skill.query.filter_by(slug=slug).first()
     if not skill:
-        return
+        raise ValueError("Captured skill is no longer available")
     row = SkillConfidence.query.filter_by(user_id=user_id, skill_id=skill.id).first()
-    if row:
-        row.confidence = confidence
-    else:
-        row = SkillConfidence(user_id=user_id, skill_id=skill.id, confidence=confidence)
+    if row is None:
+        row = SkillConfidence(user_id=user_id, skill_id=skill.id)
         db.session.add(row)
-    try:
-        db.session.commit()
-    except IntegrityError:
-        # Lost a race to a concurrent write for the same (user, skill) - the
-        # unique constraint is what actually closes this. Re-read and apply
-        # this value on top (last-write-wins for a single user's own two
-        # concurrent requests is fine here; there's no cross-user contention).
-        db.session.rollback()
-        row = SkillConfidence.query.filter_by(user_id=user_id, skill_id=skill.id).first()
-        if row:
-            row.confidence = confidence
-            db.session.commit()
+    row.confidence = value
+    return row
+
+
+def _error(message, status=400):
+    db.session.rollback()
+    return jsonify({"error": message}), status
 
 
 @reflections_bp.route("/reflections", methods=["POST"])
 @jwt_required()
 def submit_reflection():
     user_id = int(get_jwt_identity())
-    data = request.get_json() or {}
-    cook_log_id = data.get("cook_log_id")
-    if not cook_log_id:
-        return jsonify({"error": "cook_log_id is required"}), 400
-
-    cook_log = CookLog.query.get(cook_log_id)
-    if not cook_log or cook_log.user_id != user_id:
-        return jsonify({"error": "Cook log not found"}), 404
-
-    skill_slug = data.get("skill_slug")  # the skill *as pinned* for this cook (§9/§10) — client-supplied
-    incoming = {f: (data[f] if f in data else _UNSET) for f in REFLECTION_FIELDS}
-
-    existing = CookReflection.query.filter_by(user_id=user_id, cook_log_id=cook_log_id).first()
-
-    if existing is None:
-        row = CookReflection(
-            user_id=user_id,
-            cook_log_id=cook_log_id,
-            skill_slug=skill_slug,
-            outcome=None if incoming["outcome"] is _UNSET else incoming["outcome"],
-            practiced_skill_confirmed=None if incoming["practiced_skill_confirmed"] is _UNSET else incoming["practiced_skill_confirmed"],
-            confidence=None if incoming["confidence"] is _UNSET else incoming["confidence"],
-        )
-        db.session.add(row)
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or set(data) - {*FIELDS, "cook_log_id", "skill_slug", "mutation_id", "expected_revision"}:
+        return _error("A JSON object with supported reflection fields is required")
+    cook_id = data.get("cook_log_id")
+    if type(cook_id) is not int or not 0 < cook_id <= 2147483647:
+        return _error("Positive cook_log_id required")
+    for key, allowed in (("outcome", OUTCOMES), ("confidence", CONFIDENCES)):
+        value = data.get(key)
+        if value is not None and (not isinstance(value, str) or value not in allowed):
+            return _error(f"Invalid {key}")
+    if data.get("practiced_skill_confirmed") is not None and type(data["practiced_skill_confirmed"]) is not bool:
+        return _error("practiced_skill_confirmed must be boolean or null")
+    supplied_skill = data.get("skill_slug")
+    if supplied_skill is not None and (not isinstance(supplied_skill, str) or not 0 < len(supplied_skill) <= 80):
+        return _error("Invalid skill_slug")
+    mutation = data.get("mutation_id")
+    versioned = "mutation_id" in data or "expected_revision" in data
+    if versioned:
         try:
-            db.session.commit()
-        except IntegrityError:
-            # Lost the race to a concurrent identical submission - re-read
-            # and fall through to the update path below, same pattern as
-            # log_cook / capture_or_reuse_snapshot elsewhere in this codebase.
+            if not isinstance(mutation, str) or str(UUID(mutation)) != mutation:
+                raise ValueError()
+        except (ValueError, TypeError, AttributeError):
+            return _error("Canonical UUID mutation_id required")
+        if type(data.get("expected_revision")) is not int or not 0 <= data["expected_revision"] < 2147483647:
+            return _error("Nonnegative expected_revision required")
+    digest = hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if not _lock_user(user_id):
+        return _error("Account not found", 404)
+    cook = CookLog.query.filter_by(id=cook_id, user_id=user_id).with_for_update().first()
+    if not cook:
+        return _error("Cook log not found", 404)
+    if mutation:
+        receipt = ReflectionMutation.query.filter_by(user_id=user_id, mutation_id=mutation).first()
+        if receipt:
+            if receipt.request_digest != digest:
+                return _error("mutation_id already used with different content", 409)
+            result = receipt.result
             db.session.rollback()
-            existing = CookReflection.query.filter_by(user_id=user_id, cook_log_id=cook_log_id).first()
-            if not existing:
-                raise
-        else:
-            # Fresh row: a genuinely new submission, never a replay - the
-            # confidence side effect always fires here if confidence was sent.
-            if incoming["confidence"] not in (_UNSET, None):
-                _apply_current_confidence(user_id, skill_slug, incoming["confidence"])
-            return jsonify({"status": "created", "reflection": _reflection_dict(row)}), 201
-
-    # Update path: existing row (found originally, or via the race above).
-    # Only fields actually present in this request are compared/touched -
-    # an absent field leaves the stored value alone (§13 partial edit rule).
-    changed = {}
-    for field, incoming_value in incoming.items():
-        if incoming_value is _UNSET:
-            continue
-        if getattr(existing, field) != incoming_value:
-            changed[field] = incoming_value
-        setattr(existing, field, incoming_value)
-    if skill_slug and existing.skill_slug != skill_slug:
-        existing.skill_slug = skill_slug  # keep the pin in sync with what this submission names
-
-    if not changed:
-        # Pure replay of an already-saved reflection (§10/§13) - nothing to
-        # persist, and critically, no confidence side effect re-fire.
-        return jsonify({"status": "already_saved", "reflection": _reflection_dict(existing)}), 200
-
+            return jsonify(result), 200
+    row = CookReflection.query.filter_by(user_id=user_id, cook_log_id=cook_id).first()
+    current = _context(cook, row)
+    incoming = {key: data[key] for key in FIELDS if key in data}
+    if (versioned and data["expected_revision"] != current["revision"]) or (
+        not versioned and row and any(getattr(row, k) != v for k, v in incoming.items())
+    ):
+        db.session.rollback()
+        return jsonify({"error": "Reflection changed; review the current values", "current_reflection": current}), 409
+    focus = current["focus_skill"]
+    if supplied_skill is not None and supplied_skill != focus:
+        return _error("Skill does not match this cook's retained teaching content")
+    if not focus and any(incoming.get(k) is not None for k in ("confidence", "practiced_skill_confirmed")):
+        return _error("No retained teaching identity; only outcome is available")
+    created = row is None
+    changed = row is None or any(getattr(row, k) != v for k, v in incoming.items())
+    if row is None and not any(v is not None for v in incoming.values()):
+        result = {"status": "skipped", "reflection": current}
+    else:
+        if row is None:
+            row = CookReflection(user_id=user_id, cook_log_id=cook_id, skill_slug=focus, revision=0)
+            db.session.add(row)
+        for key, value in incoming.items():
+            setattr(row, key, value)
+        if changed or versioned:
+            row.revision += 1
+            if incoming.get("confidence") is not None:
+                try:
+                    _set_confidence(user_id, focus, incoming["confidence"])
+                except ValueError as error:
+                    return _error(str(error), 409)
+        db.session.flush()
+        result = {"status": "created" if created else "updated" if changed or versioned else "already_saved",
+                  "reflection": _context(cook, row)}
+    if mutation:
+        db.session.add(ReflectionMutation(user_id=user_id, mutation_id=mutation, cook_log_id=cook_id,
+                                         request_digest=digest, result=result))
     db.session.commit()
-    if "confidence" in changed:
-        _apply_current_confidence(user_id, skill_slug or existing.skill_slug, changed["confidence"])
-    return jsonify({"status": "updated", "reflection": _reflection_dict(existing)}), 200
+    return jsonify(result), 201 if created and result["status"] == "created" else 200
 
 
 @reflections_bp.route("/cook-log/<int:cook_log_id>/reflection", methods=["GET"])
 @jwt_required()
 def get_reflection(cook_log_id):
-    """Lets a refresh resume 'reflection still offered/resumable against the
-    right cook' (§13) without guessing whether one was already submitted."""
     user_id = int(get_jwt_identity())
-    cook_log = CookLog.query.get(cook_log_id)
-    if not cook_log or cook_log.user_id != user_id:
+    cook = CookLog.query.filter_by(id=cook_log_id, user_id=user_id).first()
+    if not cook:
         return jsonify({"error": "Cook log not found"}), 404
     row = CookReflection.query.filter_by(user_id=user_id, cook_log_id=cook_log_id).first()
-    if not row:
-        return jsonify({"error": "No reflection yet"}), 404
-    return jsonify(_reflection_dict(row)), 200
+    return jsonify(_context(cook, row)), 200
 
 
-@reflections_bp.route("/me/skills/<slug>", methods=["GET"])
+@reflections_bp.route("/me/skills", methods=["GET"])
 @jwt_required()
-def get_skill_confidence(slug):
+def list_confidences():
+    rows = SkillConfidence.query.filter_by(user_id=int(get_jwt_identity())).all()
+    states = {r.skill.slug: r.to_dict() for r in rows}
+    if "simmering" not in states and Skill.query.filter_by(slug="simmering").first():
+        states["simmering"] = {"skill": "simmering", "confidence": None, "updated_at": None}
+    return jsonify(list(states.values()))
+
+
+@reflections_bp.route("/me/skills/<slug>", methods=["GET", "PUT"])
+@jwt_required()
+def skill_confidence(slug):
     user_id = int(get_jwt_identity())
+    if request.method == "PUT":
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict) or set(data) != {"confidence"} or data.get("confidence") not in CONFIDENCES:
+            return _error("Valid confidence required")
+        if not _lock_user(user_id):
+            return _error("Account not found", 404)
     skill = Skill.query.filter_by(slug=slug).first()
     if not skill:
-        return jsonify({"error": "Skill not found"}), 404
-    row = SkillConfidence.query.filter_by(user_id=user_id, skill_id=skill.id).first()
-    return jsonify(row.to_dict() if row else {"skill": slug, "confidence": None, "updated_at": None})
-
-
-@reflections_bp.route("/me/skills/<slug>", methods=["PUT"])
-@jwt_required()
-def put_skill_confidence(slug):
-    """A later, separate direct edit (§10) — updates ONLY this current-
-    confidence row, never any past CookReflection."""
-    user_id = int(get_jwt_identity())
-    skill = Skill.query.filter_by(slug=slug).first()
-    if not skill:
-        return jsonify({"error": "Skill not found"}), 404
-    data = request.get_json() or {}
-    confidence = data.get("confidence")
-    if not confidence:
-        return jsonify({"error": "confidence is required"}), 400
-
-    row = SkillConfidence.query.filter_by(user_id=user_id, skill_id=skill.id).first()
-    if row:
-        row.confidence = confidence
+        return _error("Skill not found", 404)
+    if request.method == "PUT":
+        row = _set_confidence(user_id, slug, data["confidence"])
+        db.session.commit()
     else:
-        row = SkillConfidence(user_id=user_id, skill_id=skill.id, confidence=confidence)
-        db.session.add(row)
-    try:
-        db.session.commit()
-    except IntegrityError:
-        db.session.rollback()
         row = SkillConfidence.query.filter_by(user_id=user_id, skill_id=skill.id).first()
-        row.confidence = confidence
-        db.session.commit()
-    return jsonify(row.to_dict()), 200
+    return jsonify(row.to_dict() if row else {"skill": slug, "confidence": None, "updated_at": None})

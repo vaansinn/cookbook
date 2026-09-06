@@ -11,7 +11,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from app import db, bcrypt
 from models import (
     User, CookLog, BadgeAward, HouseholdMember, Household, GroceryList, GroceryItem, PlanEntry,
-    CookReflection, SkillConfidence,
+    CookReflection, SkillConfidence, ReflectionMutation,
 )
 
 auth_bp = Blueprint("auth", __name__)
@@ -104,7 +104,8 @@ def export_account():
     return jsonify({
         "profile": user.to_dict(),
         "cook_logs": [
-            {"dish_slug": l.dish.slug if l.dish else None, "level": l.level, "cooked_at": l.cooked_at.isoformat()}
+            {"id": l.id, "session_id": l.session_id, "lang": l.lang, "snapshot_id": l.snapshot_id,
+             "dish_slug": l.dish.slug if l.dish else None, "level": l.level, "cooked_at": l.cooked_at.isoformat()}
             for l in logs
         ],
         "badges": [{"slug": b.badge_slug, "earned_at": b.earned_at.isoformat()} for b in badges],
@@ -130,6 +131,7 @@ def delete_account():
     if not user:
         return jsonify({"error": "User not found"}), 404
 
+    ReflectionMutation.query.filter_by(user_id=user_id).delete()
     CookReflection.query.filter_by(user_id=user_id).delete()
     SkillConfidence.query.filter_by(user_id=user_id).delete()
     CookLog.query.filter_by(user_id=user_id).delete()

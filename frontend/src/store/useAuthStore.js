@@ -8,23 +8,26 @@ import api from "../api/client";
 // what keeps one account's slow response from landing in another account's
 // session after a switch. Read it with getAuthEpoch() from call sites that
 // don't otherwise subscribe to this store.
-const useAuthStore = create((set) => ({
+const useAuthStore = create((set, get) => ({
   user: null,
   token: localStorage.getItem("token"),
   loading: false,
   error: null,
   errorData: null,
   epoch: 0,
+  initialized: false,
 
   init: async () => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    const requestEpoch = get().epoch;
+    if (!token) { set({ initialized: true }); return; }
     try {
       const { data } = await api.get("/auth/me");
-      set({ user: data });
+      if (get().epoch === requestEpoch && get().token === token) set({ user: data, initialized: true });
     } catch {
+      if (get().epoch !== requestEpoch) return;
       localStorage.removeItem("token");
-      set((s) => ({ token: null, epoch: s.epoch + 1 }));
+      set((s) => ({ user: null, token: null, initialized: true, epoch: s.epoch + 1 }));
     }
   },
 
@@ -33,7 +36,7 @@ const useAuthStore = create((set) => ({
     try {
       const { data } = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", data.token);
-      set((s) => ({ user: data.user, token: data.token, loading: false, epoch: s.epoch + 1 }));
+      set((s) => ({ user: data.user, token: data.token, initialized: true, loading: false, epoch: s.epoch + 1 }));
     } catch (err) {
       set({ error: err.response?.data?.error || "Login failed", errorData: err.response?.data || null, loading: false });
       throw err;
@@ -45,7 +48,7 @@ const useAuthStore = create((set) => ({
     try {
       const { data } = await api.post("/auth/register", { email, display_name: displayName, password });
       localStorage.setItem("token", data.token);
-      set((s) => ({ user: data.user, token: data.token, loading: false, epoch: s.epoch + 1 }));
+      set((s) => ({ user: data.user, token: data.token, initialized: true, loading: false, epoch: s.epoch + 1 }));
     } catch (err) {
       set({ error: err.response?.data?.error || "Registration failed", errorData: err.response?.data || null, loading: false });
       throw err;
@@ -54,7 +57,7 @@ const useAuthStore = create((set) => ({
 
   logout: () => {
     localStorage.removeItem("token");
-    set((s) => ({ user: null, token: null, epoch: s.epoch + 1 }));
+    set((s) => ({ user: null, token: null, initialized: true, epoch: s.epoch + 1 }));
   },
 
   exportData: () => api.get("/auth/me/export").then((r) => r.data),
@@ -62,7 +65,7 @@ const useAuthStore = create((set) => ({
   deleteAccount: async () => {
     await api.delete("/auth/me");
     localStorage.removeItem("token");
-    set((s) => ({ user: null, token: null, epoch: s.epoch + 1 }));
+    set((s) => ({ user: null, token: null, initialized: true, epoch: s.epoch + 1 }));
   },
 }));
 
@@ -75,7 +78,7 @@ if (typeof window !== "undefined") {
   window.addEventListener("auth:expired", () => {
     if (!useAuthStore.getState().token) return; // already logged out
     localStorage.removeItem("token");
-    useAuthStore.setState((s) => ({ user: null, token: null, epoch: s.epoch + 1 }));
+    useAuthStore.setState((s) => ({ user: null, token: null, initialized: true, epoch: s.epoch + 1 }));
   });
 }
 

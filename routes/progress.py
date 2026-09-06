@@ -87,13 +87,21 @@ def _conflict_response(existing):
 @jwt_required()
 def log_cook():
     user_id = int(get_jwt_identity())
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON object required"}), 400
     dish_slug, level = data.get("dish_slug"), data.get("level")
     session_id = data.get("session_id")
     lang = data.get("lang")  # optional — un-upgraded clients don't send one yet
     snapshot_id = data.get("snapshot_id")  # optional, same reason
-    if not dish_slug or level not in TIER_ORDER:
+    if not isinstance(dish_slug, str) or not 0 < len(dish_slug) <= 80 or level not in TIER_ORDER:
         return jsonify({"error": "dish_slug and a valid level required"}), 400
+    if session_id is not None and (not isinstance(session_id, str) or not 0 < len(session_id) <= 64):
+        return jsonify({"error": "Invalid session_id"}), 400
+    if lang is not None and lang not in ("en", "de"):
+        return jsonify({"error": "Invalid language"}), 400
+    if snapshot_id is not None and (type(snapshot_id) is not int or not 0 < snapshot_id <= 2147483647):
+        return jsonify({"error": "Invalid snapshot_id"}), 400
 
     dish = Dish.query.filter_by(slug=dish_slug).first()
     if not dish:

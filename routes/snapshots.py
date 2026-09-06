@@ -25,12 +25,18 @@ def _current_user():
 
 
 def _snapshot_dict(row):
+    from routes.lessons import eligible_next_practice
+    lessons = (row.content or {}).get("lessons", {})
+    user = _current_user()
+    suggestion = next((target for lesson in lessons.values()
+                       if (target := eligible_next_practice(lesson.get("next_practice"), user))), None)
     return {
         "snapshot_id": row.id,
         "dish_slug": row.dish_slug,
         "level": row.level,
         "lang": row.lang,
         "content": row.content,
+        "next_practice": suggestion,
     }
 
 
@@ -40,9 +46,11 @@ def start_recipe_snapshot():
     """Capture-or-reuse (contract §1) for the start of a cook session — called
     for a signed-in visitor or a guest alike. Guests can only ever reach this
     successfully for level=basic, same as Basic recipe viewing (access.py)."""
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON object required"}), 400
     dish_slug, level, lang = data.get("dish_slug"), data.get("level"), data.get("lang")
-    if not dish_slug or level not in TIER_ORDER or lang not in ("en", "de"):
+    if not isinstance(dish_slug, str) or not 0 < len(dish_slug) <= 80 or level not in TIER_ORDER or lang not in ("en", "de"):
         return jsonify({"error": "dish_slug, a valid level, and lang are required"}), 400
 
     allowed, reason = tier_access(level, _current_user())
@@ -54,6 +62,8 @@ def start_recipe_snapshot():
         return jsonify({"error": "Dish not found"}), 404
     if error == "tier_not_found":
         return jsonify({"error": "No content for this level/language yet"}), 404
+    if error:
+        return jsonify({"error": "Teaching content could not be captured; retry after content is corrected", "code": error}), 503
 
     return jsonify(_snapshot_dict(snapshot)), 200
 

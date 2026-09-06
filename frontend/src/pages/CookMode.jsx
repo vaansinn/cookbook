@@ -4,13 +4,14 @@ import useSettingsStore from "../store/useSettingsStore";
 import useAuthStore, { getAuthEpoch } from "../store/useAuthStore";
 import {
   getOrStartSession, getSessionRecord, setCurrentStep, setSessionSnapshot,
-  setPinnedLessons, setSessionCookLog, completeSession, getOrCreateGuestId,
+  setSessionCookLog, completeSession, getOrCreateGuestId,
 } from "../store/cookSession";
 import { useT } from "../i18n";
 import { startSnapshot, readSnapshot } from "../api/snapshots";
-import { getLessonByRef } from "../api/lessons";
+import ReflectionEditor from "../components/ReflectionEditor";
+import HelpDialog from "../components/HelpDialog";
+import { createRequestScope } from "../utils/requestScope";
 import { logCook } from "../api/progress";
-import { submitReflection } from "../api/reflections";
 import { parseSeconds, fmtSecs, beep } from "../utils/timer";
 import LessonBody, { stripMd } from "../components/LessonBody";
 
@@ -29,11 +30,24 @@ function stepId(step) {
 }
 
 export default function CookMode() {
+  const initialized = useAuthStore((s) => s.initialized);
+  const epoch = useAuthStore((s) => s.epoch);
+  const userId = useAuthStore((s) => s.user?.id);
+  const { slug } = useParams();
+  const [params] = useSearchParams();
+  const settingsLanguage = useSettingsStore((s) => s.language);
+  const t = useT();
+  if (!initialized) return <p className="p-8">{t("loading")}</p>;
+  return <CookAttempt key={`${epoch}:${userId}:${slug}:${params.get("level")}:${params.get("attempt")}:${params.get("lang") || settingsLanguage}`} />;
+}
+
+function CookAttempt() {
   const { slug } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const t = useT();
-  const language = useSettingsStore((s) => s.language);
+  const settingsLanguage = useSettingsStore((s) => s.language);
+  const language = ["en", "de"].includes(params.get("lang")) ? params.get("lang") : settingsLanguage;
   const epoch = useAuthStore((s) => s.epoch);
   const user = useAuthStore((s) => s.user);
   const level = params.get("level") || "basic";
@@ -61,12 +75,11 @@ export default function CookMode() {
   const [phase, setPhase] = useState("cooking");
   const [cookLog, setCookLog] = useState(null);
 
-  const [reflOutcome, setReflOutcome] = useState(null);
-  const [reflPracticed, setReflPracticed] = useState(null); // tri-state: null = never touched (§12)
-  const [reflConfidence, setReflConfidence] = useState(null);
-  const [reflSaving, setReflSaving] = useState(false);
-  const [reflError, setReflError] = useState(false);
-  const [reflected, setReflected] = useState(false); // true once a reflection was actually submitted (vs. skipped)
+  const [reflected, setReflected] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [reload, setReload] = useState(0);
+  const [legacy, setLegacy] = useState(false);
+  const scopeRef = useRef(null);
 
   // Idempotency key (#48) for the /cook-log call, resolved (not always
   // minted) once the dish/level/lang/owner identity is known - reused from
@@ -75,86 +88,67 @@ export default function CookMode() {
   const snapshotIdRef = useRef(null);
 
   useEffect(() => {
-    // Clear any previously rendered (possibly premium, possibly another
-    // owner's) content immediately.
-    setTier(null);
-    setSaveError(false);
-    setSaving(false);
-    setHelpOpen(false);
-    setPhase("cooking");
-    setCookLog(null);
-    setPinnedLessonsState({});
-    setReflOutcome(null);
-    setReflPracticed(null);
-    setReflConfidence(null);
-    setReflError(false);
-    setReflected(false);
-
-    const requestEpoch = epoch;
-    const sessionId = getOrStartSession(ownerId, { dishSlug: slug, level, lang: language, ns });
+    const scope = createRequestScope(() => getAuthEpoch() === epoch);
+    scopeRef.current = scope;
+    setTier(null); setLoadError(false); setSaveError(false); setSaving(false);
+    setTimer(null); setStepIdx(0); setHelpOpen(false); setPhase("cooking");
+    setCookLog(null); setPinnedLessonsState({}); setReflected(false);
+    const sessionId = getOrStartSession(ownerId, { dishSlug: slug, level, lang: language, ns, attemptId: params.get("attempt") });
     sessionIdRef.current = sessionId;
+    if (params.get("attempt") !== sessionId) {
+      navigate(`/dish/${slug}/cook?level=${level}&lang=${language}&serves=${serves}&attempt=${sessionId}`, { replace: true });
+      return scope.cancel;
+    }
     const record = getSessionRecord(ownerId, sessionId, ns);
-
+    const unknown = record?.snapshot_id == null && record?.capture_pending !== true;
+    setLegacy(unknown);
+    snapshotIdRef.current = record?.snapshot_id ?? null;
+    if (unknown) {
+      if (record?.cook_log_id) { setCookLog({ id: record.cook_log_id }); setPhase("reflecting"); }
+      return scope.cancel;
+    }
     async function load() {
-      let content, snapshotId;
       try {
-        if (record?.snapshot_id != null) {
-          // The one legitimate re-fetch (§1): a resume re-requesting the
-          // SAME snapshot_id, never a fresh capture mid-session. Access is
-          // re-checked every time regardless.
-          const res = await readSnapshot(record.snapshot_id, slug, level, language);
-          content = res.content;
-          snapshotId = res.snapshot_id;
-        } else {
-          const res = await startSnapshot(slug, level, language);
-          content = res.content;
-          snapshotId = res.snapshot_id;
-          setSessionSnapshot(ownerId, sessionId, snapshotId, ns);
-        }
-      } catch {
-        // Locked tier (access lapsed or was never granted) or dish/tier gone
-        // - same redirect-away behavior as before.
-        if (getAuthEpoch() === requestEpoch) navigate(`/dish/${slug}`, { replace: true });
-        return;
-      }
-      if (getAuthEpoch() !== requestEpoch) return; // account changed mid-request
-
-      snapshotIdRef.current = snapshotId;
-      setTier(content);
-
-      // A refresh between a successful cook-log save and reflection (§13):
-      // resume straight into the reflection screen for the right cook,
-      // never re-prompted as if the cook needs re-saving.
-      if (record?.cook_log_id) {
-        setCookLog({ id: record.cook_log_id });
-        setPhase("reflecting");
-      } else {
-        const stepIds = (content.steps || []).map(stepId);
-        const idx = record?.current_step_id ? stepIds.indexOf(record.current_step_id) : -1;
+        const res = record?.snapshot_id != null
+          ? await readSnapshot(record.snapshot_id, slug, level, language, scope.signal)
+          : await startSnapshot(slug, level, language, scope.signal);
+        if (!scope.current()) return;
+        setSessionSnapshot(ownerId, sessionId, res.snapshot_id, ns);
+        snapshotIdRef.current = res.snapshot_id;
+        setTier(res.content);
+        setPinnedLessonsState(res.content.lessons || {});
+        if (record?.cook_log_id) { setCookLog({ id: record.cook_log_id }); setPhase("reflecting"); }
+        const idx = record?.current_step_id ? (res.content.steps || []).map(stepId).indexOf(record.current_step_id) : -1;
         setStepIdx(idx >= 0 ? idx : 0);
+      } catch {
+        if (scope.current()) setLoadError(true);
       }
-
-      // Lesson-content pin (§9): captured once at a NEW session's start,
-      // never re-fetched live for a resumed one - a resumed session reads
-      // exactly what's already pinned on the record.
-      let lessons = record?.pinned_lessons;
-      if (lessons == null) {
-        lessons = {};
-        const ids = [...new Set((content.steps || []).map(stepId).filter(Boolean))];
-        await Promise.all(ids.map(async (id) => {
-          try {
-            lessons[id] = await getLessonByRef(slug, level, language, id);
-          } catch {
-            // No lesson for this step (or not accessible to this requester) - fine, just omit it.
-          }
-        }));
-        setPinnedLessons(ownerId, sessionId, lessons, ns);
-      }
-      if (getAuthEpoch() !== requestEpoch) return;
-      setPinnedLessonsState(lessons);
     }
     load();
-  }, [slug, level, language, epoch, ownerId, ns]); // eslint-disable-line react-hooks/exhaustive-deps
+    return scope.cancel;
+  }, [slug, level, language, epoch, ownerId, ns, reload]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const restart = () => {
+    const id = getOrStartSession(ownerId, { dishSlug: slug, level, lang: language, ns, forceNew: true });
+    navigate(`/dish/${slug}/cook?level=${level}&lang=${language}&serves=${serves}&attempt=${id}`, { replace: true });
+  };
+  const finish = async () => {
+    const scope = scopeRef.current;
+    const sessionId = sessionIdRef.current;
+    if (!scope?.current() || saving) return;
+    setSaveError(false); setSaving(true);
+    try {
+      if (!isGuest) {
+        const result = await logCook(slug, level, sessionId, language, snapshotIdRef.current);
+        if (!scope.current()) return;
+        setSessionCookLog(ownerId, sessionId, result.cook_log.id, ns);
+        setCookLog(result.cook_log); setPhase("reflecting");
+      } else {
+        completeSession(ownerId, sessionId, ns); setPhase("done");
+      }
+    } catch { if (scope.current()) setSaveError(true); }
+    finally { if (scope.current()) setSaving(false); }
+  };
 
   useEffect(() => {
     if (!timer || !timer.running) return;
@@ -182,58 +176,31 @@ export default function CookMode() {
     return () => lock?.release?.().catch(() => {});
   }, []);
 
-  if (!tier) {
-    return <div className="min-h-screen p-8" style={{ background: "var(--bg)", color: "var(--muted)" }}>{t("loading")}</div>;
-  }
-
   if (phase === "reflecting") {
-    return (
-      <ReflectionScreen
-        t={t}
-        pinnedLessons={pinnedLessons}
-        outcome={reflOutcome} setOutcome={setReflOutcome}
-        practiced={reflPracticed} setPracticed={setReflPracticed}
-        confidence={reflConfidence} setConfidence={setReflConfidence}
-        saving={reflSaving}
-        error={reflError}
-        onSubmit={() => {
-          const primaryLesson = Object.values(pinnedLessons).find(Boolean) || null;
-          if (reflOutcome == null && reflPracticed == null && reflConfidence == null) {
-            completeSession(ownerId, sessionIdRef.current, ns);
-            setPhase("done");
-            return;
-          }
-          setReflSaving(true);
-          setReflError(false);
-          const payload = { cook_log_id: cookLog.id };
-          if (primaryLesson?.skill) payload.skill_slug = primaryLesson.skill;
-          if (reflOutcome != null) payload.outcome = reflOutcome;
-          if (reflPracticed != null) payload.practiced_skill_confirmed = reflPracticed;
-          if (reflConfidence != null) payload.confidence = reflConfidence;
-          submitReflection(payload)
-            .then(() => {
-              setReflSaving(false);
-              setReflected(true);
-              completeSession(ownerId, sessionIdRef.current, ns);
-              setPhase("done");
-            })
-            .catch(() => {
-              setReflSaving(false);
-              setReflError(true); // visible retry (§13) - stay on this screen, never navigate forward
-            });
-        }}
-        onSkip={() => {
-          completeSession(ownerId, sessionIdRef.current, ns);
-          setPhase("done");
-        }}
-      />
-    );
+    const sessionId = sessionIdRef.current;
+    const done = async (result) => {
+      if (!scopeRef.current?.current()) return;
+      setReflected(result?.status && result.status !== "skipped");
+      completeSession(ownerId, sessionId, ns);
+      setPhase("done");
+    };
+    return <div className="min-h-screen p-6 max-w-lg mx-auto"><ReflectionEditor cookLogId={cookLog.id} onDone={done} onContinue={() => done(null)} /></div>;
   }
-
   if (phase === "done") {
-    const nextPractice = Object.values(pinnedLessons).find((l) => l?.next_practice)?.next_practice || null;
-    return <DoneScreen t={t} isGuest={isGuest} reflected={reflected} nextPractice={nextPractice} dishSlug={slug} />;
+    return <DoneScreen t={t} isGuest={isGuest} reflected={reflected} dishSlug={slug}
+      snapshotId={snapshotIdRef.current} level={level} language={language} />;
   }
+  if (legacy) return <div className="min-h-screen p-8 flex flex-col gap-4">
+    <p>{t("source_unknown")}</p>
+    <button className="btn-primary" onClick={restart}>{t("cook_start_over")}</button>
+    <button className="btn-ghost" disabled={saving} onClick={finish}>{t(saving ? "loading" : "legacy_finish")}</button>
+    {saveError && <p role="alert">{t("error_generic")}</p>}
+  </div>;
+  if (!tier) return <div className="min-h-screen p-8">
+    <p role="status">{t(loadError ? "snapshot_load_error" : "loading")}</p>
+    {loadError && <button className="btn-primary mt-4" onClick={() => setReload((n) => n + 1)}>{t("error_retry")}</button>}
+    <Link className="btn-ghost block mt-4" to={`/dish/${slug}`}>{t("lesson_back")}</Link>
+  </div>;
 
   const step = tier.steps[stepIdx];
   const text = stepText(step);
@@ -257,44 +224,9 @@ export default function CookMode() {
       persistStep(next);
       return;
     }
-    attemptFinish();
+    finish();
   };
 
-  // Reattempted by the retry button on failure, reusing the same
-  // sessionIdRef - never minting a new one - so a flaky first attempt
-  // replays via #48's idempotency key instead of double-logging.
-  const attemptFinish = () => {
-    setSaveError(false);
-
-    if (isGuest) {
-      // §4 guest exception / §K: no server round-trip at all for a guest -
-      // this is a client-side branch decided before any request is built,
-      // never a call the backend happens to reject.
-      completeSession(ownerId, sessionIdRef.current, ns);
-      setPhase("done");
-      return;
-    }
-
-    setSaving(true);
-    const requestEpoch = epoch;
-    if (!sessionIdRef.current) sessionIdRef.current = crypto.randomUUID();
-    logCook(slug, level, sessionIdRef.current, language, snapshotIdRef.current)
-      .then((res) => {
-        if (getAuthEpoch() !== requestEpoch) { navigate(`/dish/${slug}`); return; }
-        setSessionCookLog(ownerId, sessionIdRef.current, res.cook_log.id, ns);
-        setCookLog(res.cook_log);
-        setSaving(false);
-        setPhase("reflecting");
-      })
-      .catch(() => {
-        if (getAuthEpoch() !== requestEpoch) { navigate(`/dish/${slug}`); return; }
-        // A real failure (network error, 409 conflict, 5xx) - never treat
-        // this like success. Stay on the Finish screen with a visible
-        // retry instead of silently losing the cook.
-        setSaving(false);
-        setSaveError(true);
-      });
-  };
   const goBack = () => {
     setTimer(null);
     if (stepIdx > 0) {
@@ -306,6 +238,8 @@ export default function CookMode() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
+      {tier.schema_version !== 2 && <p className="px-5 pt-3 text-sm">{t("teaching_unavailable")}</p>}
+      <button className="chip self-end m-3" onClick={restart}>{t("cook_start_over")}</button>
       <div className="flex items-center justify-between px-5 pt-5">
         <button onClick={() => navigate(`/dish/${slug}`)} className="chip">✕ {t("cook_exit")}</button>
         <div className="flex gap-1 flex-1 mx-4">
@@ -368,7 +302,7 @@ export default function CookMode() {
       )}
       <div className="flex gap-2.5 px-5 pb-6">
         <button onClick={goBack} className="btn-ghost flex-1" disabled={saving}>← {t("cook_back")}</button>
-        <button onClick={saveError ? attemptFinish : goNext} className="btn-primary flex-1" disabled={saving}>
+        <button onClick={saveError ? finish : goNext} className="btn-primary flex-1" disabled={saving}>
           {saving
             ? t("loading")
             : saveError
@@ -380,19 +314,19 @@ export default function CookMode() {
       </div>
 
       {helpOpen && lesson && (
-        <div className="fixed inset-0 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
+        <HelpDialog onClose={() => setHelpOpen(false)}>
           <div className="card w-full max-w-lg rounded-b-none px-6 pt-5 pb-8" style={{ maxHeight: "80vh", overflowY: "auto" }}>
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--muted)" }}>{t("cook_help_eyebrow")}</p>
-                <h2 className="font-display text-2xl font-bold mt-0.5" style={{ color: "var(--ink)" }}>{lesson.title}</h2>
+                <h2 id="cook-help-title" className="font-display text-2xl font-bold mt-0.5" style={{ color: "var(--ink)" }}>{lesson.title}</h2>
               </div>
               <button onClick={() => setHelpOpen(false)} className="chip" aria-label={t("cook_help_close")}>✕</button>
             </div>
 
             <LessonBody body={lesson.body} />
 
-            <Link to={`/lesson/${lesson.slug}`} className="block text-sm font-bold text-center mt-4" style={{ color: "var(--brand)" }}>
+            <Link to={`/lesson/${lesson.slug}?snapshot=${snapshotIdRef.current}&dish_slug=${slug}&level=${level}&lang=${language}&attempt=${sessionIdRef.current}`} className="block text-sm font-bold text-center mt-4" style={{ color: "var(--brand)" }}>
               {t("cook_help_see_full_lesson")} →
             </Link>
 
@@ -400,91 +334,7 @@ export default function CookMode() {
               {t("cook_help_close")}
             </button>
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ReflectionScreen({ t, pinnedLessons, outcome, setOutcome, practiced, setPracticed, confidence, setConfidence, saving, error, onSubmit, onSkip }) {
-  const primaryLesson = Object.values(pinnedLessons).find(Boolean) || null;
-
-  const outcomeOptions = [
-    { value: "happy", label: t("reflect_outcome_happy") },
-    { value: "mixed", label: t("reflect_outcome_mixed") },
-    { value: "need_help", label: t("reflect_outcome_need_help") },
-  ];
-  const confidenceOptions = [
-    { value: "unknown", label: t("reflect_confidence_unknown") },
-    { value: "wants_guidance", label: t("reflect_confidence_wants_guidance") },
-    { value: "comfortable", label: t("reflect_confidence_comfortable") },
-  ];
-
-  return (
-    <div className="min-h-screen flex flex-col px-6 pt-8 pb-6" style={{ background: "var(--bg)" }}>
-      <h1 className="font-display text-2xl font-bold" style={{ color: "var(--ink)" }}>{t("reflect_title")}</h1>
-
-      <div className="flex gap-2 mt-4">
-        {outcomeOptions.map((o) => (
-          <button
-            key={o.value}
-            onClick={() => setOutcome(outcome === o.value ? null : o.value)}
-            className="flex-1 rounded-2xl border-2 py-3 text-sm font-bold"
-            style={{
-              borderColor: outcome === o.value ? "var(--brand)" : "var(--line)",
-              background: outcome === o.value ? "var(--brand-soft)" : "var(--card)",
-              color: "var(--ink)",
-            }}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-
-      {primaryLesson && (
-        <label className="card flex items-center gap-3 px-4 py-3.5 mt-5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={practiced === true}
-            onChange={(e) => setPracticed(e.target.checked)}
-            className="w-5 h-5"
-          />
-          <span className="text-sm font-semibold" style={{ color: "var(--ink)" }}>
-            {t("reflect_practiced_label", { skill: primaryLesson.title })}
-          </span>
-        </label>
-      )}
-
-      <p className="font-display font-bold text-sm mt-6" style={{ color: "var(--ink)" }}>{t("reflect_confidence_title")}</p>
-      <div className="flex flex-col gap-2 mt-2">
-        {confidenceOptions.map((c) => (
-          <button
-            key={c.value}
-            onClick={() => setConfidence(confidence === c.value ? null : c.value)}
-            className="rounded-2xl border-2 py-3 px-4 text-sm font-bold text-left"
-            style={{
-              borderColor: confidence === c.value ? "var(--brand)" : "var(--line)",
-              background: confidence === c.value ? "var(--brand-soft)" : "var(--card)",
-              color: "var(--ink)",
-            }}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex-1" />
-
-      {error && (
-        <p className="text-sm font-semibold text-center mb-2" style={{ color: "var(--hot)" }}>{t("error_generic")}</p>
-      )}
-      <button onClick={onSubmit} className="btn-primary mt-2" disabled={saving}>
-        {saving ? t("loading") : error ? t("error_retry") : t("reflect_save")}
-      </button>
-      {!error && (
-        <button onClick={onSkip} className="text-sm font-bold text-center mt-3 py-2" style={{ color: "var(--muted)" }} disabled={saving}>
-          {t("reflect_skip")}
-        </button>
+        </HelpDialog>
       )}
     </div>
   );
@@ -496,7 +346,19 @@ function ReflectionScreen({ t, pinnedLessons, outcome, setOutcome, practiced, se
 // slug rather than a second API round-trip just to show a nicer heading.
 const titleizeSlug = (slug) => slug.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
 
-function DoneScreen({ t, isGuest, reflected, nextPractice, dishSlug }) {
+function DoneScreen({ t, isGuest, reflected, dishSlug, snapshotId, level, language }) {
+  const [nextPractice, setNextPractice] = useState(null);
+  const [failed, setFailed] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const epoch = useAuthStore((s) => s.epoch);
+  useEffect(() => {
+    const scope = createRequestScope(() => getAuthEpoch() === epoch);
+    setNextPractice(null); setFailed(false);
+    if (snapshotId) readSnapshot(snapshotId, dishSlug, level, language, scope.signal)
+      .then((res) => { if (scope.current()) setNextPractice(res.next_practice); })
+      .catch(() => { if (scope.current()) setFailed(true); });
+    return scope.cancel;
+  }, [snapshotId, dishSlug, level, language, epoch, retry]);
   const [dismissed, setDismissed] = useState(false);
   const heading = isGuest ? t("guest_cook_done_title") : reflected ? t("reflect_saved") : t("cooked_logged");
 
@@ -512,6 +374,7 @@ function DoneScreen({ t, isGuest, reflected, nextPractice, dishSlug }) {
         </p>
       )}
 
+      {failed && <button className="btn-ghost mt-4" onClick={() => setRetry((n) => n + 1)}>{t("error_retry")}</button>}
       {nextPractice && !dismissed && (
         <div className="card px-4 py-4 mt-6 max-w-sm w-full text-left">
           <p className="font-display font-bold text-xs uppercase tracking-wide" style={{ color: "var(--brand)" }}>{t("reflect_next_practice_label")}</p>
@@ -519,7 +382,7 @@ function DoneScreen({ t, isGuest, reflected, nextPractice, dishSlug }) {
           <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>{stripMd(nextPractice.reason)}</p>
           <div className="flex gap-2 mt-3">
             <button onClick={() => setDismissed(true)} className="btn-ghost flex-1 text-sm py-2.5">{t("reflect_next_practice_dismiss")}</button>
-            <Link to={`/dish/${nextPractice.dish_slug}`} className="btn-primary flex-1 text-sm py-2.5 text-center">{t("reflect_next_practice_cta")}</Link>
+            <Link to={`/dish/${nextPractice.dish_slug}?level=${nextPractice.level}&lang=${nextPractice.lang}`} className="btn-primary flex-1 text-sm py-2.5 text-center">{t("reflect_next_practice_cta")}</Link>
           </div>
         </div>
       )}

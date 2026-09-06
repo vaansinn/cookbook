@@ -1,7 +1,7 @@
 import api from "./client";
 
-export async function fetchDishes(params = {}) {
-  const { data } = await api.get("/dishes", { params });
+export async function fetchDishes(params = {}, signal) {
+  const { data } = await api.get("/dishes", { params, signal });
   return data;
 }
 

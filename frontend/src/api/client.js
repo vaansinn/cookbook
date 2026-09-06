@@ -15,7 +15,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 && err.config?.headers?.Authorization) {
+    if (err.response?.status === 401 && err.config?.headers?.Authorization === `Bearer ${localStorage.getItem("token")}`) {
       window.dispatchEvent(new CustomEvent("auth:expired"));
     }
     return Promise.reject(err);

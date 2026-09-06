@@ -1,5 +1,67 @@
 # #47a — Teaching pilot fixture contract
 
+## Hardening amendment — authoritative over older implementation examples
+
+The following tightens sections 1, 3, 4, 9, 10 and 13 without adding a broader
+learning platform. Earlier examples remain historical where they differ.
+
+- New recipe snapshots use `content.schema_version: 2` and `content.lessons`,
+  a map keyed by authored step ID containing the full localized lesson, slug,
+  skill slug, exact recipe reference and authored next-practice reference.
+  Capture uses one SQL statement for recipe/lesson/skill consistency. These
+  fields participate in the digest and are never updated after capture.
+- Snapshot responses additionally expose `next_practice` outside `content`.
+  It is filtered against current access and actual tier/language availability;
+  this presentation metadata may change, but immutable `content` never does.
+- Legacy snapshots stay untouched. Missing retained teaching data is shown as
+  unavailable; neither the server nor browser fills it from today's lessons.
+  A reflection's focus skill is derived only from retained server content.
+- `GET /api/cook-log/<id>/reflection` returns owner-scoped flat context, including
+  `revision`, `focus_skill` and optional historical fields. An absent reflection
+  returns revision 0 and null fields without inserting a row. Unknown/foreign
+  cooks still return 404. A legacy cook may record outcome only, not invented
+  skill practice or confidence. Existing historical answers are not backfilled.
+- `POST /api/reflections` accepts `cook_log_id`, a canonical UUID `mutation_id`,
+  nonnegative `expected_revision`, and only touched optional fields. Null clears
+  a field; omission leaves it untouched. Invalid types/values return 400.
+  Outcome: happy/mixed/need_help. Confidence: unknown/wants_guidance/comfortable.
+  Practice confirmation: boolean/null, never derived or defaulted to false.
+- A successful revision-checked write increments the revision and atomically
+  commits its reflection, any explicit current-confidence update, and its
+  user-scoped mutation receipt. Repeating a mutation+payload returns its original
+  result (200), without reapplying side effects. Reusing an ID for different
+  content returns 409. Stale expected revisions return 409 plus
+  `current_reflection`; users review those values before making a new mutation.
+  Account writes serialize before the owning cook lock, covering SQLite and
+  PostgreSQL and preventing races with direct confidence updates.
+- Unversioned clients may create an initial reflection and replay identical
+  existing fields. Differing unversioned updates return 409; they cannot silently
+  overwrite newer answers. Empty new submissions create no reflection row.
+- Clearing a historical confidence field leaves current confidence unchanged.
+  Explicitly submitting a nonnull confidence updates current confidence in the
+  same transaction. Direct `PUT /api/me/skills/<slug>` changes current confidence
+  only. `GET /api/me/skills` lists saved assessments and the pilot simmering skill.
+- History provides reflection corrections and independent current-confidence
+  editing without a new navigation entry. Pending reflection payload/UUID pairs
+  survive refresh in account/cook-scoped storage, cleared on account boundaries.
+  An uncertain save offers safe retry or continuing without further changes,
+  never an assertion that the server did not save it.
+- Auth initialization completes before guest/account selection. Each mounted
+  flow binds requests to its owner, attempt and language; obsolete reads abort
+  and stale writes cannot affect newer UI. Cook URLs preserve `attempt` identity.
+  Explicit Start over creates a new attempt without overwriting another one.
+- The old owner-only storage record is adopted after validation, preserving
+  session ID. Only after the new record and index are written is the old key
+  removed. Legacy snapshot-less attempts never capture today's content silently:
+  users explicitly restart or record the earlier cook through the legacy path.
+- Export includes cook ID/session/language/snapshot references, reflections and
+  current confidence. Account deletion removes mutation receipts before cooks.
+  Snapshot references in export do not grant access to restricted content.
+
+Release gates remain PostgreSQL fresh/populated-history verification, real UI
+approval, culinary review and beginner observation. SQLite tests are not evidence
+that the PostgreSQL gate has passed.
+
 Status: final for the pilot slice (#47a). Two agents build against this without
 talking to each other live — one on the teaching flow (#34a–#38a), one on
 idempotent cook-logging (#48). Field names here are the ones to implement

@@ -27,8 +27,8 @@ function RequireAuth({ children }) {
 // pilot-fixtures.md §5/§7 - mirrors how Basic recipe *viewing* is already
 // public, access.py's tier_access). Every other tier still requires
 // sign-in, same as before. This only unlocks the ROUTE for a guest; the
-// actual guest-facing Cook Mode/save-skip experience is Step 3, not built
-// here (CookMode.jsx is unchanged in this pass).
+// guest-facing Cook Mode waits for auth initialization, reads public Basic
+// snapshots and never saves personal cook/reflection records for a guest.
 function RequireAuthUnlessBasicCook({ children }) {
   const token = useAuthStore((s) => s.token);
   const [params] = useSearchParams();

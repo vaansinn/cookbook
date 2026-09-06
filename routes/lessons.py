@@ -19,10 +19,21 @@ eligible.
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import User, Lesson, Dish
+from models import User, Lesson, Dish, RecipeTier
 from access import tier_access
 
 lessons_bp = Blueprint("lessons", __name__)
+
+
+def eligible_next_practice(target, user):
+    """Presentation metadata, never written back into immutable snapshots."""
+    if not target or target.get("level") not in ("basic", "intermediate", "advanced") or not tier_access(target.get("level"), user)[0]:
+        return None
+    tier = RecipeTier.query.join(Dish).filter(
+        Dish.slug == target.get("dish_slug"), RecipeTier.level == target.get("level"),
+        RecipeTier.lang == target.get("lang"),
+    ).first()
+    return target if tier else None
 
 
 def _current_user():
@@ -48,11 +59,7 @@ def _lesson_response(lesson, lang, user):
     data = lesson.to_dict(lang=resolved_lang)
 
     # §11 next-practice filtering: only ever a target this requester can open.
-    if data["next_practice"]:
-        target_dish = Dish.query.filter_by(slug=data["next_practice"]["dish_slug"]).first()
-        target_allowed = bool(target_dish) and tier_access(data["next_practice"]["level"], user)[0]
-        if not target_allowed:
-            data["next_practice"] = None
+    data["next_practice"] = eligible_next_practice(data["next_practice"], user)
 
     return jsonify(data), 200
 
