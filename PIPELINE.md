@@ -14,6 +14,29 @@ screens. #60a–#60h define dependencies, bounded ownership and acceptance check
 no application implementation or agent dispatch has started. #60a now has a
 verified baseline (45 backend tests, 4 frontend scripts, production build) and a
 revised recipe/Cook Mode [prototype and evidence](docs/mobile-first-baseline.md).
+Follow-up preview: a welcoming-kitchen draft with ingredient-first discovery,
+the source lentil Bolognese recipe, generated dish/ingredient illustrations,
+and contextual cooking help. This remains a separate prototype under #60a;
+it does not change application code or resolve the culinary review gate.
+The draft now includes EN/DE AI-use disclosure and separate creator-cooked /
+image-comparison states. Creator cooking is confirmed; image comparison remains
+pending. Equipment correction awaits the creator's parallel-versus-sequential
+method choice; no source cooking instruction has been guessed or overwritten.
+The separate Explore tab now previews a compact 11-node pasta network: one guide,
+ten dish ideas across tomato/pesto/cream, and a shared creamy-tomato connection.
+Three existing labelled AI images are retained; eight missing recipes remain
+empty, selectable placeholders. EN/DE, mobile branch selection, adaptive
+connectors and node detail links are wired and checked. No new recipe was invented.
+Explore polish tightens desktop nodes to 52–56px and adds prominent Open recipe
+buttons for the lentil draft and the new tomato-pasta sample. The tomato sample
+now previews recipe-wide jarred-sauce versus tomatoes-and-herbs choices, a compact
+step overview, icon-led servings/time tiles, a three-image cooking story and a
+separate equipment section. AI disclosure remains accessible inside the images.
+EN/DE, mobile layout and prototype regression tests are checked. This is a
+memory-only design prototype: no unlocks, saved progress, production graph
+migration or application integration. New tomato quantities, timings and image
+comparison remain unverified. See [network notes](docs/prototypes/welcoming-network-notes.md)
+and [component notes](docs/prototypes/welcoming-tomato-notes.md).
 Visual approval and remaining supporting-screen baseline capture are pending;
 #60a is not complete. Exact responsive visuals require approval before UI code.
 #29/#30 are coordinated through #60c;

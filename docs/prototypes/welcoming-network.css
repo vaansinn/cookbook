@@ -1,0 +1,38 @@
+/* Compact discovery graph; existing kitchen tokens own both colour themes. */
+.header-inner nav{flex-wrap:wrap;column-gap:20px;row-gap:0}
+.header-inner nav a{min-height:44px;display:inline-flex;align-items:center}
+.network-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:28px 0 24px}
+.network-intro h1{font-size:clamp(30px,3vw,40px);margin-top:8px}.network-intro>p{font-size:12px;color:var(--muted);white-space:nowrap}
+.network-branch-picker{display:none}
+.network-map{position:relative;padding:0 24px 12px;max-width:960px;margin-inline:auto}
+.network-root{max-width:230px;margin:0 auto 32px}
+.network-branches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px}
+.network-branch{min-width:0}.network-node{position:relative;z-index:1;min-width:0}
+.network-card{display:flex;align-items:center;gap:9px;min-height:56px;padding:6px 10px;color:var(--ink);border:1px solid var(--line);border-radius:9px;background:var(--surface);transition:border-color .15s,box-shadow .15s}
+.network-card:hover{text-decoration:none;border-color:var(--blue);box-shadow:0 2px 8px var(--blue-soft)}
+.network-card[aria-current=location]{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue)}
+.network-photo{flex:0 0 34px;width:34px;height:34px;aspect-ratio:1;overflow:hidden;border-radius:50%}.network-photo img{width:100%;height:100%;object-fit:cover}
+.network-image-blank{display:block;width:100%;height:100%;border:1px dashed var(--line);border-radius:50%;background:var(--paper)}
+.network-card-copy{min-width:0}.network-card h2{font-size:16px;line-height:1.2;letter-spacing:-.02em}.network-status{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.network-variations{padding-left:27px;display:grid;gap:8px;margin-top:14px}
+.network-variations .network-card{min-height:52px;padding:6px 9px}.network-variations .network-photo{flex-basis:30px;width:30px;height:30px}.network-variations h2{font-size:15px}
+.network-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.network-lines path{fill:none;stroke:var(--blue);stroke-width:1.25;opacity:.45;stroke-linejoin:round}.network-lines .shared-edge{stroke-dasharray:4 5}.network-lines .related-edge{opacity:1;stroke-width:2}
+.network-shared{position:relative;max-width:260px;margin:20px auto 0}.network-shared>p{width:fit-content;margin:0 auto 8px;background:var(--paper);padding-inline:8px;color:var(--muted);font-size:11px;position:relative;z-index:1}.network-shared-links{display:none}
+.network-caption{display:flex;align-items:center;justify-content:space-between;gap:20px;padding-top:12px;color:var(--muted);font-size:12px}.network-caption .text-link{font-size:11px;white-space:nowrap}.network-select-hint{text-align:center;max-width:none;margin:12px 0;color:var(--muted);font-size:13px}
+.network-detail{max-width:780px;margin:24px auto 0;padding:26px 30px;background:var(--surface);border:1px solid var(--line);border-radius:14px;scroll-margin-top:24px}
+.network-detail-top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}.network-detail-top .text-link{font-size:12px}.network-detail-heading{display:flex;align-items:center;gap:18px}.network-detail-heading .network-photo{flex-basis:76px;width:76px;height:76px}.network-detail h2{font-size:30px;text-wrap:balance}.network-detail-intro{margin:18px 0 26px;font-size:15px}.network-detail h3{font-size:22px}.network-empty{min-height:60px;color:var(--muted)}
+.network-kit{padding:20px;background:var(--oat);border-radius:10px;margin:24px 0}.network-kit p{font-size:14px;margin-top:10px}.network-method{padding-left:26px;margin:26px 0}.network-method li{padding-left:10px;margin-bottom:24px}.network-method li::marker{font-weight:700;color:var(--blue)}.network-method p{font-size:15px;margin-top:9px}
+.network-components{display:flex;flex-wrap:wrap;gap:10px;padding:0;margin:18px 0 24px;list-style:none}.network-components li{padding:9px 15px;background:var(--blue-soft);border-radius:8px;color:var(--blue);font-size:14px}.network-related{border-top:1px solid var(--line);padding-top:20px;margin-top:24px}.network-related h3{font-size:20px;margin-bottom:16px}
+@media(min-width:700px) and (max-width:1050px){.network-branches{gap:25px}.network-card{gap:8px;padding:6px 8px}.network-card h2{font-size:15px}.network-photo{flex-basis:38px;width:38px;height:38px}.network-variations{padding-left:18px}.network-variations .network-photo{flex-basis:28px;width:28px;height:28px}.header-inner{flex-wrap:wrap;padding-block:12px}.header-inner nav{order:3;width:100%;justify-content:center}.header-inner .preferences{margin-left:auto}}
+@media(max-width:699px){
+.network-intro{align-items:flex-start;flex-direction:column;gap:9px;padding:22px 0 16px}.network-intro h1{font-size:32px}.network-intro .eyebrow{font-size:10px}
+.network-branch-picker{display:flex;gap:8px;margin-bottom:20px}.network-branch-picker a{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--line);border-radius:9px;font-size:13px}.network-branch-picker a[aria-current=true]{background:var(--blue);color:var(--on-blue);border-color:var(--blue)}
+.network-map{padding-inline:16px}.network-root{max-width:none;margin-bottom:32px}.network-branches{display:block}
+.network-branch{display:none}.network-map[data-branch=tomato] .network-branch[data-branch=tomato],.network-map[data-branch=pesto] .network-branch[data-branch=pesto],.network-map[data-branch=cream] .network-branch[data-branch=cream]{display:block}
+.network-map[data-branch=pesto] .network-shared{display:none}.network-card{min-height:56px}.network-card h2{font-size:16px}
+.network-shared{max-width:none;margin-top:18px;margin-left:27px}.network-shared-links{display:flex;justify-content:flex-end;gap:14px;font-size:12px}.network-map[data-branch=tomato] .network-shared-links a:first-child,.network-map[data-branch=cream] .network-shared-links a:last-child{display:none}
+.network-caption{align-items:flex-start;flex-direction:column;gap:0}.network-select-hint{text-align:left;margin-top:8px}.network-detail{padding:20px 18px}.network-detail h2{font-size:26px}.network-detail-top{flex-wrap:wrap;gap:0}.network-detail-top .text-link{order:-1;flex-basis:100%}.network-detail-heading{gap:12px}.network-detail-heading .network-photo{flex-basis:52px;width:52px;height:52px}.network-related .button{width:100%}
+}
+@media(max-width:600px){.header-inner nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}}
+@media(prefers-reduced-motion:reduce){.network-card{transition:none}}
+.network-recipe-action{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px}

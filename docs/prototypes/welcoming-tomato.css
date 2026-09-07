@@ -1,0 +1,50 @@
+/* Approved compact component selector. All quantities reserve the action column. */
+.tomato-page{--tomato-action:64px;--tomato-gap:10px}
+.tomato-hero{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;padding:14px 0 4px}
+.tomato-hero h1{font-size:clamp(32px,4vw,48px);margin:0;text-wrap:balance}
+.tomato-overview{display:flex;flex-wrap:wrap;gap:6px 12px;list-style:none;padding:0;margin:16px 0 0;color:var(--blue);font-size:13px;line-height:1.65}
+.tomato-overview li{display:flex;gap:12px;align-items:baseline}
+.tomato-overview li:not(:last-child)::after{content:'→';color:var(--muted)}
+.tomato-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0;align-self:stretch}
+.tomato-fact{display:flex;flex-direction:column;justify-content:center;background:var(--oat);border-radius:10px;padding:12px 14px;min-height:80px}
+.tomato-fact dt{font-size:12px;color:var(--muted);margin:0 0 4px}
+.tomato-fact-icon{display:block;width:24px;height:24px;margin-bottom:8px;color:var(--blue)}
+.tomato-fact dd{font:500 clamp(21px,2.3vw,28px)/1.2 var(--display);font-variant-numeric:tabular-nums;color:var(--blue);margin:0;white-space:nowrap}
+.tomato-story-wrap{grid-column:1/-1;min-width:0}
+.tomato-story{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;list-style:none;margin:0;padding:0}
+.tomato-story li{min-width:0}
+.tomato-story-frame{position:relative}
+.tomato-story-photo{display:block;width:100%;padding:0;background:transparent;text-align:left;color:var(--blue);border-radius:10px}
+.tomato-story-photo img{width:100%;height:auto;aspect-ratio:1;object-fit:cover;border-radius:10px;background:var(--oat)}
+.tomato-story-caption{padding-top:8px;font-size:12px;font-weight:600;line-height:1.5;color:var(--blue)}
+.tomato-image-credit.text-link{position:absolute;right:4px;bottom:0;display:flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 4px;background:transparent;text-decoration:none;font-size:11px}
+.tomato-image-credit span{padding:3px 7px;border-radius:4px;background:var(--surface);color:var(--ink);line-height:1.5}
+.tomato-image-credit:hover span{text-decoration:underline;text-underline-offset:2px}
+.tomato-image-credit:focus-visible{outline-offset:0;border-radius:5px}
+.tomato-story-large{width:100%;height:auto;max-height:65dvh;object-fit:contain;border-radius:10px;margin-bottom:12px}
+.tomato-page .recipe-bar{margin-top:4px}
+@media(min-width:650px){.tomato-story{gap:18px}.tomato-story-photo img{aspect-ratio:1.45;object-fit:contain}.tomato-story-caption{font-size:13px}}
+@media(min-width:900px){.tomato-hero{grid-template-columns:minmax(0,1fr) 290px;column-gap:32px;row-gap:24px}.tomato-page .recipe-bar .shell{justify-content:flex-end}.tomato-fact dd{font-size:25px}}
+.tomato-ingredients{--tomato-action:64px;--tomato-gap:10px;margin:14px 0}
+.tomato-ingredients ul{list-style:none;margin:0;padding:0}
+.tomato-ingredients li{display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-height:48px;padding:12px 0;font-size:14px}
+.tomato-ingredients li>span:first-child{min-width:0;overflow-wrap:break-word}
+.tomato-amount{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;color:var(--blue);font-size:13px;flex-shrink:0}
+.tomato-component{border-block:1px solid var(--line)}
+.tomato-editable .tomato-fixed{padding-right:calc(var(--tomato-action) + var(--tomato-gap))}
+.tomato-editable .tomato-component-row{display:grid;grid-template-columns:minmax(0,1fr) var(--tomato-action);gap:var(--tomato-gap);align-items:start}
+.tomato-change{justify-content:flex-end;min-height:48px;white-space:nowrap}
+.tomato-equipment{margin-top:32px}
+.tomato-equipment ul{list-style:none;padding:0;margin:16px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 20px;font-size:14px}
+.tomato-editor{background:var(--oat);border-radius:10px;padding:18px;margin:8px 0 14px}
+.tomato-editor[hidden]{display:none}
+.tomato-editor fieldset{border:0;padding:0;margin:0;min-width:0}
+.tomato-editor legend{font-size:14px;font-weight:600;margin-bottom:8px}
+.tomato-editor label{display:flex;align-items:center;gap:10px;min-height:44px;font-size:14px;cursor:pointer}
+.tomato-editor input{width:18px;height:18px;accent-color:var(--blue);flex-shrink:0}
+.tomato-breakout{margin:14px 0}.tomato-breakout strong{font-size:13px;color:var(--blue)}
+.tomato-breakout ul{border-left:1px solid var(--blue);padding-left:16px;margin:8px 0 0 7px}
+.tomato-breakout li{position:relative;font-size:13px;min-height:34px;padding:7px 0}
+.tomato-breakout li::before{content:'';position:absolute;width:12px;border-top:1px solid var(--blue);left:-16px;top:19px}
+.tomato-editor .row{margin-top:14px;gap:8px}.tomato-editor .button{padding:10px 14px}
+@media(max-width:600px){.tomato-hero h1{font-size:32px}.tomato-page .recipe-body{padding-top:22px}.tomato-ingredients li{font-size:13px}.tomato-amount{font-size:12px}.tomato-ingredients{--tomato-action:54px;--tomato-gap:8px}.tomato-editor{padding:14px}.tomato-editor .button{font-size:12px}}

@@ -25,6 +25,8 @@ Backend tests use disposable SQLite databases. This is not PostgreSQL acceptance
 
 ## Preview
 
+Latest visual exploration: [Welcoming kitchen draft](prototypes/welcoming-kitchen.html), with [scope, asset prompts and verification](prototypes/welcoming-kitchen-notes.md). This adds ingredient-first discovery and generated imagery around the actual five-ingredient starter recipe. The earlier structural prototype below is retained for comparison. Both remain pending visual approval; production UI is unchanged.
+
 Source: [mobile-cooking.html](prototypes/mobile-cooking.html).
 
 Run from the repository root with a suitable Python:
