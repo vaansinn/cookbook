@@ -5,11 +5,12 @@
 // here it also carries the light/dark swap instead of a data-section swap.
 export default {
   darkMode: "class",
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  // The local launcher can run from the repository root, not just frontend/.
+  content: { relative: true, files: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"] },
   theme: {
     extend: {
       fontFamily: {
-        display: ["Baloo 2", "system-ui", "sans-serif"],
+        display: ["Bricolage Grotesque", "system-ui", "sans-serif"],
         sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
       },
       colors: {

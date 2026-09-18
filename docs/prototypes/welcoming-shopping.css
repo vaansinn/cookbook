@@ -1,0 +1,92 @@
+/* Names toggle coverage; only the separate arrow opens details. */
+.shopping-selectable.shopping-entry{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 88px 44px;align-items:center;border-bottom:1px solid var(--line)}
+.shopping-selectable.shopping-dish-columns,.shopping-column-head{grid-template-columns:minmax(0,1fr) 88px 96px 44px}
+.shopping-column-head{display:grid;align-items:center;font-size:12px;color:var(--muted);padding:0 0 8px}
+.shopping-column-head>span:not(:first-child){text-align:right}.shopping-column-head>span:first-child{padding-left:44px}
+.shopping-name-check{display:flex;align-items:center;min-height:56px;min-width:0;cursor:pointer;font-size:14px;line-height:1.5;padding:8px 0}
+.shopping-name-check input{flex:none;width:19px;height:19px;margin:0 21px 0 4px;accent-color:var(--blue)}
+.shopping-name-check>span{min-width:0;overflow-wrap:anywhere}.shopping-name-check input:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.shopping-dish-quantity,.shopping-all-quantity{text-align:right;font-size:13px;font-variant-numeric:tabular-nums;line-height:1.4}
+.shopping-dish-quantity{font-weight:600}.shopping-all-quantity{color:var(--muted)}
+.shopping-selectable>details{grid-column:1/-1;border:0;min-width:0}
+.shopping-selectable>details>summary{position:absolute;right:0;top:0;width:44px;height:56px;min-height:44px;justify-content:center;padding:0;gap:0}
+.shopping-selectable .shopping-row-body{padding:0 0 8px 44px}
+.shopping-selectable.shopping-covered .shopping-name-check{color:var(--muted)}
+.shopping-check-notice{grid-column:1/-1;display:flex;gap:0 16px;align-items:center;flex-wrap:wrap;margin:0 0 10px 44px;padding:8px 12px;background:var(--blue-soft);border-radius:6px;font-size:12px}
+.shopping-check-notice>.text-link{min-height:44px;font-size:12px;text-align:left;padding:4px 0}
+.shopping-extra-check{display:flex;align-items:center;gap:10px;min-height:44px;font-size:13px;cursor:pointer}.shopping-extra-check input{width:19px;height:19px;accent-color:var(--blue)}
+@media(max-width:420px){
+ .shopping-selectable.shopping-entry{grid-template-columns:minmax(0,1fr) 64px 44px}
+ .shopping-selectable.shopping-dish-columns,.shopping-column-head{grid-template-columns:minmax(0,1fr) 54px 58px 44px}
+ .shopping-name-check{font-size:13px}.shopping-name-check input{margin-right:9px}
+ .shopping-dish-quantity,.shopping-all-quantity{font-size:12px}
+ .shopping-column-head>span:first-child{padding-left:32px}
+ .shopping-selectable .shopping-row-body{padding-left:0}.shopping-check-notice{margin-left:0}
+}
+.shopping-list-choices{display:grid;gap:24px}.shopping-list-choices h3{font-size:16px;margin-bottom:10px}
+.shopping-list-choices a{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:58px;padding:12px 0;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}
+.shopping-list-choices a>span{min-width:0;overflow-wrap:anywhere}.shopping-list-choices small{display:block;color:var(--muted);font-size:12px;margin-top:4px}.shopping-list-choices svg{flex:none}
+.shopping-seasonings>.planning-caption{max-width:48ch;margin:8px 0 12px;font-size:13px;line-height:1.6;color:var(--muted)}
+.shopping-seasoning summary>span{flex:1;min-width:0}.shopping-seasoning .shopping-hint{margin-bottom:8px}
+.shopping-scope-bar{display:flex;gap:16px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:13px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.shopping-view-picker{display:inline-flex;align-items:center;gap:10px;margin-left:auto;max-width:100%;min-height:44px}
+.shopping-view-picker select{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:6px;min-height:44px;max-width:100%;padding:6px 28px 6px 10px}
+.shopping-view-picker select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.shopping-interactive.shopping-ordered{grid-template-columns:1fr;max-width:760px;gap:30px}
+.shopping-ordered h2{overflow-wrap:anywhere}
+.shopping-heading{margin-bottom:8px}.shopping-heading>.button{flex:none}
+.shopping-heading{flex-wrap:wrap}.shopping-heading h1{flex:none;max-width:100%}
+.shopping-list-selector{display:inline-flex;align-items:center;gap:10px;max-width:100%;min-height:44px;padding:4px 0;border:0;background:transparent;color:var(--blue);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.shopping-list-selector span{min-width:0;overflow-wrap:anywhere}.shopping-list-selector svg{width:16px;height:16px;flex:none;transform:rotate(90deg)}
+.shopping-list-selector:hover span{text-decoration:underline}.shopping-list-selector:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.shopping-interactive{align-items:start;margin-top:26px;gap:40px}
+.shopping-column{display:grid;gap:30px;min-width:0}.shopping-column:empty{display:none}
+.shopping-interactive:has(.shopping-column:empty){grid-template-columns:1fr;max-width:760px}
+.shopping-entry{display:grid;grid-template-columns:44px minmax(0,1fr);align-items:start}
+.shopping-check{display:flex;align-items:center;justify-content:flex-start;min-height:54px;cursor:pointer}
+.shopping-check input{width:19px;height:19px;margin:0 0 0 4px;accent-color:var(--blue)}
+.shopping-entry summary{gap:10px}.shopping-entry summary>strong{min-width:64px;font-variant-numeric:tabular-nums}
+.shopping-covered summary{color:var(--muted)}.shopping-covered .shopping-item-name{text-decoration:line-through;text-decoration-color:var(--muted)}
+.shopping-state{display:block;width:fit-content;font-size:11px;font-weight:500;line-height:1.5;margin-top:3px;color:var(--muted);text-decoration:none}
+.shopping-review{color:var(--note-ink);background:var(--note);padding:2px 7px;border-radius:4px}
+.shopping-row-body{padding:0 0 8px}.shopping-row-body ul{padding:0 26px 4px 0}
+.shopping-row-body li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start}
+.shopping-row-body .planning-caption{font-size:12px;margin-bottom:12px}
+.shopping-review-copy{font-size:12px;padding:12px;background:var(--note);color:var(--note-ink);border-radius:7px;margin-bottom:14px}
+.shopping-extra{display:flex;justify-content:space-between;gap:16px;color:var(--blue);font-size:13px;border-left:2px solid var(--blue);padding:4px 26px 4px 10px;margin:4px 0}
+.shopping-extra strong{font-weight:600}
+.shopping-shared-total{display:flex;align-items:center;justify-content:space-between;gap:4px 16px;flex-wrap:wrap;border-top:1px solid var(--line);padding:8px 26px 0 0;font-size:13px}
+.shopping-shared-total strong{font-weight:600}.shopping-shared-total .text-link{min-height:44px;text-align:left;font-size:12px;padding:6px 0}
+@media(max-width:420px){.shopping-shared-total{padding-right:0}}
+.shopping-row-actions{display:flex;align-items:center;flex-wrap:wrap;gap:0 20px}
+.shopping-row-actions .text-link,.shopping-amount-controls .text-link{min-height:44px;font-size:12px;padding:6px 0}
+.shopping-row-actions .text-link{color:var(--muted)}
+.shopping-row-actions .text-link:not(:disabled):is(:hover,:focus-visible){color:var(--blue)}
+.shopping-change-amount{margin-left:auto;margin-right:26px}
+.shopping-total-form{padding-top:8px}
+.shopping-amount-controls{display:flex;align-items:center;flex-wrap:wrap;gap:0 12px;font-size:12px}.shopping-amount-controls label{font-weight:600}
+.shopping-amount-controls input{width:88px;min-width:0;flex:0 1 88px;max-width:120px}
+.shopping-unit{color:var(--muted)}
+.shopping-edit-actions{display:inline-flex;gap:16px;flex:none}
+.shopping-amount-controls input,#shopping-personal-form input,#shopping-personal-form select,#shopping-scope-form input[type=date]{min-height:44px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;font-size:16px;color:var(--ink)}
+.shopping-hint{font-size:11px;color:var(--muted);margin-top:7px}
+.shopping-error{font-size:12px;color:var(--note-ink);margin-top:8px}.shopping-error:empty{display:none}.shopping-error:not(:empty){border-left:3px solid var(--note-ink);padding:10px;background:var(--note)}
+.shopping-error:focus{outline:2px solid var(--focus);outline-offset:3px}
+.shopping-total-form input[aria-invalid=true]{border-color:var(--note-ink)}
+.shopping-undo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--blue-soft);padding:8px 14px;border-radius:8px;font-size:13px;margin-top:14px}
+#shopping-personal-form>input{width:100%}.shopping-personal-quantity,.shopping-date-inputs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.shopping-personal-quantity input,.shopping-personal-quantity select,.shopping-date-inputs input{width:100%;min-width:0;display:block;margin-top:8px}
+.shopping-date-inputs label{min-width:0}
+@media(max-width:420px){.shopping-date-inputs{grid-template-columns:1fr}#planning-dialog:has(#shopping-scope-form) h2{font-size:22px}}
+#shopping-scope-form fieldset{padding:0;margin:16px 0;border:0;min-width:0}
+#shopping-scope-form legend{font-size:14px;font-weight:600}
+#shopping-scope-form .shopping-scope-modes{display:flex;flex-wrap:wrap;gap:4px 20px}
+#planning-dialog .shopping-scope-modes label{display:flex;gap:10px;align-items:center;min-height:44px;margin:0}
+.shopping-scope-modes input,.shopping-meal-choice input{width:18px;height:18px;accent-color:var(--blue);flex:none}
+#planning-dialog .shopping-meal-choice{display:flex;align-items:center;gap:12px;min-height:54px;border-bottom:1px solid var(--line);padding-block:8px;margin:0}
+.shopping-meal-choice small{display:block;color:var(--muted);font-size:12px}
+#shopping-scope-form fieldset[hidden]{display:none}
+.shopping-row-body button:focus-visible,#shopping-personal-form select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+@media(max-width:899px){.shopping-interactive{grid-template-columns:1fr;gap:30px}.shopping-interactive .shopping-column{gap:30px}}
+@media(max-width:700px){.shopping-heading{flex-direction:row;align-items:center;gap:12px}.shopping-heading h1{font-size:30px}.shopping-heading>.button{padding-inline:12px;font-size:12px}.shopping-scope-bar{gap:0 16px}.shopping-list-selector{flex-basis:100%}}
+@media(max-width:420px){.shopping-entry{grid-template-columns:44px minmax(0,1fr)}.shopping-entry summary{font-size:13px;gap:8px}.shopping-entry summary>strong{font-size:12px;min-width:52px}.shopping-personal-quantity,.shopping-date-inputs{gap:10px}.shopping-row-body ul{padding-right:0}.planning-shopping li{flex-wrap:wrap}.planning-shopping li span{white-space:nowrap}.shopping-change-amount{margin-right:0}.shopping-amount-controls{gap:0 10px}.shopping-heading h1{font-size:26px}.shopping-row-actions{column-gap:14px}}

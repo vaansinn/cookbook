@@ -1,0 +1,58 @@
+/* Bounded LP21 presentation port: real API dishes; no inferred ingredient bases,
+   photographs, verification claims or prototype data imports. */
+.library-page {
+  --bg: #faf8f3; --card: #fffdf9; --ink: #263d43; --muted: #62645d;
+  --line: #c4bdaf; --library-oat: #eee5d4;
+  background: var(--bg); color: var(--ink); overflow-wrap: anywhere;
+}
+.dark .library-page {
+  --bg: #202726; --card: #29312f; --ink: #f2eee5; --muted: #c0c1b7;
+  --line: #747b6f; --library-oat: #353830;
+}
+.library-shell { width: min(100% - 32px, 1100px); margin-inline: auto; }
+.library-intro { padding: 20px 0; }
+.library-intro header > div { flex-wrap: wrap; }
+.library-intro header > div:nth-child(2) { flex-wrap: nowrap; }
+.library-intro header > div:nth-child(2) > p { min-width: 0; font-size: 12px; }
+.library-intro header > div:nth-child(2) > div { flex-shrink: 0; gap: 8px; }
+.library-intro header > div:nth-child(2) .btn-ghost { padding-inline: 12px; white-space: nowrap; }
+.library-intro h1 { font-size: clamp(30px, 4vw, 44px); letter-spacing: -.035em; line-height: 1.15; margin-top: 28px; }
+.library-page :is(a, button, input, select):focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+.library-page :is(button, a, select) { touch-action: manipulation; }
+.library-page .btn-ghost { box-shadow: none; border-width: 1px; border-radius: 8px; min-height: 44px; }
+.library-content { padding-bottom: 40px; }
+.library-search { border-width: 1px; border-radius: 10px; }
+.library-search input { min-width: 0; width: 100%; font-size: 16px; }
+.library-tools { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 16px 0 24px; }
+.library-filter { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); flex: 1 1 130px; max-width: 240px; min-width: 0; }
+.library-filter select { min-height: 44px; width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); font-size: 14px; padding: 8px; }
+.library-favorites { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); font-size: 14px; }
+.library-favorites[aria-pressed=true] { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+.library-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 235px), 1fr)); gap: 16px; }
+.library-grid > [role], .library-grid > p { grid-column: 1 / -1; }
+.library-recipe { position: relative; border: 1px solid var(--line); border-radius: 12px; background: var(--card); min-width: 0; }
+.library-recipe-link { display: flex; flex-direction: column; height: 100%; padding: 16px; gap: 12px; border-radius: inherit; }
+.library-recipe-link:hover { background: var(--library-oat); }
+.library-recipe-mark { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; background: var(--library-oat); color: var(--brand); }
+.library-recipe h2 { font: 600 21px/1.25 'Bricolage Grotesque', system-ui, sans-serif; letter-spacing: -.02em; }
+.library-recipe-meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: auto; font-size: 13px; color: var(--muted); }
+.library-recipe-meta svg { width: 16px; height: 16px; }
+.library-recipe-meta > span { margin-left: auto; }
+.library-icon-button { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 8px; }
+.library-icon-button:hover { background: var(--library-oat); }
+.library-recipe-favorite { position: absolute; right: 8px; top: 8px; }
+.library-recipe-favorite[aria-pressed=true] svg { fill: currentColor; }
+.library-page nav { padding-bottom: max(12px, env(safe-area-inset-bottom)); border-top-width: 1px; }
+@media (max-width: 519px) {
+  .library-intro { padding-top: 16px; }
+  .library-intro h1 { margin-top: 20px; }
+  .library-tools { gap: 8px; }
+  .library-filter { flex: 1 1 0; }
+  .library-favorites { width: 44px; padding: 10px; flex-shrink: 0; }
+  .library-favorites > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .library-grid { gap: 10px; }
+  .library-recipe-link { padding: 16px 60px 16px 16px; gap: 8px; }
+  .library-recipe-mark { display: none; }
+  .library-recipe h2 { font-size: 21px; }
+  .library-recipe-meta > span { margin-left: 6px; }
+}

@@ -1,6 +1,6 @@
 /*
  * index.css — theme tokens + global styles.
- * Approved enamel-blue palette. Typography remains Baloo 2 + Plus Jakarta Sans.
+ * Approved enamel-blue palette with locally bundled welcoming-kitchen fonts.
  * Tier names are compatibility aliases, not traffic-light or spice-heat colors.
  * Success, danger and attention have independent semantic tokens.
  */
@@ -8,6 +8,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/fonts/plus-jakarta-sans-variable.ttf") format("truetype");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/fonts/plus-jakarta-sans-italic-variable.ttf") format("truetype");
+  font-weight: 200 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/bricolage-grotesque-variable.ttf") format("truetype");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
 
 @layer base {
   /*

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Only Vite's local module/style GETs are permitted. Even a missed mock
+         cannot send fetch/XHR/beacon/WebSocket requests or submit a real form. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'" />
+    <title>TEST ONLY — mounted planning recovery</title>
+    <style>
+      body { margin: 0; background: #f5f2ed; color: #202b35; font: 16px system-ui, sans-serif; }
+      #harness { padding: 16px; border-bottom: 4px solid #945300; background: #fff3cf; }
+      #harness h1 { font-size: 20px; margin: 0 0 8px; }
+      #harness button { min-height: 44px; padding: 8px 18px; font: inherit; }
+      #results { padding-left: 24px; } #results li { margin: 10px 0; white-space: pre-wrap; }
+      [data-result="PASS"] { color: #16612f; } [data-result="FAIL"] { color: #a32121; }
+      #mounted-page { max-width: 1100px; margin: auto; padding: 12px; }
+      #summary, #boot-status { white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <header id="harness">
+      <h1>TEST ONLY — actual mounted planning recovery</h1>
+      <p>Synthetic account, server and storage in memory. No real API requests or browser auth/planning storage. This is not PostgreSQL or cross-tab acceptance.</p>
+      <p id="boot-status" role="status">Installing isolation before importing the planning page…</p>
+      <button id="run-tests" type="button" disabled>Run mounted recovery tests</button>
+      <p id="summary" role="status">Not run.</p>
+      <ol id="results" aria-label="Test results"></ol>
+    </header>
+    <main id="mounted-page"></main>
+    <script type="module" src="./planning-sandbox.mjs"></script>
+  </body>
+</html>

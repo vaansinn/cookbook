@@ -18,8 +18,8 @@ export default function Register() {
     e.preventDefault();
     setErr("");
     try {
-      await register(email, displayName, password);
-      navigate("/");
+      const applied = await register(email, displayName, password);
+      if (applied) navigate("/");
     } catch (e2) {
       setErr(apiMessage(e2.response?.data, t, "Registration failed"));
     }

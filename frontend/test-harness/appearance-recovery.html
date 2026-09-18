@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'" />
+  <title>TEST ONLY — account appearance recovery</title>
+  <style>
+    :root { --brand:#194c43; --brand-ink:white; --brand-soft:#e7f0ea; --bg:#f5f2ed; --card:white; --ink:#202b35; --muted:#53616c; --line:#b7c4bd; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px system-ui,sans-serif; }
+    #harness { padding:16px; background:#fff3cf; border-bottom:4px solid #945300; }
+    #harness h1 { font-size:20px; } button { min-height:44px; }
+    #results li { margin:10px 0; white-space:pre-wrap; }
+    [data-result="PASS"] { color:#16612f; } [data-result="FAIL"] { color:#a32121; }
+    #mounted-page { max-width:1100px; padding:12px; margin:auto; }
+    #appearance-fixture-controls { padding:8px; border:1px dashed #945300; }
+    #appearance-fixture-controls button { margin:4px; }
+  </style>
+</head>
+<body>
+  <header id="harness">
+    <h1>TEST ONLY — actual account appearance provider</h1>
+    <p>Actual Home/Shopping pages, provider, switches, hook and planning adapter. Synthetic accounts, SQL responses and memory storage only. Native network/storage are blocked before imports.</p>
+    <p>Seven cases check rendered controls and request/storage evidence, including navigation during a held save, a held read superseded by a Shopping save and a failed guest storage write. This does not mount App's document-root theme effect or exercise real login, PostgreSQL or cross-tab browser locks.</p>
+    <p id="boot-status" role="status">Installing isolation…</p>
+    <button id="run-tests" type="button" disabled>Run mounted appearance cases</button>
+    <button id="show-fixture" type="button" disabled>Show synthetic appearance fixture</button>
+    <p id="summary" role="status">Not run.</p>
+    <ol id="results" aria-label="Test results"></ol>
+  </header>
+  <main id="mounted-page"></main>
+  <script type="module" src="./appearance-sandbox.mjs"></script>
+</body>
+</html>

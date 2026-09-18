@@ -22,4 +22,6 @@ def tier_access(level, user):
         if user and user.plan == "premium":
             return True, None
         return False, "account" if not user else "premium"
-    return True, None
+    # Unknown levels must not turn an invalid request or bad content row into
+    # public access. Existing Basic/account/premium rules are unchanged.
+    return False, "invalid_tier"

@@ -1,0 +1,126 @@
+name: Verify
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    env:
+      FLASK_SKIP_DOTENV: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install declared dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          npm ci --prefix frontend --include=dev
+      - name: Record source and resolved runtime identity
+        run: |
+          mkdir -p "$RUNNER_TEMP/cookbook-verification"
+          git rev-parse HEAD > "$RUNNER_TEMP/cookbook-verification/source.txt"
+          git rev-parse HEAD:content >> "$RUNNER_TEMP/cookbook-verification/source.txt"
+          python --version > "$RUNNER_TEMP/cookbook-verification/runtime.txt"
+          node --version >> "$RUNNER_TEMP/cookbook-verification/runtime.txt"
+          npm --version >> "$RUNNER_TEMP/cookbook-verification/runtime.txt"
+          python -m pip freeze > "$RUNNER_TEMP/cookbook-verification/python-resolution.txt"
+          sha256sum frontend/package-lock.json > "$RUNNER_TEMP/cookbook-verification/lockfile.txt"
+      - name: Backend regression scripts (isolated SQLite evidence)
+        run: python tests/run_backend.py 2>&1 | tee "$RUNNER_TEMP/cookbook-verification/backend.log"
+      - name: Frontend and prototype regression scripts
+        run: node --experimental-vm-modules --experimental-loader ./tests/frontend/extensionlessLoader.mjs --test tests/frontend/test_*.mjs docs/prototypes/*.test.mjs 2>&1 | tee "$RUNNER_TEMP/cookbook-verification/frontend.log"
+      - name: Production frontend build in temporary output
+        run: |
+          npm --prefix frontend run build -- --outDir "$RUNNER_TEMP/cookbook-build" 2>&1 | tee "$RUNNER_TEMP/cookbook-verification/build.log"
+          find "$RUNNER_TEMP/cookbook-build" -type f -exec sha256sum {} + > "$RUNNER_TEMP/cookbook-verification/build-sha256.txt"
+      - name: Prepare fixed-path PostgreSQL 16 restore clients
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client-16
+          mkdir -p .local/postgres-runtime/pgsql/bin
+          install -m 0755 /usr/lib/postgresql/16/bin/pg_dump .local/postgres-runtime/pgsql/bin/pg_dump
+          install -m 0755 /usr/lib/postgresql/16/bin/pg_restore .local/postgres-runtime/pgsql/bin/pg_restore
+          .local/postgres-runtime/pgsql/bin/pg_dump --version > "$RUNNER_TEMP/cookbook-verification/postgres-clients.txt"
+          .local/postgres-runtime/pgsql/bin/pg_restore --version >> "$RUNNER_TEMP/cookbook-verification/postgres-clients.txt"
+          sha256sum .local/postgres-runtime/pgsql/bin/pg_dump .local/postgres-runtime/pgsql/bin/pg_restore >> "$RUNNER_TEMP/cookbook-verification/postgres-clients.txt"
+      # The verifiers require SERVER identity 127.0.0.1:55432, not Docker's
+      # bridge address/internal 5432. Linux host networking + loopback-only
+      # Postgres preserves that guard. No volume/mount or saved cluster is used.
+      - name: Start job-owned disposable PostgreSQL 16 on loopback
+        id: release_postgres
+        run: |
+          container=$(docker run --detach --network host \
+            --name "cookbook-verify-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --label "cookbook.verification=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --tmpfs /var/lib/postgresql/data \
+            --env POSTGRES_USER=cookbook_ci --env POSTGRES_PASSWORD=disposable_ci_only \
+            --env POSTGRES_DB=postgres \
+            postgres:16.15-bookworm postgres -h 127.0.0.1 -p 55432)
+          [[ "$container" =~ ^[0-9a-f]{64}$ ]]
+          echo "container=$container" >> "$GITHUB_OUTPUT"
+          docker inspect --format '{{.Image}}' "$container" > "$RUNNER_TEMP/cookbook-verification/postgres-image.txt"
+          ready=false
+          for attempt in {1..30}; do
+            if docker exec "$container" pg_isready -h 127.0.0.1 -p 55432 -U cookbook_ci -d postgres; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          [[ "$ready" == true ]]
+      - name: Provision five new empty databases inside the owned ephemeral cluster
+        env:
+          POSTGRES_CONTAINER: ${{ steps.release_postgres.outputs.container }}
+        run: |
+          [[ "$POSTGRES_CONTAINER" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$(docker inspect --format '{{ index .Config.Labels "cookbook.verification" }}' "$POSTGRES_CONTAINER")" == "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" ]]
+          for database in cookbook_test_fresh cookbook_test_history cookbook_test_recovery_source cookbook_test_restored cookbook_test_shopping_upgrade; do
+            docker exec "$POSTGRES_CONTAINER" createdb -h 127.0.0.1 -p 55432 -U cookbook_ci --template=template0 "$database"
+          done
+      - name: Complete serial PostgreSQL release rehearsal (not release approval)
+        env:
+          COOKBOOK_TEST_DATABASE_URL: postgresql://cookbook_ci:disposable_ci_only@localhost:55432/cookbook_test_fresh
+          COOKBOOK_TEST_HISTORY_URL: postgresql://cookbook_ci:disposable_ci_only@localhost:55432/cookbook_test_history
+          COOKBOOK_TEST_RECOVERY_SOURCE_URL: postgresql://cookbook_ci:disposable_ci_only@localhost:55432/cookbook_test_recovery_source
+          COOKBOOK_TEST_RESTORED_URL: postgresql://cookbook_ci:disposable_ci_only@localhost:55432/cookbook_test_restored
+          COOKBOOK_TEST_SHOPPING_UPGRADE_URL: postgresql://cookbook_ci:disposable_ci_only@localhost:55432/cookbook_test_shopping_upgrade
+          COOKBOOK_TEST_POSTGRES_CONFIRM: disposable-local-test-databases
+          COOKBOOK_TEST_RESTORE_CONFIRM: verifier-finished-synthetic-clone-and-restore
+          COOKBOOK_TEST_SHOPPING_UPGRADE_CONFIRM: new-empty-pre-fc86-fixture-upgrade
+          COOKBOOK_TEST_RELEASE_CONFIRM: new-empty-five-database-release-rehearsal
+        run: |
+          python -I -B scripts/verify_release.py --check-guards
+          python -I -B scripts/verify_release.py --run 2>&1 | tee "$RUNNER_TEMP/cookbook-verification/postgres-release.log"
+      - name: Remove only this job's disposable cluster
+        if: always() && steps.release_postgres.outputs.container != ''
+        env:
+          POSTGRES_CONTAINER: ${{ steps.release_postgres.outputs.container }}
+        run: |
+          [[ "$POSTGRES_CONTAINER" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$(docker inspect --format '{{ index .Config.Labels "cookbook.verification" }}' "$POSTGRES_CONTAINER")" == "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" ]]
+          docker rm --force "$POSTGRES_CONTAINER"
+      - name: Save verification reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-${{ github.run_id }}
+          path: ${{ runner.temp }}/cookbook-verification/
+          if-no-files-found: ignore
+          retention-days: 7

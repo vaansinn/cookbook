@@ -1,0 +1,123 @@
+/* Compact editing controls, shared by agenda and board. */
+.pe-period-filter{display:flex;gap:24px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.pe-period-filter [aria-pressed=true]{color:var(--ink);border-bottom:2px solid var(--blue);font-weight:700}
+.pe-period{margin-block:26px}.pe-period>h2{margin-bottom:16px}
+.pe-owner-card{border:1px solid var(--line);border-radius:10px;background:var(--oat);min-width:0}
+.pe-owner-card>a{display:block;padding:20px 20px 10px;color:var(--ink)}.pe-owner-card h3{margin:12px 0}.pe-owner-card p,.pe-owner-card span{font-size:12px;color:var(--muted);line-height:1.8}
+.pe-card-actions{display:flex;justify-content:space-between;align-items:flex-start;padding:0 14px 6px;gap:8px}
+.pe-more{font-size:12px;min-width:0}.pe-more>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;list-style:none;color:var(--muted);gap:6px}.pe-more>summary:after{content:'⌄'}.pe-more>summary::-webkit-details-marker{display:none}
+.pe-more>div{display:flex;flex-direction:column;border-left:2px solid var(--line);padding-left:10px}.pe-more button{text-align:left;min-height:44px}
+.pe-more>summary{min-width:44px;justify-content:center;font-size:24px;letter-spacing:2px}.pe-more>summary:after{content:none}
+.pe-heading-actions{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.pe-heading-actions>.pe-more{min-width:44px}
+.pe-meal-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.pe-meal-heading h2{margin:0}.pe-meal-heading>.pe-more{max-width:46%}
+.pe-item{padding-block:10px;border-bottom:1px solid var(--line);align-items:flex-start}.pe-item .planning-thumb,.pe-item .planning-thumb img{width:56px;height:56px}.pe-item .planning-dish-title{font-size:17px;min-height:30px}.pe-item h3{font-size:16px;padding-top:3px}
+.pe-item-actions{display:flex;gap:18px;align-items:flex-start}.pe-item-actions .text-link{font-size:12px}.pe-add-day{display:block;margin-top:16px;width:100%;border:1px dashed var(--line);border-radius:6px;padding:10px;background:transparent;color:var(--blue);min-height:44px;text-align:left}
+.pe-menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 40px;margin-bottom:24px}.pe-menu section>h2{margin-bottom:10px}.pe-menu .planning-dish{max-width:560px}
+.pe-task{padding-bottom:10px;border-bottom:1px solid var(--line)}.pe-task .pe-more>summary{min-height:36px}.pe-linked>.text-link{font-size:12px}
+.pe-task{display:flex;align-items:flex-start;gap:8px}.pe-task>label{flex:1;min-width:0}.pe-task>.pe-more{max-width:45%}.pe-task .pe-more>summary{min-height:44px}
+.pe-saved{display:flex;gap:20px;align-items:center;position:sticky;bottom:12px;width:fit-content;max-width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:0 16px;box-shadow:0 3px 16px #0001;z-index:3;font-size:13px}
+#pe-form input:not([type=checkbox]),#pe-form select{display:block;width:100%;min-width:0;min-height:44px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);font:inherit;margin-top:7px}
+#planning-dialog:has(#pe-form){width:min(560px,calc(100% - 24px));max-width:calc(100% - 24px);padding:18px;overflow:auto}
+#planning-dialog:has(#pe-form) .dialog-head{top:-18px;z-index:1;gap:12px}
+#planning-dialog:has(#pe-form) .dialog-head h2{min-width:0;overflow-wrap:anywhere;font-size:23px}
+#planning-dialog:has(#pe-form) .dialog-head button{flex:none}
+#pe-form label{min-width:0}
+#pe-form input:disabled{opacity:.6}#pe-form [hidden]{display:none!important}
+.pe-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}#pe-form .pe-check{display:flex;gap:10px;align-items:center;min-height:44px}#pe-form .pe-check input{width:20px;height:20px;flex:none;accent-color:var(--blue)}
+#pe-form p{font-size:13px;line-height:1.7;margin-top:14px}#pe-form ul{font-size:13px;padding-left:20px;line-height:1.8}#pe-error{color:var(--ink);font-weight:600}
+.pe-ingredient{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) 44px;gap:8px;align-items:end}.pe-icon-button{min-width:44px;min-height:44px;margin-bottom:8px;background:transparent;color:var(--blue);font-size:24px}
+.pe-recipe{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:40px;margin:25px 0}.pe-recipe h2{margin-bottom:14px}.pe-recipe .method-list{margin-bottom:24px}
+.pe-more summary:focus-visible,.pe-add-day:focus-visible,#pe-form :focus-visible,.pe-icon-button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+@media(max-width:700px){.pe-menu,.pe-recipe{grid-template-columns:1fr}.pe-heading-actions{width:100%;justify-content:space-between}.pe-card-actions{gap:12px}.pe-fields{gap:10px}.pe-ingredient{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px}.pe-ingredient>label:first-child{grid-column:1/-1}.pe-ingredient>label{margin-top:4px!important}.pe-period-filter{gap:16px}.pe-period-filter button{font-size:12px}.pe-saved{bottom:8px}.pe-meal-heading>.pe-more{max-width:45%}}
+@media(max-width:420px){.pe-fields{grid-template-columns:1fr;gap:0}#planning-dialog:has(#pe-form) .dialog-head h2{font-size:21px}}
+
+/* Compact planner: days are lanes, meals are cards, dishes are rows. */
+.pe-compact{--meal-border:color-mix(in srgb,var(--line) 65%,var(--muted));padding-top:12px}
+.pe-compact .planning-nav{margin-bottom:12px;gap:24px}
+.pe-compact .planning-nav a{min-height:44px;padding:4px 0}
+.pe-compact .planning-heading{margin:12px 0 16px;gap:16px;align-items:center;flex-direction:row}
+.pe-compact .planning-heading h1{font-size:28px;line-height:1.15}
+.pe-compact .planning-heading p{margin-top:5px;font-size:12px}
+.pe-compact .pe-heading-actions{width:auto;flex:none;gap:8px;flex-wrap:nowrap}
+.pe-shop-link{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:13px;font-weight:600}
+.pe-shop-link svg{width:20px;height:20px}
+.pe-compact .planning-days{border:0;gap:16px;align-items:start;grid-template-columns:repeat(3,minmax(0,1fr))}
+.pe-compact .planning-day,.pe-compact .planning-day:first-child,.pe-compact .planning-day:last-child{padding:0;border:0;min-width:0}
+.pe-compact .planning-day>header{display:flex;align-items:center;justify-content:space-between;margin:0 0 8px;padding:0 4px;border-bottom:1px solid var(--meal-border)}
+.pe-compact .planning-day>header h2{font:600 17px var(--display);color:var(--ink)}
+.pe-compact .planning-day>header h2 span{font:500 12px var(--body);color:var(--muted);margin-right:6px}
+.pe-compact .planning-day-content{display:grid;grid-template-columns:1fr;gap:12px}
+.pe-compact .pe-meal{margin:0;padding:0;border:1px solid var(--meal-border);border-radius:10px;background:var(--surface);overflow:visible;min-width:0}
+.pe-compact .pe-meal-heading{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:0 6px 0 12px;background:color-mix(in srgb,var(--oat) 52%,var(--surface));border-radius:9px 9px 0 0;min-height:44px}
+.pe-compact .pe-meal-heading h3{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0;font:600 15px var(--display)}
+.pe-meal-title{min-height:44px;padding:0;background:transparent;text-align:left;font:inherit;color:var(--ink)}
+.pe-meal-time{font:500 12px var(--body);color:var(--muted)}
+.pe-card-tools{display:flex;align-items:center;gap:0;flex:none}
+.pe-more{display:inline-flex;vertical-align:middle;flex:none;max-width:none!important}
+.pe-menu-trigger,.pe-inline-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;min-width:44px;height:44px;padding:0;background:transparent;color:var(--blue);border-radius:6px}
+.pe-menu-trigger:hover,.pe-inline-icon:hover,.pe-meal-title:hover,.pe-value-button:hover{background:var(--blue-soft)}
+.pe-menu-trigger:active,.pe-inline-icon:active,.pe-value-button:active{background:var(--oat)}
+.pe-compact .pe-item{gap:10px;padding:10px 6px 10px 12px;align-items:center;border-bottom:0;min-width:0}
+.pe-compact .pe-item+.pe-item{border-top:1px solid var(--line)}
+.pe-compact .pe-item .planning-thumb,.pe-compact .pe-item .planning-thumb img{width:48px;height:48px}
+.pe-compact .planning-photo-credit{white-space:nowrap;font-size:9px;padding-inline:2px}
+.pe-compact .pe-item .planning-dish-title{font-size:15px;line-height:1.3;min-height:32px;color:var(--ink);text-decoration:none}
+.pe-compact .pe-item .planning-dish-title:hover{text-decoration:underline}
+.pe-compact .pe-item-content{flex:1;min-width:0}
+.pe-compact .pe-personal-title{font-size:14px;color:var(--ink);margin:0}
+.pe-compact .pe-note-row .pe-personal-title{font-weight:400;color:var(--muted);line-height:1.5}
+.pe-item-meta{display:flex;align-items:center;gap:4px 12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.pe-value-button{min-height:44px;padding:0 2px;background:transparent;color:var(--muted);font:inherit;text-align:left;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.pe-change-word{color:var(--blue);margin-left:5px}
+.pe-compact .pe-contribution{font-size:12px;margin-top:4px}
+.pe-empty-add{background:transparent;color:var(--blue);padding:10px 12px;min-height:48px;font-size:13px;text-align:left;width:100%}
+.pe-open-day{padding:4px;font-size:12px;color:var(--muted)}
+.pe-compact .pe-event-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--blue)}
+.pe-event-label svg{width:18px;height:18px}
+.pe-event-open{display:block;padding:12px;color:var(--ink)}
+.pe-event-open h3{font-size:18px;line-height:1.2;margin-bottom:5px}
+.pe-event-open p{font-size:12px;color:var(--muted)}
+.pe-event-preview{margin:10px 0;font-size:13px;line-height:1.6}
+.pe-event-preview>span{display:block}.pe-event-more{color:var(--muted);font-size:12px}
+.pe-open-label{font-size:12px;color:var(--blue)}
+.pe-date-bar{display:flex;align-items:center;gap:8px;margin:0 0 12px;position:sticky;top:0;z-index:3;background:var(--paper);border-bottom:1px solid var(--line);padding:4px 0}
+.pe-date-jump{font-size:13px;background:transparent;color:var(--blue);min-height:44px;text-align:center;padding:0 8px}
+.pe-date-bar .planning-page-button{border:0;flex:none}
+.pe-compact .planning-foot{margin-top:20px;padding-top:8px}
+.pe-compact .pe-menu{gap:16px;margin:16px 0}
+.pe-compact .pe-menu>section{border:1px solid var(--meal-border);border-radius:10px;background:var(--surface);min-width:0;align-self:start;overflow:hidden}
+.pe-compact .pe-menu>section>h2{font-size:16px;padding:12px;margin:0;background:var(--oat)}
+.pe-compact .planning-tasks{margin:16px 0;gap:16px}.pe-compact .planning-tasks section{padding:12px;border:1px solid var(--meal-border);background:var(--surface)}
+.pe-compact .planning-tasks h2{font-size:17px;margin-bottom:8px}
+.pe-compact .pe-task{padding-bottom:4px}
+.pe-compact .planning-event-tabs{margin-bottom:12px}.pe-compact .planning-event-tabs a{min-height:44px}
+.pe-compact .pe-owner-card{background:var(--surface);border-color:var(--meal-border)}
+.pe-compact .pe-owner-card>a{padding:14px 14px 6px}.pe-compact .pe-owner-card>a>.planning-icon{float:right;width:20px}
+.pe-compact .pe-owner-card h3{margin:0 26px 8px 0}.pe-compact .pe-card-actions{padding-inline:12px}
+#planning-dialog.pe-actions-dialog{position:fixed;width:260px;max-width:calc(100vw - 24px);margin:0;left:var(--pe-menu-left);top:var(--pe-menu-top);bottom:auto;right:auto;padding:12px;border:1px solid var(--line);border-radius:10px;max-height:min(420px,calc(100dvh - var(--pe-menu-top) - 12px));overflow:auto}
+#planning-dialog.pe-actions-dialog::backdrop{background:transparent}
+#planning-dialog.pe-actions-dialog .dialog-head{position:static;gap:8px;padding:0 0 8px}
+#planning-dialog.pe-actions-dialog h2{font:600 14px/1.4 var(--body);overflow-wrap:anywhere;min-width:0}
+#planning-dialog.pe-actions-dialog #planning-close{min-width:44px;font-size:12px;padding:0 6px}
+#planning-dialog.pe-actions-dialog #planning-dialog-body{padding:0}
+.pe-action-list{display:flex;flex-direction:column;gap:2px}
+.pe-action-list button{display:block;min-height:44px;width:100%;padding:8px 10px;text-align:left;font-size:14px;border-radius:6px;text-decoration:none}
+.pe-action-list button:hover,.pe-action-list button:focus-visible{background:var(--blue-soft)}
+body:has(.pe-compact) :is(button,a,input,select){scroll-margin-block:64px}
+@media(max-width:899px){.pe-compact .planning-days{display:block}.pe-compact .planning-day{margin-bottom:16px}.pe-compact .planning-day-content{grid-template-columns:1fr}.pe-compact .planning-meal+.planning-meal{padding-top:0;border-top:1px solid var(--meal-border)}}
+@media(max-width:700px){
+ body:has(.pe-compact) .header-inner{padding-block:6px 0;gap:0 8px;min-height:0}
+ body:has(.pe-compact) .header-inner #navigation{margin-top:0;gap:0 8px}
+ body:has(.pe-compact) .draft-banner{font-size:9px;padding-block:2px}
+ .pe-compact{padding-top:4px}.pe-compact .planning-nav{margin-bottom:4px;gap:20px}
+ .pe-compact .planning-heading{margin:8px 0 12px;gap:8px}.pe-compact .planning-heading>div:first-child{width:auto;flex:1}
+ .pe-compact .planning-heading h1{font-size:23px}.pe-compact .planning-heading p{line-height:1.4}
+ .pe-compact .pe-heading-actions{width:auto;gap:0}
+ .pe-shop-link{width:44px;padding:8px;background:transparent;border:0}.pe-shop-link>span{display:none}
+ .pe-compact .pe-menu{grid-template-columns:1fr}
+ .pe-compact .pe-date-bar{gap:4px;justify-content:space-between}.pe-date-jump{font-size:12px}
+ .pe-compact .pe-empty-day{margin-bottom:8px}.pe-compact .pe-empty-day>header{margin-bottom:0}
+ .pe-compact .pe-empty-day .pe-open-day{display:none}
+ #planning-dialog.pe-actions-dialog{left:12px;right:12px;top:auto;bottom:0;margin:0 auto;width:auto;max-width:540px;padding:16px 16px max(16px,env(safe-area-inset-bottom));border-radius:14px 14px 0 0;max-height:85dvh}
+ #planning-dialog.pe-actions-dialog::backdrop{background:var(--scrim)}
+}

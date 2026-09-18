@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'" />
+  <title>TEST ONLY — cooking timer recovery</title>
+  <style>
+    #harness { padding:16px; background:#fff3cf; color:#202b35; border-bottom:4px solid #945300; }
+    #harness h1 { font:700 20px system-ui; } #harness button, #timer-fixture-controls button { min-height:44px; margin:4px; padding:6px 12px; border:1px solid; border-radius:8px; }
+    #results li { margin:10px 0; white-space:pre-wrap; } [data-result="PASS"] { color:#16612f; } [data-result="FAIL"] { color:#a32121; }
+    #mounted-page { max-width:760px; margin:auto; } #timer-fixture-controls { padding:8px; border:1px dashed #945300; }
+  </style>
+</head>
+<body>
+  <header id="harness">
+    <h1>TEST ONLY — actual CookMode timer recovery</h1>
+    <p>Dev-only loopback fixture. Actual CookMode, session storage code, snapshot/cook-log services and reflection UI. Synthetic account, recipe, transport, storage, wake lock and sound only. Native transport and persistence are blocked before imports.</p>
+    <p>No real catalog, account, API or browser storage is read or changed. Not physical-device alarm, real cross-tab, or production acceptance. Reload after source changes: the safety policy blocks live-reload sockets.</p>
+    <p id="boot-status" role="status">Installing isolation…</p>
+    <button id="run-tests" type="button" disabled>Run mounted timer cases</button>
+    <button id="show-fixture" type="button" disabled>Show synthetic cooking fixture</button>
+    <p id="summary" role="status">Not run.</p>
+    <ol id="results" aria-label="Test results"></ol>
+  </header>
+  <main id="mounted-page"></main>
+  <script type="module" src="./timer-sandbox.mjs"></script>
+</body>
+</html>

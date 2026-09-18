@@ -1,93 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "../store/useAuthStore";
 import useSettingsStore from "../store/useSettingsStore";
 import useFavoritesStore from "../store/useFavoritesStore";
 import { useT } from "../i18n";
-import { fetchDishes, fetchFilters } from "../api/recipes";
+import { fetchDishes, fetchFilters, discoveryIdentity, startDiscoveryRead } from "../api/recipes";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
 import BottomNav from "../components/BottomNav";
-import DISH_EMOJI from "../dishEmoji";
+import "../styles/library.css";
 
-const TIER_DOT_CLASS = { basic: "bg-basic", intermediate: "bg-inter", advanced: "bg-hot" };
+const EMPTY_FILTERS = { cuisines: [], meal_types: [], methods: [] };
 
-const MEAL_TYPE_EMOJI = {
-  breakfast: "🍳",
-  lunch: "🥪",
-  dinner: "🍲",
-  dessert: "🍰",
-  side: "🥗",
-  snack: "🥑",
-};
-
-const CUISINE_EMOJI = {
-  American: "🍔",
-  Chinese: "🥢",
-  French: "🥐",
-  Greek: "🫒",
-  Indian: "🍛",
-  Italian: "🍝",
-  Japanese: "🍣",
-  Mexican: "🌮",
-  "Spanish/Mediterranean": "🥘",
-  Thai: "🌶️",
-};
-
-function FilterTileRow({ label, allLabel, items, active, onSelect, emojiMap, labelFor }) {
-  return (
-    <div className="mt-4">
-      <div
-        className="font-display font-bold text-xs uppercase tracking-wide mb-2 ml-0.5"
-        style={{ color: "var(--muted)" }}
-      >
-        {label}
-      </div>
-      <div className="flex gap-2.5 overflow-x-auto pb-1">
-        <FilterTile
-          emoji="🍽️"
-          text={allLabel}
-          isActive={!active}
-          onClick={() => onSelect(null)}
-        />
-        {items.map((item) => (
-          <FilterTile
-            key={item}
-            emoji={emojiMap[item] || "🍽️"}
-            text={labelFor ? labelFor(item) : item}
-            isActive={active === item}
-            onClick={() => onSelect(active === item ? null : item)}
-          />
-        ))}
-      </div>
-    </div>
-  );
+function LibraryIcon({ kind = "dish" }) {
+  const paths = { search: <><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></>,
+    settings: <><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="17" r="2"/></>,
+    heart: <path d="M12 20 4 12C-2 5 8 0 12 7c4-7 14-2 8 5Z"/>,
+    clock: <><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></>,
+    dish: <><path d="M3 16h18M5 16a7 7 0 0 1 14 0M8 20h8M12 7V5"/></> };
+  return <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{paths[kind]}</svg>;
 }
 
-function FilterTile({ emoji, text, isActive, onClick }) {
+function FilterTileRow({ label, allLabel, items, active, onSelect, labelFor }) {
   return (
-    <button
-      onClick={onClick}
-      aria-pressed={isActive}
-      className="shrink-0 w-16 flex flex-col items-center gap-1.5"
-    >
-      <span
-        className="w-16 h-16 rounded-2xl border-2 flex items-center justify-center text-2xl"
-        style={
-          isActive
-            ? { background: "var(--brand)", borderColor: "var(--brand)", boxShadow: "0 3px 0 var(--brand-dk)" }
-            : { background: "var(--card)", borderColor: "var(--line)" }
-        }
-      >
-        {emoji}
-      </span>
-      <span
-        className="font-display font-bold text-[11px] leading-tight text-center"
-        style={{ color: isActive ? "var(--brand)" : "var(--ink)" }}
-      >
-        {text}
-      </span>
-    </button>
+    <label className="library-filter"><span>{label}</span>
+      <select value={active || ""} onChange={(event) => onSelect(event.target.value || null)}>
+        <option value="">{allLabel}</option>
+        {items.map((item) => <option key={item} value={item}>{labelFor ? labelFor(item) : item}</option>)}
+      </select>
+    </label>
   );
 }
 
@@ -96,11 +37,13 @@ export default function Home() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const identity = useAuthStore(discoveryIdentity);
   const language = useSettingsStore((s) => s.language);
 
-  const [dishes, setDishes] = useState(null);
-  const [dishesError, setDishesError] = useState(false);
-  const [filters, setFilters] = useState({ cuisines: [], meal_types: [], methods: [] });
+  const [dishRead, setDishRead] = useState({ key: null, value: null, error: false });
+  const [filterRead, setFilterRead] = useState({ key: null, value: EMPTY_FILTERS, error: false });
+  const [dishRetry, setDishRetry] = useState(0);
+  const [filterRetry, setFilterRetry] = useState(0);
   const [q, setQ] = useState("");
   const [activeCuisine, setActiveCuisine] = useState(null);
   const [activeMealType, setActiveMealType] = useState(null);
@@ -109,35 +52,49 @@ export default function Home() {
   const toggleFavorite = useFavoritesStore((s) => s.toggle);
   const loadFavorites = useFavoritesStore((s) => s.load);
 
-  useEffect(() => {
-    fetchFilters(language).then(setFilters).catch(() => {});
-  }, [language]);
+  const filterKey = JSON.stringify([identity, language, filterRetry]);
+  const dishKey = JSON.stringify([identity, language, q, activeCuisine, activeMealType, dishRetry]);
+  const latest = useRef(null);
+  latest.current = { filterKey, dishKey };
+  // Hide previous results during the render that changes the request, before
+  // passive-effect cleanup runs. A stale error is not a current-query error.
+  const dishes = dishRead.key === dishKey ? dishRead.value : null;
+  const dishesError = dishRead.key === dishKey && dishRead.error;
+  const filters = filterRead.key === filterKey ? filterRead.value : EMPTY_FILTERS;
+  const filtersError = filterRead.key === filterKey && filterRead.error;
+
+  useEffect(() => startDiscoveryRead({
+    request: (signal) => fetchFilters(language, signal),
+    isCurrent: () => latest.current.filterKey === filterKey && useSettingsStore.getState().language === language,
+    onStart: () => setFilterRead({ key: filterKey, value: EMPTY_FILTERS, error: false }),
+    onSuccess: (value) => setFilterRead({ key: filterKey, value, error: false }),
+    onError: () => setFilterRead({ key: filterKey, value: EMPTY_FILTERS, error: true }),
+  }), [filterKey, language]);
 
   useEffect(() => { if (user) loadFavorites(); }, [user]);
 
-  const loadDishes = () => {
+  useEffect(() => {
     const params = { lang: language };
     if (q) params.q = q;
     if (activeCuisine) params.cuisine = activeCuisine;
     if (activeMealType) params.meal_type = activeMealType;
-    setDishesError(false);
-    fetchDishes(params).then(setDishes).catch(() => setDishesError(true));
-  };
+    return startDiscoveryRead({
+      request: (signal) => fetchDishes(params, signal), delay: 200,
+      isCurrent: () => latest.current.dishKey === dishKey && useSettingsStore.getState().language === language,
+      onStart: () => setDishRead({ key: dishKey, value: null, error: false }),
+      onSuccess: (value) => setDishRead({ key: dishKey, value, error: false }),
+      onError: () => setDishRead({ key: dishKey, value: null, error: true }),
+    });
+  }, [dishKey, language, q, activeCuisine, activeMealType]);
 
   const visibleDishes = dishes ? (favoritesOnly ? dishes.filter((d) => favoriteSlugs.has(d.slug)) : dishes) : [];
 
-  useEffect(() => {
-    const handle = setTimeout(loadDishes, 200);
-    return () => clearTimeout(handle);
-  }, [language, q, activeCuisine, activeMealType]);
-
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+    <div className="library-page min-h-screen">
       <div
-        className="px-6 pt-8 pb-4"
-        style={{ background: `linear-gradient(160deg, var(--brand-soft), var(--bg) 70%)` }}
+        className="library-intro"
       >
-        <header className="max-w-3xl mx-auto">
+        <header className="library-shell">
           <div className="flex items-center justify-between">
             <span className="font-display font-bold text-lg" style={{ color: "var(--brand)" }}>
               {t("app_name")}
@@ -157,8 +114,8 @@ export default function Home() {
             )}
             {user ? (
               <div className="flex items-center gap-3">
-                <Link to="/settings" className="w-9 h-9 rounded-full border-2 flex items-center justify-center" style={{ borderColor: "var(--line)" }} aria-label={t("settings_title")}>
-                  ⚙️
+                <Link to="/settings" className="library-icon-button" aria-label={t("settings_title")}>
+                  <LibraryIcon kind="settings" />
                 </Link>
                 <button onClick={logout} className="btn-ghost text-sm py-2 px-4">
                   {t("auth_logout")}
@@ -171,34 +128,37 @@ export default function Home() {
             )}
           </div>
         </header>
-        <h1 className="max-w-3xl mx-auto font-display text-4xl font-bold mt-6" style={{ color: "var(--ink)" }}>
+        <h1 className="library-shell font-display text-4xl font-bold mt-6">
           {t("home_greeting")}
         </h1>
       </div>
 
-      <main className="max-w-3xl mx-auto px-6 pb-16">
-        <div className="field flex items-center gap-2 mt-2">
-          <span aria-hidden="true">🔍</span>
+      <main className="library-shell library-content">
+        <div className="library-search field flex items-center gap-2">
+          <LibraryIcon kind="search" />
           <input
             className="flex-1 bg-transparent outline-none font-medium"
             placeholder={t("search_placeholder")}
+            aria-label={t("search_placeholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
 
-        <button
+        <div className="library-tools"><button
           onClick={() => setFavoritesOnly((v) => !v)}
           aria-pressed={favoritesOnly}
-          className="inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 mt-4 font-display font-bold text-xs"
-          style={
-            favoritesOnly
-              ? { background: "var(--brand)", color: "var(--brand-ink)", boxShadow: "0 3px 0 var(--brand-dk)" }
-              : { background: "var(--card)", color: "var(--ink)", border: "2px solid var(--line)" }
-          }
+          className="library-favorites"
         >
-          <span aria-hidden="true">{favoritesOnly ? "♥" : "♡"}</span> {t("filter_favorites")}
+          <LibraryIcon kind="heart" /> <span>{t("filter_favorites")}</span>
         </button>
+
+        {filtersError && <div className="mt-4" role="alert">
+          <p className="text-sm font-semibold" style={{ color: "var(--danger)" }}>
+            {t("filter_meal_label")} / {t("filter_cuisine_label")}: {t("error_generic")}
+          </p>
+          <button onClick={() => setFilterRetry((value) => value + 1)} className="btn-ghost text-sm py-2 px-4 mt-2">{t("error_retry")}</button>
+        </div>}
 
         <FilterTileRow
           label={t("filter_meal_label")}
@@ -206,7 +166,6 @@ export default function Home() {
           items={filters.meal_types}
           active={activeMealType}
           onSelect={setActiveMealType}
-          emojiMap={MEAL_TYPE_EMOJI}
           labelFor={(item) => t(`meal_type_${item}`)}
         />
         <FilterTileRow
@@ -215,20 +174,24 @@ export default function Home() {
           items={filters.cuisines}
           active={activeCuisine}
           onSelect={setActiveCuisine}
-          emojiMap={CUISINE_EMOJI}
         />
 
-        <div className="mt-5 flex flex-col gap-3">
+        </div><div className="library-grid">
           {dishesError && (
-            <div className="mt-2">
+            <div className="mt-2" role="alert">
               <p className="text-sm font-semibold" style={{ color: "var(--danger)" }}>{t("error_generic")}</p>
-              <button onClick={loadDishes} className="btn-ghost text-sm py-2 px-4 mt-2">{t("error_retry")}</button>
+              <button onClick={() => setDishRetry((value) => value + 1)} className="btn-ghost text-sm py-2 px-4 mt-2">{t("error_retry")}</button>
             </div>
           )}
-          {!dishesError && dishes === null && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+          {!dishesError && dishes === null && <p role="status" style={{ color: "var(--muted)" }}>{t("loading")}</p>}
           {!dishesError && dishes && visibleDishes.length === 0 && <p style={{ color: "var(--muted)" }}>{t("no_dishes_found")}</p>}
           {dishes && visibleDishes.map((d) => (
-            <Link key={d.slug} to={`/dish/${d.slug}`} className="card relative flex gap-3 p-4 shadow-[0_3px_0_var(--line)]">
+            <article key={d.slug} className="library-recipe">
+              <Link to={`/dish/${d.slug}`} className="library-recipe-link">
+                <span className="library-recipe-mark"><LibraryIcon /></span>
+                <h2>{d.summary.title}</h2>
+                <span className="library-recipe-meta"><LibraryIcon kind="clock" /> ~{d.summary.time_min} {t("min_short")}<span>{d.cuisine}</span></span>
+              </Link>
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -237,36 +200,12 @@ export default function Home() {
                 }}
                 aria-label={favoriteSlugs.has(d.slug) ? t("favorite_remove") : t("favorite_add")}
                 aria-pressed={favoriteSlugs.has(d.slug)}
-                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center text-base"
+                className="library-recipe-favorite library-icon-button"
                 style={{ color: favoriteSlugs.has(d.slug) ? "var(--brand)" : "var(--muted)" }}
               >
-                {favoriteSlugs.has(d.slug) ? "♥" : "♡"}
+                <LibraryIcon kind="heart" />
               </button>
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center text-2xl shrink-0"
-                style={{ background: "var(--basic-soft)" }}
-              >
-                {DISH_EMOJI[d.slug] || "🍽️"}
-              </div>
-              <div className="min-w-0 pr-6">
-                <div className="font-display font-semibold text-lg" style={{ color: "var(--ink)" }}>
-                  {d.summary.title}
-                </div>
-                <div className="text-xs font-semibold flex gap-1.5 flex-wrap" style={{ color: "var(--muted)" }}>
-                  <span>{d.cuisine}</span>·<span>~{d.summary.time_min} {t("min_short")}</span>
-                  {d.summary.kcal && <>·<span>{d.summary.kcal} {t("kcal")}</span></>}
-                </div>
-                <div className="flex gap-1 mt-2">
-                  {["basic", "intermediate", "advanced"].map((lvl) => (
-                    <span
-                      key={lvl}
-                      className={`w-4 h-1.5 rounded-sm ${d.tiers_available.includes(lvl) ? TIER_DOT_CLASS[lvl] : ""}`}
-                      style={!d.tiers_available.includes(lvl) ? { background: "var(--line)" } : undefined}
-                    />
-                  ))}
-                </div>
-              </div>
-            </Link>
+            </article>
           ))}
         </div>
       </main>

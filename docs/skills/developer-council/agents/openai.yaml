@@ -1,0 +1,4 @@
+interface:
+  display_name: "Developer Council"
+  short_description: "Five specialist reviews and a chairman's implementation plan"
+  default_prompt: "Use $developer-council to prepare an evidence-grounded implementation plan for this feature."

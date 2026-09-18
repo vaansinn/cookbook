@@ -15,11 +15,15 @@ import SettingsPage from "./pages/SettingsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import MealPlansPage from "./pages/MealPlansPage";
 import SharedMealPlanPage from "./pages/SharedMealPlanPage";
+import AuthRecovery from "./components/AuthRecovery";
+import PrivatePlanningPage from "./pages/PrivatePlanningPage";
+import PrivateShoppingPage from "./pages/PrivateShoppingPage";
+import AccountAppearanceProvider from './components/AccountAppearanceProvider';
 
 function RequireAuth({ children }) {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
-  if (!token) return <Navigate to="/login" replace />;
+  if (!token || !user) return <Navigate to="/login" replace />;
   return children;
 }
 
@@ -40,6 +44,8 @@ function RequireAuthUnlessBasicCook({ children }) {
 export default function App() {
   const init = useAuthStore((s) => s.init);
   const darkMode = useSettingsStore((s) => s.darkMode);
+  const initialized = useAuthStore((s) => s.initialized);
+  const epoch = useAuthStore((s) => s.epoch);
 
   useEffect(() => {
     init();
@@ -49,11 +55,17 @@ export default function App() {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
+  // Public pages also need a resolved identity before starting guest/cache work.
+  if (!initialized) return <AuthRecovery />;
+
   return (
     <BrowserRouter>
-      <Routes>
+      <AccountAppearanceProvider>
+      <Routes key={epoch}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/planning/*" element={<RequireAuth><PrivatePlanningPage /></RequireAuth>} />
+        <Route path="/shopping" element={<RequireAuth><PrivateShoppingPage /></RequireAuth>} />
         <Route path="/" element={<Home />} />
         <Route path="/dish/:slug" element={<RecipePage />} />
         <Route
@@ -102,6 +114,7 @@ export default function App() {
         />
         <Route path="/privacy" element={<PrivacyPage />} />
       </Routes>
+      </AccountAppearanceProvider>
     </BrowserRouter>
   );
 }

@@ -125,8 +125,8 @@ def delete_meal_plan(plan_id):
 @jwt_required()
 def add_plan_to_grocery_list(plan_id):
     """Merges every recipe in the plan into the household grocery list, same
-    merge path as the week planner's build-list. Tier access was enforced when
-    the items were added to the plan (same contract as /plan + /plan/build-list).
+    merge path as the week planner's build-list. Current tier access is checked
+    for the complete selection before any grocery list or item is changed.
     Uses each tier's default serves (plan items don't carry serves yet)."""
     plan = MealPlan.query.get(plan_id)
     if not plan or plan.user_id != _current_user_id():
@@ -134,14 +134,24 @@ def add_plan_to_grocery_list(plan_id):
     m = _get_membership()
     if not m:
         return jsonify({"error": "Join or create a household first", "code": "no_household"}), 404
-    lang = (request.get_json() or {}).get("lang", "en")
-    lst = _get_or_create_list(m.household_id)
-    added = 0
+    data = request.get_json(silent=True) if request.get_data() else {}
+    if not isinstance(data, dict) or data.get("lang", "en") not in ("en", "de"):
+        return jsonify({"error": "JSON object with lang en or de required"}), 400
+    lang = data.get("lang", "en")
+    user = db.session.get(User, _current_user_id())
+    resolved = []
     for item in plan.items:
         dish = Dish.query.filter_by(slug=item.dish_slug).first()
         tier = RecipeTier.query.filter_by(dish_id=dish.id if dish else -1, level=item.level, lang=lang).first()
         if not dish or not tier:
             continue
+        allowed, reason = tier_access(item.level, user)
+        if not allowed:
+            return jsonify({"error": "This tier needs an upgrade", "code": f"needs_{reason}"}), 403
+        resolved.append((dish, tier))
+    lst = _get_or_create_list(m.household_id)
+    added = 0
+    for dish, tier in resolved:
         _merge_recipe_into_list(lst, dish, tier, 1.0, lang)
         added += 1
     db.session.commit()

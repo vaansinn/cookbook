@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
-import useAuthStore, { getAuthEpoch } from "../store/useAuthStore";
+import useAuthStore from "../store/useAuthStore";
 import { useT } from "../i18n";
-import { fetchDish } from "../api/recipes";
+import { fetchDish, discoveryIdentity, startDiscoveryRead } from "../api/recipes";
 import { addRecipeToList } from "../api/groceries";
 import { getGlossary } from "../api/progress";
 import useFavoritesStore from "../store/useFavoritesStore";
@@ -28,14 +28,28 @@ const TIER_SOFT_TEXT = { basic: "var(--basic-dk)", intermediate: "var(--inter-dk
 
 export default function RecipePage() {
   const { slug } = useParams();
+  const location = useLocation();
+  const settingsLanguage = useSettingsStore((s) => s.language);
+  const requested = new URLSearchParams(location.search);
+  const explicitLanguage = ["en", "de"].includes(requested.get("lang")) ? requested.get("lang") : null;
+  const language = explicitLanguage || settingsLanguage;
+  const requestedLevel = requested.get("level");
+  const identity = useAuthStore(discoveryIdentity);
+  const key = JSON.stringify([identity, slug, language, requestedLevel]);
+  const latest = useRef(key);
+  latest.current = key;
+  const isCurrent = useCallback(() => latest.current === key
+    && (explicitLanguage || useSettingsStore.getState().language) === language, [key, explicitLanguage, language]);
+  // A new route/language/identity must not render old premium content, servings,
+  // checks or errors for even the render before effect cleanup executes.
+  return <RecipeDetails key={key} slug={slug} language={language} requestedLevel={requestedLevel} isCurrent={isCurrent} />;
+}
+
+function RecipeDetails({ slug, language, requestedLevel, isCurrent }) {
   const navigate = useNavigate();
   const location = useLocation();
   const t = useT();
-  const settingsLanguage = useSettingsStore((s) => s.language);
-  const requested = new URLSearchParams(location.search);
-  const language = ["en", "de"].includes(requested.get("lang")) ? requested.get("lang") : settingsLanguage;
   const user = useAuthStore((s) => s.user);
-  const epoch = useAuthStore((s) => s.epoch);
   const [cookToast, setCookToast] = useState(location.state?.cooked ? location.state : null);
 
   useEffect(() => {
@@ -55,54 +69,43 @@ export default function RecipePage() {
   const [showPremiumNote, setShowPremiumNote] = useState(false);
   const [glossary, setGlossary] = useState([]);
   const [dishError, setDishError] = useState(false);
+  const [dishRetry, setDishRetry] = useState(0);
   const favoriteSlugs = useFavoritesStore((s) => s.slugs);
   const toggleFavorite = useFavoritesStore((s) => s.toggle);
   const loadFavorites = useFavoritesStore((s) => s.load);
   const favoritesLoaded = useFavoritesStore((s) => s.loaded);
 
-  useEffect(() => {
-    getGlossary(language).then(setGlossary).catch(() => {});
-  }, [language]);
+  useEffect(() => startDiscoveryRead({
+    request: () => getGlossary(language), isCurrent,
+    onStart: () => setGlossary([]), onSuccess: setGlossary, onError: () => {},
+  }), [language, isCurrent]);
 
   useEffect(() => { if (user && !favoritesLoaded) loadFavorites(); }, [user]);
 
-  const loadDish = () => {
-    // Clear whatever's on screen immediately - if this reload was triggered
-    // by an account switch/logout, a previous account's (possibly premium)
-    // content must not keep sitting there while the new request is in flight.
-    setDish(null);
-    setDishError(false);
-    const requestEpoch = epoch;
-    fetchDish(slug, language)
-      .then((d) => {
-        if (getAuthEpoch() !== requestEpoch) return; // account changed since this request started
-        setDish(d);
-        const firstAvailable = d.tiers[requested.get("level")] ? requested.get("level") : TIER_ORDER.find((l) => d.tiers[l]);
-        setLevel(firstAvailable);
-        setServes(d.tiers[firstAvailable]?.serves);
-        setDoneSteps({});
-        setDonePrep({});
-      })
-      .catch(() => {
-        if (getAuthEpoch() !== requestEpoch) return;
-        setDishError(true);
-      });
-  };
-
-  // Reload on account change too (login/logout/switch/session-expiry), not
-  // just slug/language - see loadDish's epoch guard above.
-  useEffect(loadDish, [slug, language, epoch]);
+  useEffect(() => startDiscoveryRead({
+    request: (signal) => fetchDish(slug, language, signal), isCurrent,
+    onStart: () => { setDish(null); setDishError(false); },
+    onSuccess: (d) => {
+      setDish(d);
+      const firstAvailable = d.tiers[requestedLevel] ? requestedLevel : TIER_ORDER.find((l) => d.tiers[l]);
+      setLevel(firstAvailable);
+      setServes(d.tiers[firstAvailable]?.serves);
+      setDoneSteps({});
+      setDonePrep({});
+    },
+    onError: () => setDishError(true),
+  }), [slug, language, requestedLevel, isCurrent, dishRetry]);
 
   if (dishError) {
     return (
       <div className="min-h-screen p-8" style={{ background: "var(--bg)" }}>
-        <p className="text-sm font-semibold" style={{ color: "var(--danger)" }}>{t("error_generic")}</p>
-        <button onClick={loadDish} className="btn-ghost text-sm py-2 px-4 mt-3">{t("error_retry")}</button>
+        <p role="alert" className="text-sm font-semibold" style={{ color: "var(--danger)" }}>{t("error_generic")}</p>
+        <button onClick={() => setDishRetry((value) => value + 1)} className="btn-ghost text-sm py-2 px-4 mt-3">{t("error_retry")}</button>
       </div>
     );
   }
   if (!dish || !level) {
-    return <div className="min-h-screen p-8" style={{ background: "var(--bg)", color: "var(--muted)" }}>{t("loading")}</div>;
+    return <div role="status" className="min-h-screen p-8" style={{ background: "var(--bg)", color: "var(--muted)" }}>{t("loading")}</div>;
   }
 
   const tier = dish.tiers[level];

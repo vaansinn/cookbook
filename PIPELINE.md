@@ -5,6 +5,141 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 
 ## Open
 
+### #61 — Launch foundation handoff and remaining work (2026-09-18)
+
+**Current actionable backlog: [TODO.md](TODO.md).** It reconciles completed local
+implementation with the launch council's LP/X/PX tasks, remaining Q&A, release
+gates and retained future features. Use that checklist for current work; the
+dated sections below are historical checkpoints, not additional open copies of
+already implemented shopping, templates, preferences or repeat flows.
+
+The user now authorizes committing/pushing the accumulated cookbook work to
+GitHub `main`. This supersedes earlier no-commit/no-push statements for this
+handoff only, not the separate deployment/content/recruitment gates. Root
+checkout files unrelated to the cookbook implementation remain untouched.
+
+Fresh 2026-09-18 checks: backend **32/32 scripts passed**; frontend/prototype
+**352 passed** with **2 optional browser tests skipped**; production build
+**161 modules**. Prior PostgreSQL and browser evidence remains dated 2026-09-13,
+not relabelled as a new run. Remote CI and launch approval remain open.
+
+### Historical implementation checkpoints
+
+These records describe what was known and authorized on their stated dates.
+Current status and pending work are in #61/TODO.md; later evidence supersedes
+older "not implemented", "uncommitted" and environment-blocker statements.
+
+### Local launch continuation — 2026-09-13 (uncommitted, not release approval)
+
+Private SQL planning/shopping/templates/preferences are implemented with guarded
+replay/recovery, explicit capacity admission and current/upcoming/past repeat
+flows. Cooking now has deadline-based retained timers and coordinated snapshot
+pin winners. Account-wide appearance, stale discovery reads, local fonts and a
+bounded compact Home port are implemented. Full welcoming recipe/discovery and
+configured-cook parity remain open: this does not quietly redefine Q02 as done.
+
+Full backend 32/32 scripts; final shopping module 48/48 and integration 55/55;
+final frontend/prototype run 352 passed, 2 optional browser tests skipped;
+production build 161 modules. New PG10 five-database release rehearsal passed all
+stages, then cluster stopped and retained. Main CUA planning/shopping/appearance
+passed 8/7/7 scenarios and final timer recovery 11/11. A test-only cleanup dialog
+temporarily blocked tooling; closing that tab restored verification. Real worker waiting/activation,
+public fallback/private non-caching and old-asset retention boundaries were
+observed. Detailed evidence, limits, council dissent/fixes and next Q05–Q07:
+[continuation handoff](docs/councils/launch-readiness/continuation-2026-09-13.md).
+
+Physical phones, full wired-design review, culinary/catalog approval, public
+account/retention and operational policy remain gates. No commit, push, cloud
+spend, deployment or content publication. The entries below are dated earlier
+checkpoints, not current test counts or a claim of launch readiness.
+
+### Private planning X1c — 2026-09-13 (local, uncommitted)
+
+SQL-backed Shopping, source-aware quantities/checks, editable extras/personal
+items, saved date/meal selections, independent templates and account appearance
+are implemented. Reviewed selection removal and bounded undo prevent capacity
+cleanup from requiring plan deletion. Full backend 31/31 scripts and
+frontend/prototype 263 passing tests (one optional standalone browser-runtime
+case skipped), mounted browser 8/8 planning + 7/7 shopping + 4/4 appearance,
+PostgreSQL fresh/history/transaction/restore and populated X1b upgrade evidence
+are recorded in [the current council handoff](docs/councils/launch-readiness/shopping-foundation-council.md).
+This supersedes X1b's deferred shopping/template/preference statements, not the
+remaining culinary, configured-cook/discovery port, physical-device or release
+gates. No production publication, deployment, commit or push is authorized here.
+
+### Private planning X1b — 2026-09-13 (local, uncommitted)
+
+Supersedes X1a's deferred event/item/UI statements below. Account-private events,
+links, reminders, configured/personal/note items, move/copy, guarded destructive
+previews and undo are implemented. Independent plan/event repeats create new
+occasions and reset reminder checks, without changing originals. `/planning/*`
+is a responsive SQL-backed leaf; `/plans` and the approved browser prototype remain
+separate. [Extension contract](docs/contracts/private-planning-x1b.md).
+
+The five-seat council and peer review found and corrected transactional follower,
+SQL null/integer, undo capacity, JWT-422 retry, modal recovery and cross-tab deletion
+issues. [Council evidence](docs/councils/launch-readiness/private-planning-council.md).
+Current development head: `eb75f643cd84`. PG07 fresh/history migrations, repeated
+full sync, configured-item transactions and ownership constraints passed. Separate
+restore rehearsal matched 33 tables/23 sequences and passed replay/export/new-write
+checks. [Recovery evidence](docs/planning-recovery-verification.md).
+
+Checkpoint: 26/26 isolated backend scripts, 222 frontend/prototype checks and
+production build (150 modules) passed;
+eight mounted browser recovery scenarios passed using isolated synthetic transport.
+Real local browser flows saved plans, meals, events, reminders and quantified
+personal items, including linked deletion/undo, independent event repeat and
+cross-tab logout/login. Item submit readiness now follows the exact current read;
+conflict recovery retains destinations. Auth deletion cleanup has owner-bound local
+retry and Settings binds destructive intent to its rendered owner. A live CSS
+purge bug from root-launched Vite was fixed with explicit config-relative paths.
+Responsive/browser smoke passed the checked EN/DE, light/dark, 320/390/768/1280
+views; exhaustive accessibility and physical-phone acceptance remain open.
+PG08 independently passed valid/invalid populated corrective migrations,
+populated downgrade refusal and empty downgrade/re-upgrade, preserving PG07.
+[Corrective evidence](docs/planning-corrective-verification.md).
+
+Still open: complete production shopping, saved meal/menu templates, date-based
+current/upcoming/past grouping, packs/Use the rest,
+shared preparation/leftovers, SQL preferences, full approved visual integration,
+physical phones, content publication Q10, privacy/retention/restore-erasure policy,
+hosting/mail and release authority. Catalog infrastructure is implemented but no
+curated planning entries are published by this work. No cloud spend, imports,
+commit, merge, push or deployment.
+
+### Private planning X1a — 2026-09-13 (local, uncommitted)
+
+New account-private workspace/plan/meal schema and `/api/planning/v1` command/read
+API; lazy creation, conservative workspace revisions, durable idempotency,
+owner-scoped reads, bounded inputs/storage and lifecycle cleanup. Legacy planner
+and browser prototype remain separate; no UI port, event/catalog/shopping or
+preview/undo implementation implied. [Frozen slice contract](docs/contracts/private-planning-v1.md).
+Independent backend/security review and QA authoring caught/fixed composite-FK,
+receipt-budget, legacy deletion-reference and consistent-read concerns. New
+migration is additive and refuses a destructive downgrade with saved workspaces.
+Verification: 19/19 backend scripts, 108/108 frontend/prototype checks and production
+build passed. Disposable PostgreSQL fresh/history upgrades and repeated full sync
+passed, including concurrent planning commands, injected transaction rollback,
+consistent reads/export and ownership/lifecycle checks. Local development migrated
+to `a631b209ef40`; restarted API serves the routes through the frontend proxy.
+Migration downgrade/backup restore, signed-in UI and phone acceptance remain open.
+No automatic imports, production data, cloud spend, commit or push.
+
+### Local development foundation — 2026-09-13 (uncommitted)
+
+User chose local development, no paid hosting/provisioning. Isolated Python 3.11
+and native PostgreSQL 16.15 now run the existing API/React app on loopback ports
+5100/5173; development database 55433 is separate from verification 55432.
+Fresh and representative old-history migrations plus repeated full content sync
+passed on real PostgreSQL. Backend 17/17 scripts, frontend/prototype 108/108 TAP
+checks and production build passed. Five specialist reviews plus cross-review
+led to inline Vite dotenv isolation, stronger database/content readiness checks
+and interrupted-init protection. [Setup/evidence](docs/local-development.md).
+This supersedes earlier claims that no local PostgreSQL engine is available;
+it does not waive concurrency, restore, phone, culinary or privacy acceptance.
+The welcoming prototype remains separate and is not yet SQL-integrated. No cloud
+resources, production personal data, commit, push or deployment in this increment.
+
 ### #60 — Mobile-first adaptive UI structure and redesign (planned)
 
 User-requested plan, 2026-09-07: [implementation steps](docs/mobile-first-redesign-plan.md).
@@ -33,10 +168,45 @@ now previews recipe-wide jarred-sauce versus tomatoes-and-herbs choices, a compa
 step overview, icon-led servings/time tiles, a three-image cooking story and a
 separate equipment section. AI disclosure remains accessible inside the images.
 EN/DE, mobile layout and prototype regression tests are checked. This is a
-memory-only design prototype: no unlocks, saved progress, production graph
+memory-only recipe/cooking design prototype: no unlocks, saved progress, production graph
 migration or application integration. New tomato quantities, timings and image
 comparison remain unverified. See [network notes](docs/prototypes/welcoming-network-notes.md)
 and [component notes](docs/prototypes/welcoming-tomato-notes.md).
+The separate flexible-planning prototype has its foundation plus **interactive
+shopping ready for review**. At the user's request, shopping moved ahead of the
+full plan/event editors. Plan navigation, the three-day agenda/board, linked event
+and Menu/Preparation views now connect to editable shopping quantities, explicit
+extras, Bought/Already have/review states, personal items with undo, and date/meal
+selections. Recipe requirements remain derived and unchanged by shopping edits.
+Drafts alone are browser-local (v4 envelope, preserving valid v1/v2/v3 drafts), with
+recovery, reset and cross-tab conflict handling. Soup/salad are still unverified
+planning examples without cooking instructions or food photos.
+Salt and dried herbs now have a separate cupboard-check section: one summary per
+ingredient, recipe quantities in details, and Have enough/Need to buy/Bought states.
+Flour and other main ingredients retain normal quantity rows; no pack size is assumed.
+Shopping is now a top-level destination beside Recipes, Explore and Plan. It
+reopens the last-used plan/event list, with a list switcher and legacy-link support;
+checks and selections are shared, not copied. Cook together is removed from the
+header while recipe-local cooking actions remain. Standalone unlinked lists are deferred.
+The shopping header now uses a compact named list selector. Ingredient sources
+remain in disclosures; quantity editors open on request, and contextual actions
+replace the repeated status-button toolbar. Saved scopes and recipe requirements
+are unchanged. Redundant seasoning labels are removed and secondary row actions
+use theme-aware grey with blue interaction feedback. Category/A–Z/Dish/Amount views
+reuse the same totals and checks; Dates & meals includes a two-day range shortcut
+without changing plan duration. The display preference is saved locally.
+89 planning/shopping/editor tests
+and the existing three recipe/Explore regression groups
+pass. Current shopping browser checks and screenshots are recorded in the
+[shopping notes](docs/prototypes/welcoming-shopping-notes.md); the previous 64-view
+foundation checks remain in the [foundation record](docs/prototypes/welcoming-planning-notes.md).
+Flexible plan/meal/item and event/menu/task editors plus current/upcoming/past
+views and independent Plan again copies are now implemented for review. Includes
+explicit move/copy, templates, guest overrides, event links, configured recipe
+previews, destructive-change warnings and state-fenced undo. See the
+[editor checkpoint and browser evidence](docs/prototypes/welcoming-planning-editor-notes.md).
+Packs/Use the rest, shared preparation, leftovers and the full-journey acceptance
+pass remain pending. No production planner/API integration is claimed.
 Visual approval and remaining supporting-screen baseline capture are pending;
 #60a is not complete. Exact responsive visuals require approval before UI code.
 #29/#30 are coordinated through #60c;
@@ -59,8 +229,9 @@ stale-response guards; legacy attempt adoption and explicit Start over; authoriz
 recommendation tier/language handling; linked exports and receipt deletion.
 
 Verification and remaining gates: see `docs/teaching-hardening-verification.md`.
-PostgreSQL is **blocked locally**, not waived: Docker daemon unavailable, no
-native PostgreSQL tools/service found. UI approval, culinary review of the
+The original PostgreSQL environment blocker is superseded by the 2026-09-13
+local migration/sync evidence above; broader PostgreSQL release gates remain.
+UI approval, culinary review of the
 single-pot/"Meanwhile" contradiction, and beginner observations remain open.
 
 Reconciled 2026-09-06 against GitHub main at dccd4db177336b7f52d992bb9a3dade681c61d1e. The original audit used local 6011faf; this published planning commit is based on dccd4db and preserves its newer application work. All new work below is planned, not implemented. Verify the current checkout before implementation. Details: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Agent dispatch: [AGENT_HANDOFFS.md](AGENT_HANDOFFS.md).
@@ -128,7 +299,7 @@ Start #50 implementation, #33a/#39a materials and #47a fixtures in parallel; the
 
 ### Numbering correction
 
-The earlier local learning draft incorrectly reused #16–#30. Those draft tasks are now #32–#46 (old draft ID + 16); shipped tasks keep their original IDs. Additional shared-foundation/library/import/event tasks occupy #47–#58. See LEARNING_PLAN.md for the old-draft mapping. Highest allocated ID: #58; recheck the shared branch before assigning more.
+The earlier local learning draft incorrectly reused #16–#30. Those draft tasks are now #32–#46 (old draft ID + 16); shipped tasks keep their original IDs. Additional shared-foundation/library/import/event tasks occupy #47–#58. See LEARNING_PLAN.md for the old-draft mapping. Highest allocated ID: **#61** (updated 2026-09-18); recheck the shared branch before assigning more. LP/X/PX/Q and TODO L identifiers are subordinate launch-plan references, not reused pipeline numbers.
 
 ## Already shipped
 

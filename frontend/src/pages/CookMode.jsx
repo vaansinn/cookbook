@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
 import useSettingsStore from "../store/useSettingsStore";
-import useAuthStore, { getAuthEpoch } from "../store/useAuthStore";
+import useAuthStore from "../store/useAuthStore";
 import {
   getOrStartSession, getSessionRecord, setCurrentStep, setSessionSnapshot,
   setSessionCookLog, completeSession, getOrCreateGuestId,
+  getSessionTimer, setSessionTimer,
 } from "../store/cookSession";
 import { useT } from "../i18n";
 import { startSnapshot, readSnapshot } from "../api/snapshots";
 import ReflectionEditor from "../components/ReflectionEditor";
 import HelpDialog from "../components/HelpDialog";
-import { createRequestScope } from "../utils/requestScope";
 import { logCook } from "../api/progress";
-import { parseSeconds, fmtSecs, beep } from "../utils/timer";
+import { parseSeconds, fmtSecs } from "../utils/timer";
+import { createCookTimerController, manageCookWakeLock, playCookTimerAlarm, cookAuthKey, createCookAuthScope, MAX_TIMER_MS } from "../utils/cookTimer.mjs";
 import LessonBody, { stripMd } from "../components/LessonBody";
 
 // Cook Mode - the step-by-step cook flow, contextual help (pilot-fixtures.md
@@ -28,17 +29,55 @@ function stepText(step) {
 function stepId(step) {
   return typeof step === "object" && step ? step.id : null;
 }
+// Earlier pinned snapshots can contain string steps. Their immutable position
+// is the identity fallback; never bind a timer to the currently visible index.
+const timerStepId = (step, index) => stepId(step) || `legacy-step:${index}`;
+
+function CookTimerPanel({ state, controller, steps, stepIdx = 0, t }) {
+  const { timer, blocked, error, remaining, saving: timerSaving } = state;
+  const step = steps?.[stepIdx], text = stepText(step);
+  const secs = typeof text === "string" ? parseSeconds(text) : null;
+  const eligible = secs && secs * 1000 <= MAX_TIMER_MS;
+  const originIdx = timer ? steps?.findIndex((value, index) => timerStepId(value, index) === timer.stepId) ?? -1 : -1;
+  const origin = originIdx >= 0 ? t("cook_timer_origin", { step: originIdx + 1 }) : t("cook_timer_origin_pending");
+  const start = () => controller.current?.start(timerStepId(step, stepIdx), secs);
+  return <>
+    {eligible && !timer && !blocked && <button onClick={start} aria-label={t("cook_timer_start", { time: fmtSecs(secs) })} className="mt-6 rounded-full px-5 py-2.5 font-bold text-sm" style={{ background: "var(--basic)", color: "var(--brand-ink)", boxShadow: "0 4px 0 var(--basic-dk)" }}>
+      ⏱ {Math.round(secs / 60)} min
+    </button>}
+    {timer && <section className="mt-6 text-sm" aria-label={origin}>
+      <p style={{ color: "var(--muted)" }}>{origin}</p>
+      <p className="rounded-full px-5 py-2.5 font-bold tabular-nums" role={timer.status === "elapsed" ? "status" : "timer"}
+        style={timer.status === "elapsed" ? { background: "var(--attention)", color: "var(--attention-ink)" } : { background: "var(--basic)", color: "var(--brand-ink)" }}>
+        {timer.status === "elapsed" ? t("cook_timer_done") : `${fmtSecs(Math.ceil(remaining / 1000))} · ${t(timer.status === "paused" ? "cook_timer_paused" : "cook_timer_active")}`}
+      </p>
+      <div className="flex flex-wrap justify-center gap-2 mt-2">
+        {timer.status !== "elapsed" && <button className="chip" disabled={blocked} onClick={() => timer.status === "running" ? controller.current?.pause() : controller.current?.resume()}>{t(timer.status === "running" ? "cook_timer_pause" : "cook_timer_resume")}</button>}
+        <button className="chip" disabled={blocked} onClick={() => controller.current?.cancel()}>{t("cook_timer_cancel")}</button>
+        {timer.status === "elapsed" && eligible && <button className="chip" disabled={blocked} onClick={start}>{t("cook_timer_new")}</button>}
+      </div>
+    </section>}
+    {timerSaving && <p role="status" className="text-sm mt-2">{t("cook_timer_saving")}</p>}
+    {timer?.clockNotice && <p role="alert" className="text-sm mt-2">{t("cook_timer_clock_changed")}</p>}
+    {error && <div role="alert" className="text-sm mt-2">
+      <p>{t(error === "storage" ? (blocked && !timerSaving ? "cook_timer_storage_read" : "cook_timer_storage_write") : error === "finished" ? "cook_timer_finished" : error === "changed" ? "cook_timer_changed" : error === "corrupt" ? "cook_timer_corrupt" : ["coordination", "busy"].includes(error) ? "cook_timer_coordination" : "cook_timer_missing")}</p>
+      {error !== "finished" && <button className="chip mt-2" onClick={() => controller.current?.retry()}>{t("cook_timer_retry")}</button>}
+      {error === "corrupt" && <button className="chip mt-2" onClick={() => controller.current?.reset()}>{t("cook_timer_reset")}</button>}
+    </div>}
+    {(timer || eligible) && <p className="text-xs mt-2 max-w-sm" style={{ color: "var(--muted)" }}>{t("cook_timer_background")}</p>}
+    {secs && !eligible && <p className="text-sm mt-2">{t("cook_timer_limit")}</p>}
+  </>;
+}
 
 export default function CookMode() {
   const initialized = useAuthStore((s) => s.initialized);
-  const epoch = useAuthStore((s) => s.epoch);
-  const userId = useAuthStore((s) => s.user?.id);
+  const authKey = useAuthStore(cookAuthKey);
   const { slug } = useParams();
   const [params] = useSearchParams();
   const settingsLanguage = useSettingsStore((s) => s.language);
   const t = useT();
   if (!initialized) return <p className="p-8">{t("loading")}</p>;
-  return <CookAttempt key={`${epoch}:${userId}:${slug}:${params.get("level")}:${params.get("attempt")}:${params.get("lang") || settingsLanguage}`} />;
+  return <CookAttempt key={`${authKey}:${slug}:${params.get("level")}:${params.get("attempt")}:${params.get("lang") || settingsLanguage}`} />;
 }
 
 function CookAttempt() {
@@ -48,7 +87,7 @@ function CookAttempt() {
   const t = useT();
   const settingsLanguage = useSettingsStore((s) => s.language);
   const language = ["en", "de"].includes(params.get("lang")) ? params.get("lang") : settingsLanguage;
-  const epoch = useAuthStore((s) => s.epoch);
+  const authKey = useAuthStore(cookAuthKey);
   const user = useAuthStore((s) => s.user);
   const level = params.get("level") || "basic";
   const serves = parseInt(params.get("serves"), 10) || 2;
@@ -62,7 +101,11 @@ function CookAttempt() {
 
   const [tier, setTier] = useState(null); // pinned snapshot content: {title, steps, notes, ...}
   const [stepIdx, setStepIdx] = useState(0);
-  const [timer, setTimer] = useState(null); // { total, left, running, done }
+  const [timerState, setTimerState] = useState({ timer: null, error: null, blocked: true, remaining: 0 });
+  const timerController = useRef(null);
+  const timerSteps = useRef(null);
+  timerSteps.current = tier ? (tier.steps || []).map(timerStepId) : null;
+  const [wakeStatus, setWakeStatus] = useState("inactive");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -88,10 +131,10 @@ function CookAttempt() {
   const snapshotIdRef = useRef(null);
 
   useEffect(() => {
-    const scope = createRequestScope(() => getAuthEpoch() === epoch);
+    const scope = createCookAuthScope(useAuthStore);
     scopeRef.current = scope;
     setTier(null); setLoadError(false); setSaveError(false); setSaving(false);
-    setTimer(null); setStepIdx(0); setHelpOpen(false); setPhase("cooking");
+    setStepIdx(0); setHelpOpen(false); setPhase("cooking");
     setCookLog(null); setPinnedLessonsState({}); setReflected(false);
     const sessionId = getOrStartSession(ownerId, { dishSlug: slug, level, lang: language, ns, attemptId: params.get("attempt") });
     sessionIdRef.current = sessionId;
@@ -109,16 +152,28 @@ function CookAttempt() {
     }
     async function load() {
       try {
-        const res = record?.snapshot_id != null
+        let res = record?.snapshot_id != null
           ? await readSnapshot(record.snapshot_id, slug, level, language, scope.signal)
           : await startSnapshot(slug, level, language, scope.signal);
         if (!scope.current()) return;
-        setSessionSnapshot(ownerId, sessionId, res.snapshot_id, ns);
-        snapshotIdRef.current = res.snapshot_id;
+        let pin = await setSessionSnapshot(ownerId, sessionId, res.snapshot_id, ns, { requireLock: true });
+        if (!scope.current()) return;
+        if (!pin?.ok) throw new Error('snapshot_pin_unconfirmed');
+        if (pin.snapshot_id !== res.snapshot_id) {
+          // Another tab won the pin. Never display our losing capture or use
+          // its lesson/step identities; authorize/read the persisted winner.
+          res = await readSnapshot(pin.snapshot_id, slug, level, language, scope.signal);
+          if (!scope.current()) return;
+          if (res.snapshot_id !== pin.snapshot_id) throw new Error('snapshot_winner_mismatch');
+          pin = await setSessionSnapshot(ownerId, sessionId, res.snapshot_id, ns, { requireLock: true });
+          if (!scope.current()) return;
+          if (!pin?.ok || pin.snapshot_id !== res.snapshot_id) throw new Error('snapshot_pin_unconfirmed');
+        }
+        snapshotIdRef.current = pin.snapshot_id;
         setTier(res.content);
         setPinnedLessonsState(res.content.lessons || {});
-        if (record?.cook_log_id) { setCookLog({ id: record.cook_log_id }); setPhase("reflecting"); }
-        const idx = record?.current_step_id ? (res.content.steps || []).map(stepId).indexOf(record.current_step_id) : -1;
+        if (pin.cook_log_id) { setCookLog({ id: pin.cook_log_id }); setPhase("reflecting"); }
+        const idx = pin.current_step_id ? (res.content.steps || []).map(stepId).indexOf(pin.current_step_id) : -1;
         setStepIdx(idx >= 0 ? idx : 0);
       } catch {
         if (scope.current()) setLoadError(true);
@@ -126,9 +181,10 @@ function CookAttempt() {
     }
     load();
     return scope.cancel;
-  }, [slug, level, language, epoch, ownerId, ns, reload]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [slug, level, language, authKey, ownerId, ns, reload]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const restart = () => {
+    if (!scopeRef.current?.current()) return;
     const id = getOrStartSession(ownerId, { dishSlug: slug, level, lang: language, ns, forceNew: true });
     navigate(`/dish/${slug}/cook?level=${level}&lang=${language}&serves=${serves}&attempt=${id}`, { replace: true });
   };
@@ -141,48 +197,66 @@ function CookAttempt() {
       if (!isGuest) {
         const result = await logCook(slug, level, sessionId, language, snapshotIdRef.current);
         if (!scope.current()) return;
-        setSessionCookLog(ownerId, sessionId, result.cook_log.id, ns);
+        await setSessionCookLog(ownerId, sessionId, result.cook_log.id, ns);
+        if (!scope.current()) return;
         setCookLog(result.cook_log); setPhase("reflecting");
       } else {
-        completeSession(ownerId, sessionId, ns); setPhase("done");
+        await completeSession(ownerId, sessionId, ns);
+        if (scope.current()) setPhase("done");
       }
     } catch { if (scope.current()) setSaveError(true); }
     finally { if (scope.current()) setSaving(false); }
   };
 
   useEffect(() => {
-    if (!timer || !timer.running) return;
-    const iv = setInterval(() => {
-      setTimer((tm) => {
-        if (!tm) return tm;
-        const left = tm.left - 1;
-        if (left <= 0) {
-          beep();
-          if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
-          return { ...tm, left: 0, running: false, done: true };
-        }
-        return { ...tm, left };
-      });
-    }, 1000);
-    return () => clearInterval(iv);
-  }, [timer?.running]);
+    if (phase !== "cooking" || params.get("attempt") !== sessionIdRef.current) return;
+    const sessionId = sessionIdRef.current;
+    // A saved cook may still be loading its reflection snapshot. It is no
+    // longer active cooking, even before that request updates the visible phase.
+    if (getSessionRecord(ownerId, sessionId, ns)?.cook_log_id) return;
+    let closeAlarm;
+    // Independent of snapshot requests/retries; captured exact attempt identity.
+    // A new mutable request scope must never make this controller current again.
+    const timerScope = createCookAuthScope(useAuthStore, () => sessionIdRef.current === sessionId && (ns === "guest"
+      ? !useAuthStore.getState().user : String(useAuthStore.getState().user?.id) === String(ownerId)));
+    const current = timerScope.current;
+    const controller = createCookTimerController({
+      read: () => getSessionTimer(ownerId, sessionId, ns),
+      write: (value, options) => setSessionTimer(ownerId, sessionId, value, ns, options),
+      stepIds: () => timerSteps.current, current, onChange: setTimerState,
+      onElapsed: () => {
+        if (document.visibilityState !== "visible") return;
+        closeAlarm?.(); closeAlarm = playCookTimerAlarm();
+        try { navigator.vibrate?.([300, 150, 300]); } catch { /* optional feedback */ }
+      },
+    });
+    timerController.current = controller;
+    controller.load();
+    const iv = setInterval(() => controller.tick(), 250);
+    const reconcile = () => controller.tick(true);
+    document.addEventListener("visibilitychange", reconcile);
+    window.addEventListener("pagehide", reconcile);
+    return () => {
+      timerScope.cancel(); controller.dispose(); timerController.current = null; clearInterval(iv); closeAlarm?.();
+      document.removeEventListener("visibilitychange", reconcile);
+      window.removeEventListener("pagehide", reconcile);
+    };
+  }, [phase, ownerId, ns, authKey, slug, level, language, params.get("attempt")]); // Independent of snapshot fetch/retry.
 
   useEffect(() => {
-    // Wake lock: keep the screen on while cooking (falls back silently if unsupported)
-    let lock;
-    if ("wakeLock" in navigator) {
-      navigator.wakeLock.request("screen").then((l) => (lock = l)).catch(() => {});
-    }
-    return () => lock?.release?.().catch(() => {});
-  }, []);
+    if (!tier || phase !== "cooking" || timerState.error === "finished") return;
+    const originScope = scopeRef.current;
+    return manageCookWakeLock({ onStatus: setWakeStatus, current: () => originScope?.current() });
+  }, [tier, phase, authKey, timerState.error === "finished"]);
 
   if (phase === "reflecting") {
     const sessionId = sessionIdRef.current;
     const done = async (result) => {
-      if (!scopeRef.current?.current()) return;
-      setReflected(result?.status && result.status !== "skipped");
-      completeSession(ownerId, sessionId, ns);
-      setPhase("done");
+      const originScope = scopeRef.current;
+      if (!originScope?.current()) return;
+      await completeSession(ownerId, sessionId, ns);
+      if (!originScope.current()) return;
+      setReflected(result?.status && result.status !== "skipped"); setPhase("done");
     };
     return <div className="min-h-screen p-6 max-w-lg mx-auto"><ReflectionEditor cookLogId={cookLog.id} onDone={done} onContinue={() => done(null)} /></div>;
   }
@@ -192,12 +266,14 @@ function CookAttempt() {
   }
   if (legacy) return <div className="min-h-screen p-8 flex flex-col gap-4">
     <p>{t("source_unknown")}</p>
+    <CookTimerPanel state={timerState} controller={timerController} t={t} />
     <button className="btn-primary" onClick={restart}>{t("cook_start_over")}</button>
     <button className="btn-ghost" disabled={saving} onClick={finish}>{t(saving ? "loading" : "legacy_finish")}</button>
     {saveError && <p role="alert">{t("error_generic")}</p>}
   </div>;
   if (!tier) return <div className="min-h-screen p-8">
     <p role="status">{t(loadError ? "snapshot_load_error" : "loading")}</p>
+    <CookTimerPanel state={timerState} controller={timerController} t={t} />
     {loadError && <button className="btn-primary mt-4" onClick={() => setReload((n) => n + 1)}>{t("error_retry")}</button>}
     <Link className="btn-ghost block mt-4" to={`/dish/${slug}`}>{t("lesson_back")}</Link>
   </div>;
@@ -205,19 +281,16 @@ function CookAttempt() {
   const step = tier.steps[stepIdx];
   const text = stepText(step);
   const sid = stepId(step);
-  const secs = parseSeconds(text);
   const lesson = sid ? pinnedLessons[sid] : null;
 
-  const startTimer = () => setTimer({ total: secs, left: secs, running: true, done: false });
-  const toggleTimer = () => setTimer((tm) => (tm ? { ...tm, running: !tm.running } : null));
-
   const persistStep = (idx) => {
+    if (!scopeRef.current?.current()) return;
     const s = tier.steps[idx];
     setCurrentStep(ownerId, sessionIdRef.current, stepId(s), ns);
   };
 
   const goNext = () => {
-    setTimer(null);
+    if (!scopeRef.current?.current()) return;
     if (stepIdx < tier.steps.length - 1) {
       const next = stepIdx + 1;
       setStepIdx(next);
@@ -228,7 +301,7 @@ function CookAttempt() {
   };
 
   const goBack = () => {
-    setTimer(null);
+    if (!scopeRef.current?.current()) return;
     if (stepIdx > 0) {
       const prev = stepIdx - 1;
       setStepIdx(prev);
@@ -275,24 +348,8 @@ function CookAttempt() {
           </button>
         )}
 
-        {secs && !timer && (
-          <button onClick={startTimer} className="mt-6 rounded-full px-5 py-2.5 font-bold text-sm" style={{ background: "var(--basic)", color: "var(--brand-ink)", boxShadow: "0 4px 0 var(--basic-dk)" }}>
-            ⏱ {Math.round(secs / 60)} min
-          </button>
-        )}
-        {timer && (
-          <button
-            onClick={toggleTimer}
-            className="mt-6 rounded-full px-5 py-2.5 font-bold text-sm"
-            style={
-              timer.done
-                ? { background: "var(--attention)", color: "var(--attention-ink)" }
-                : { background: "var(--basic)", color: "var(--brand-ink)", boxShadow: "0 4px 0 var(--basic-dk)" }
-            }
-          >
-            {timer.done ? `✓ ${t("cook_timer_done")}` : `⏱ ${fmtSecs(timer.left)} · ${t("cook_timer_running")}`}
-          </button>
-        )}
+        <CookTimerPanel state={timerState} controller={timerController} steps={tier.steps} stepIdx={stepIdx} t={t} />
+        <p role="status" className="text-xs mt-2" style={{ color: "var(--muted)" }}>{t(`cook_wakelock_${wakeStatus}`)}</p>
       </div>
 
       {saveError && (
@@ -350,15 +407,15 @@ function DoneScreen({ t, isGuest, reflected, dishSlug, snapshotId, level, langua
   const [nextPractice, setNextPractice] = useState(null);
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
-  const epoch = useAuthStore((s) => s.epoch);
+  const authKey = useAuthStore(cookAuthKey);
   useEffect(() => {
-    const scope = createRequestScope(() => getAuthEpoch() === epoch);
+    const scope = createCookAuthScope(useAuthStore);
     setNextPractice(null); setFailed(false);
     if (snapshotId) readSnapshot(snapshotId, dishSlug, level, language, scope.signal)
       .then((res) => { if (scope.current()) setNextPractice(res.next_practice); })
       .catch(() => { if (scope.current()) setFailed(true); });
     return scope.cancel;
-  }, [snapshotId, dishSlug, level, language, epoch, retry]);
+  }, [snapshotId, dishSlug, level, language, authKey, retry]);
   const [dismissed, setDismissed] = useState(false);
   const heading = isGuest ? t("guest_cook_done_title") : reflected ? t("reflect_saved") : t("cooked_logged");
 

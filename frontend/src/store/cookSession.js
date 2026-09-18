@@ -1,4 +1,5 @@
 import useAuthStore from "./useAuthStore";
+import { validCookTimer, createCookAuthScope } from "../utils/cookTimer.mjs";
 
 // Persists cook session attempts for a signed-in account OR a guest, so a
 // mid-cook refresh reuses the same idempotency session_id (pilot-fixtures.md
@@ -29,6 +30,17 @@ import useAuthStore from "./useAuthStore";
 const recordKey = (ns, ownerId, sessionId) => `cook_session:${ns}:${ownerId}:${sessionId}`;
 const indexKey = (ns, ownerId) => `cook_session:${ns}:${ownerId}:index`;
 const ownerPrefix = (ns, ownerId) => `cook_session:${ns}:${ownerId}:`;
+const attemptLock = (ns, ownerId, sessionId) => `cook_timer:${ns}:${ownerId}:${sessionId}`;
+// The timer shares its record with step/snapshot/completion metadata. These
+// writers must participate too, or an old whole-record write could lose a timer.
+function withAttemptWrite(ns, ownerId, sessionId, action, failureResult) {
+  if (!globalThis.navigator?.locks?.request) return action(); // legacy flow; timer writes are disabled here
+  const originScope = createCookAuthScope(useAuthStore);
+  return navigator.locks.request(attemptLock(ns, ownerId, sessionId), { mode: "exclusive" }, (lock) => {
+    if (lock && originScope.current()) return action();
+    return failureResult;
+  }).catch(() => failureResult).finally(originScope.cancel);
+}
 
 // The guest id lives under its own fixed key, wholly separate from any
 // account's cook_session:account:<id>:* keys (pilot-fixtures.md §8) -
@@ -139,6 +151,66 @@ export function getSessionRecord(ownerId, sessionId, ns = "account") {
   }
 }
 
+// Timer reads/writes report failures rather than pretending the browser saved.
+// Never create a missing attempt or repair a corrupt record as a side effect.
+function timerRecord(ownerId, sessionId, ns) {
+  if (!["account", "guest"].includes(ns) || !/^[a-zA-Z0-9-]{1,128}$/.test(String(ownerId ?? ""))
+    || !/^[a-zA-Z0-9-]{1,64}$/.test(sessionId || "")) return { ok: false, error: "identity" };
+  const key = recordKey(ns, ownerId, sessionId);
+  const raw = localStorage.getItem(key);
+  if (!raw) return { ok: false, error: "missing" };
+  let record;
+  try { record = JSON.parse(raw); } catch { return { ok: false, error: "corrupt" }; }
+  if (!record || Array.isArray(record) || record.session_id !== sessionId
+    || (record.owner_id != null && String(record.owner_id) !== String(ownerId))) return { ok: false, error: "identity" };
+  return { ok: true, key, record };
+}
+
+export function getSessionTimer(ownerId, sessionId, ns = "account") {
+  try {
+    const result = timerRecord(ownerId, sessionId, ns);
+    if (!result.ok) return result;
+    if (result.record.cook_log_id != null) return { ok: false, error: "finished" };
+    return { ok: true, timer: result.record.timer ?? null };
+  } catch { return { ok: false, error: "storage" }; }
+}
+
+export async function setSessionTimer(ownerId, sessionId, timer, ns = "account", options = {}) {
+  const current = options.current || (() => true);
+  if (!globalThis.navigator?.locks?.request) return { ok: false, error: "coordination" };
+  const originScope = createCookAuthScope(useAuthStore, current);
+  try {
+    return await navigator.locks.request(attemptLock(ns, ownerId, sessionId), { mode: "exclusive", ifAvailable: true }, (lock) => {
+      if (!lock) return { ok: false, error: "busy" };
+      if (!originScope.current()) return { ok: false, error: "identity" };
+      return writeSessionTimer(ownerId, sessionId, timer, ns, options);
+    });
+  } catch { return { ok: false, error: "coordination" }; }
+  finally { originScope.cancel(); }
+}
+
+function writeSessionTimer(ownerId, sessionId, timer, ns, { expectedTimer, reset = false, onElapsed, current } = {}) {
+  if (timer !== null && !validCookTimer(timer)) return { ok: false, error: "corrupt" };
+  try {
+    const result = timerRecord(ownerId, sessionId, ns);
+    if (!result.ok) return result;
+    if (result.record.cook_log_id != null) return { ok: false, error: "finished" };
+    const existing = result.record.timer ?? null;
+    if (!reset && existing !== null && !validCookTimer(existing)) return { ok: false, error: "corrupt" };
+    if (JSON.stringify(existing) !== JSON.stringify(expectedTimer ?? null)) return { ok: false, error: "changed" };
+    if (reset && timer !== null) return { ok: false, error: "corrupt" };
+    if (timer === null) delete result.record.timer;
+    else result.record.timer = timer;
+    localStorage.setItem(result.key, JSON.stringify(result.record));
+    // Still inside the same attempt Web Lock as cook-log metadata. A different
+    // tab cannot finish the attempt between lifecycle validation and this alarm.
+    if (timer?.status === "elapsed" && current?.() && typeof onElapsed === "function") {
+      try { onElapsed(); } catch { /* optional foreground feedback cannot undo a saved timer */ }
+    }
+    return { ok: true };
+  } catch { return { ok: false, error: "storage" }; }
+}
+
 // Persists current_step_id as the user advances - the one field on the
 // record that changes turn-by-turn (pilot-fixtures.md §4). Never touches
 // dish_slug/level/lang/snapshot_id, which stay fixed for the life of the
@@ -147,6 +219,7 @@ export function getSessionRecord(ownerId, sessionId, ns = "account") {
 export function setCurrentStep(ownerId, sessionId, stepId, ns = "account") {
   if (!ownerId || !sessionId) return;
   const key = recordKey(ns, ownerId, sessionId);
+  return withAttemptWrite(ns, ownerId, sessionId, () => {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return;
@@ -156,6 +229,7 @@ export function setCurrentStep(ownerId, sessionId, stepId, ns = "account") {
   } catch {
     // storage unavailable - nothing to persist
   }
+  });
 }
 
 // Sets snapshot_id on a record right after a fresh capture (a NEW session -
@@ -163,20 +237,30 @@ export function setCurrentStep(ownerId, sessionId, stepId, ns = "account") {
 // (pilot-fixtures.md §1/§4/§9): a no-op if the record already has a
 // snapshot_id, so a stray second call can never move a session onto a
 // different snapshot mid-attempt.
-export function setSessionSnapshot(ownerId, sessionId, snapshotId, ns = "account") {
-  if (!ownerId || !sessionId) return;
-  const key = recordKey(ns, ownerId, sessionId);
+export function setSessionSnapshot(ownerId, sessionId, snapshotId, ns = "account", { requireLock = false } = {}) {
+  if (!Number.isSafeInteger(snapshotId) || snapshotId <= 0) return { ok: false, error: "snapshot" };
+  // CookMode requires coordination; retain the old synchronous imperative API
+  // for legacy callers without locks, but never silently accept it in CookMode.
+  if (requireLock && !globalThis.navigator?.locks?.request) return { ok: false, error: "coordination" };
+  return withAttemptWrite(ns, ownerId, sessionId, () => {
   try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return;
-    const existing = JSON.parse(raw);
-    if (existing.snapshot_id != null) return; // already pinned - never overwritten
-    existing.snapshot_id = snapshotId;
-    existing.capture_pending = false;
-    localStorage.setItem(key, JSON.stringify(existing));
+    const result = timerRecord(ownerId, sessionId, ns);
+    if (!result.ok) return result;
+    const existing = result.record;
+    const status = existing.snapshot_id == null ? "pinned" : "existing";
+    if (existing.snapshot_id == null) {
+      if (existing.cook_log_id != null) return { ok: false, error: "finished" };
+      existing.snapshot_id = snapshotId;
+      existing.capture_pending = false;
+      localStorage.setItem(result.key, JSON.stringify(existing));
+    }
+    if (!Number.isSafeInteger(existing.snapshot_id) || existing.snapshot_id <= 0) return { ok: false, error: "snapshot" };
+    return { ok: true, status, snapshot_id: existing.snapshot_id,
+      current_step_id: existing.current_step_id, cook_log_id: existing.cook_log_id };
   } catch {
-    // storage unavailable - nothing to persist
+    return { ok: false, error: "storage" };
   }
+  }, { ok: false, error: "coordination" });
 }
 
 // Records that this session's cook was successfully saved server-side
@@ -189,6 +273,7 @@ export function setSessionSnapshot(ownerId, sessionId, snapshotId, ns = "account
 export function setSessionCookLog(ownerId, sessionId, cookLogId, ns = "account") {
   if (!ownerId || !sessionId) return;
   const key = recordKey(ns, ownerId, sessionId);
+  return withAttemptWrite(ns, ownerId, sessionId, () => {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return;
@@ -198,6 +283,7 @@ export function setSessionCookLog(ownerId, sessionId, cookLogId, ns = "account")
   } catch {
     // storage unavailable - nothing to persist
   }
+  });
 }
 
 // Call once the cook is actually saved/finished - the attempt is over, so
@@ -210,6 +296,7 @@ export function setSessionCookLog(ownerId, sessionId, cookLogId, ns = "account")
 // on, so this is called directly once the guest reaches the finish screen).
 export function completeSession(ownerId, sessionId, ns = "account") {
   if (!ownerId || !sessionId) return;
+  return withAttemptWrite(ns, ownerId, sessionId, () => {
   try {
     localStorage.removeItem(recordKey(ns, ownerId, sessionId));
     const index = readIndex(ns, ownerId);
@@ -218,6 +305,7 @@ export function completeSession(ownerId, sessionId, ns = "account") {
   } catch {
     // ignore - nothing to clear
   }
+  });
 }
 
 // Drops every persisted attempt-record and the index for one owner - used

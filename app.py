@@ -8,7 +8,7 @@ trimmed for this project's current scope (Talisman/rate-limiting/email flows
 are deferred until P5 hardening, see PIPELINE.md).
 """
 
-from flask import Flask, Response, send_from_directory
+from flask import Flask, Response, abort, jsonify, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -19,8 +19,11 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 from datetime import timedelta
 import os
+import re
 
-load_dotenv()
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from runtime_config import PROXY_HEADERS, build_runtime_config, runtime_environment
 
 # Created outside create_app() so models can import them without a circular import.
 db = SQLAlchemy()
@@ -30,40 +33,79 @@ bcrypt = Bcrypt()
 compress = Compress()
 
 
-def create_app():
+def create_app(*, environment=None):
+    mode = runtime_environment(os.environ, environment)
+    if mode == "development" and os.environ.get("FLASK_SKIP_DOTENV") != "1":
+        load_dotenv()
+    # Validate every runtime setting before initializing extensions. Engine
+    # construction is lazy with respect to connections; startup never probes DB.
+    config = build_runtime_config(environment=mode)
     app = Flask(__name__)
-
-    # ── Database ──────────────────────────────────────────────────────────────
-    db_url = os.environ.get("DATABASE_URL", "sqlite:///cookbook.db")
-    if db_url.startswith("postgres://"):
-        db_url = db_url.replace("postgres://", "postgresql://", 1)
-    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-    # ── Auth ──────────────────────────────────────────────────────────────────
-    is_dev = os.environ.get("FLASK_ENV") == "development"
-    jwt_secret = os.environ.get("JWT_SECRET_KEY")
-    if not jwt_secret:
-        if not is_dev:
-            raise RuntimeError("JWT_SECRET_KEY must be set in production")
-        jwt_secret = "dev-secret"
-    app.config["JWT_SECRET_KEY"] = jwt_secret
+    app.config.update(config)
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=30)
 
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+    from auth_identity import install_identity_checks
+    install_identity_checks(jwt)
     bcrypt.init_app(app)
     compress.init_app(app)
 
-    allowed_origins = [
-        os.environ.get("FRONTEND_URL", "http://localhost:5173"),
-        "http://localhost:5173",
-    ]
-    CORS(app, resources={r"/api/*": {"origins": allowed_origins}})
+    allowed_origins = app.config["API_CORS_ORIGINS"]
+    if allowed_origins:
+        CORS(app, resources={r"^/api(?:/|$)": {
+            "origins": [re.compile(re.escape(origin) + r"\Z", re.IGNORECASE) for origin in allowed_origins],
+        }}, always_send=False)
 
-    # Trust Heroku's proxy headers so request.is_secure is correct behind the router.
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    app.wsgi_app = ProxyFix(app.wsgi_app, **{
+        f"x_{header}": app.config[f"PROXY_FIX_X_{header.upper()}"]
+        for header in PROXY_HEADERS
+    })
+
+    def is_api_request():
+        return request.path == "/api" or request.path.startswith("/api/")
+
+    @app.before_request
+    def enforce_request_limit():
+        if request.content_length is not None and request.content_length > app.config["MAX_CONTENT_LENGTH"]:
+            abort(413)
+
+    # Preserve HTTP status/headers, and leave JWT callbacks with the auth owner.
+    def api_http_error(error):
+        response = error.get_response()
+        if is_api_request():
+            response.set_data(app.json.dumps({"error": error.name}))
+            response.mimetype = "application/json"
+        return response
+
+    for status in (404, 405, 413):
+        app.register_error_handler(status, api_http_error)
+
+    @app.after_request
+    def defensive_api_headers(response):
+        if is_api_request() or request.path in {"/health/live", "/health/ready"}:
+            # A conservative default also covers optional-auth content and errors.
+            response.headers["Cache-Control"] = "no-store"
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["Referrer-Policy"] = "no-referrer"
+        return response
+
+    @app.get("/health/live")
+    def liveness():
+        return jsonify(status="ok")
+
+    @app.get("/health/ready")
+    def readiness():
+        try:
+            # Separate connection: no user query, schema access, or session writes.
+            with db.engine.connect() as connection:
+                if connection.execute(text("SELECT 1")).scalar_one() != 1:
+                    return jsonify(status="unavailable"), 503
+        except SQLAlchemyError:
+            # Do not echo or log driver messages, URLs, SQL, or credentials.
+            return jsonify(status="unavailable"), 503
+        return jsonify(status="ok")
 
     # ── Register API blueprints ───────────────────────────────────────────────
     from routes.auth import auth_bp
@@ -76,6 +118,7 @@ def create_app():
     from routes.snapshots import snapshots_bp
     from routes.lessons import lessons_bp
     from routes.reflections import reflections_bp
+    from routes.planning import planning_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(recipes_bp, url_prefix="/api")
     app.register_blueprint(groceries_bp, url_prefix="/api")
@@ -86,6 +129,7 @@ def create_app():
     app.register_blueprint(snapshots_bp, url_prefix="/api")
     app.register_blueprint(lessons_bp, url_prefix="/api")
     app.register_blueprint(reflections_bp, url_prefix="/api")
+    app.register_blueprint(planning_bp, url_prefix="/api/planning/v1")
 
     # ── CLI: flask sync-recipes ───────────────────────────────────────────────
     # Re-parses content/recipes/**/*.md + content/foods.json into Postgres.
@@ -160,8 +204,19 @@ def create_app():
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     def serve_react(path):
-        static_dir = os.path.join(os.path.dirname(__file__), "static")
+        if path == "api" or path.startswith("api/"):
+            abort(404)
+        static_dir = app.static_folder
         if path and os.path.exists(os.path.join(static_dir, path)):
+            # Only audited, account-independent build resources opt into the
+            # worker's fallback cache. Dynamic recipe/SPA routes stay uncached.
+            if re.fullmatch(r"assets/index-[A-Za-z0-9_-]{8,}\.(js|css)", path):
+                return send_from_directory(static_dir, path, max_age=31536000)
+            if path in {"index.html", "manifest.json", "icons/favicon-32.png", "icons/icon-192.png",
+                        "icons/icon-512.png", "icons/icon-512-maskable.png",
+                        "fonts/plus-jakarta-sans-variable.ttf", "fonts/plus-jakarta-sans-italic-variable.ttf",
+                        "fonts/bricolage-grotesque-variable.ttf"}:
+                return send_from_directory(static_dir, path, max_age=60)
             return send_from_directory(static_dir, path)
 
         index_path = os.path.join(static_dir, "index.html")
@@ -181,7 +236,7 @@ def create_app():
                     title, description, json_ld = build_recipe_head(dish, tier)
                     return inject_head(html_text, title, description, json_ld)
 
-        return send_from_directory(static_dir, "index.html")
+        return send_from_directory(static_dir, "index.html", max_age=60 if not path else None)
 
     return app
 
@@ -189,4 +244,4 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=app.config["RUNTIME_ENV"] == "development")

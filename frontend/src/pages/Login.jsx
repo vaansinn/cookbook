@@ -17,8 +17,8 @@ export default function Login() {
     e.preventDefault();
     setErr("");
     try {
-      await login(email, password);
-      navigate("/");
+      const applied = await login(email, password);
+      if (applied) navigate("/");
     } catch (e2) {
       setErr(apiMessage(e2.response?.data, t, "Login failed"));
     }

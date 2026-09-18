@@ -17,6 +17,7 @@ export default function PrivacyPage() {
         <h1 className="font-display text-3xl font-bold mt-4" style={{ color: "var(--ink)" }}>{t("privacy_title")}</h1>
         <p className="mt-4 leading-relaxed">{t("privacy_body_1")}</p>
         <p className="mt-4 leading-relaxed">{t("privacy_body_2")}</p>
+        <p className="mt-6 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>{t("privacy_draft")}</p>
       </div>
     </div>
   );

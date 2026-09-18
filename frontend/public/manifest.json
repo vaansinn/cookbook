@@ -1,11 +1,11 @@
 {
   "name": "Recipe Drawer",
   "short_name": "Recipe Drawer",
-  "description": "Cook a dish at your level, then level up — with shared grocery lists built in.",
+  "description": "A welcoming kitchen. Find dishes, plan meals and learn to cook at your own pace.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#F7F7F2",
   "theme_color": "#284C65",
   "icons": [

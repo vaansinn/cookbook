@@ -13,11 +13,17 @@ export default function SettingsPage() {
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const doExport = async () => {
+    if (busy) return;
+    const origin = useAuthStore.getState();
+    const current = () => ["token", "epoch", "requestGeneration"].every((key) => useAuthStore.getState()[key] === origin[key]);
+    setBusy(true);
     setError("");
     try {
       const data = await exportData();
+      if (!current()) return;
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -28,17 +34,27 @@ export default function SettingsPage() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      setError(t("error_generic"));
+      if (current()) setError(t("error_generic"));
+    } finally {
+      setBusy(false);
     }
   };
 
   const doDelete = async () => {
+    if (busy) return;
+    setBusy(true);
     setError("");
     try {
-      await deleteAccount();
-      navigate("/login");
-    } catch {
-      setError(t("error_generic"));
+      const result = await deleteAccount(user?.id);
+      if (result?.deleted) navigate("/login");
+    } catch (err) {
+      const key = err.code === "writer_busy" ? "settings_delete_busy"
+        : err.code === "write_coordination_unavailable" ? "settings_delete_browser"
+          : ["storage_blocked", "deletion_marker_changed"].includes(err.code) ? "settings_delete_storage"
+            : "settings_delete_unconfirmed";
+      setError(t(key));
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -65,14 +81,14 @@ export default function SettingsPage() {
         <div className="card p-4 mt-6">
           <div className="font-display font-bold text-sm" style={{ color: "var(--ink)" }}>{t("settings_export_title")}</div>
           <p className="text-sm mt-1.5 mb-3" style={{ color: "var(--muted)" }}>{t("settings_export_desc")}</p>
-          <button onClick={doExport} className="btn-ghost w-full text-sm py-2.5">{t("settings_export_button")}</button>
+          <button disabled={busy} onClick={doExport} className="btn-ghost w-full text-sm py-2.5">{t("settings_export_button")}</button>
         </div>
 
         <div className="rounded-3xl border-2 p-4 mt-4" style={{ background: "var(--danger-soft)", borderColor: "var(--danger-soft)" }}>
           <div className="font-display font-bold text-sm" style={{ color: "var(--danger-dk)" }}>{t("settings_delete_title")}</div>
           <p className="text-sm mt-1.5 mb-3">{t("settings_delete_desc")}</p>
 
-          {error && <p className="text-sm font-semibold mb-2" style={{ color: "var(--danger)" }}>{error}</p>}
+          {error && <p role="alert" className="text-sm font-semibold mb-2" style={{ color: "var(--danger)" }}>{error}</p>}
 
           {!confirmingDelete ? (
             <button onClick={() => setConfirmingDelete(true)} className="w-full text-sm py-2.5 rounded-2xl border-2 font-display font-bold" style={{ borderColor: "var(--danger)", color: "var(--danger-dk)" }}>
@@ -82,8 +98,8 @@ export default function SettingsPage() {
             <div>
               <p className="text-sm font-semibold mb-3">{t("settings_delete_confirm")}</p>
               <div className="flex gap-2">
-                <button onClick={() => setConfirmingDelete(false)} className="btn-ghost flex-1 text-sm py-2.5">{t("settings_cancel")}</button>
-                <button onClick={doDelete} className="flex-1 text-sm py-2.5 rounded-2xl font-display font-bold" style={{ background: "var(--danger)", color: "var(--danger-ink)", boxShadow: "0 4px 0 var(--danger-dk)" }}>
+                <button disabled={busy} onClick={() => setConfirmingDelete(false)} className="btn-ghost flex-1 text-sm py-2.5">{t("settings_cancel")}</button>
+                <button disabled={busy} onClick={doDelete} className="flex-1 text-sm py-2.5 rounded-2xl font-display font-bold" style={{ background: "var(--danger)", color: "var(--danger-ink)", boxShadow: "0 4px 0 var(--danger-dk)" }}>
                   {t("settings_delete_confirm_button")}
                 </button>
               </div>

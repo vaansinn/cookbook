@@ -1,96 +1,130 @@
-// Recipe Drawer service worker — offline support for the app shell and a
-// small allowlist of genuinely public API responses.
-// - App shell / static assets: cache-first, refreshed in the background.
-// - Public, non-entitlement-varying API GETs (see PUBLIC_API_ALLOWLIST):
-//   network-first, falling back to the cache when offline.
-// - Every other API GET (anything not on the allowlist, and always anything
-//   carrying an Authorization header) is network-only: never read from or
-//   written to the cache. Most `/api/*` responses vary by who's asking (an
-//   account's entitlement/tier access, favorites, progress, meal plans...)
-//   even when the URL itself looks the same for everyone, so a cache keyed
-//   on the URL alone can hand one account's private/premium response to a
-//   different account that logs in later on the same device — including
-//   offline. GET /api/dishes/<slug> is the clearest example: the path looks
-//   static per-recipe, but its content differs by tier access, so it is
-//   deliberately NOT on the allowlist.
-//   Trade-off accepted: a previously-viewed recipe's detail is no longer
-//   available offline. That's a real regression versus the old (unsafe)
-//   behavior, not a bug — correctness beats offline convenience here.
-// Never caches mutating requests (POST/PATCH/DELETE) or cross-origin calls.
+// Cache only the public build shell inspected in frontend/index.html,
+// public/manifest.json and vite.config.js. Dynamic pages (including /dish/*)
+// and ALL APIs are network-only: a URL or missing Authorization header is
+// not proof that a response is independent of accounts/entitlements.
+const CACHE_PREFIX = "recipe-drawer-";
+const SHELL_CACHE = `${CACHE_PREFIX}shell-v4`;
+const SHELL_TYPES = new Map([
+  ["/", ["text/html"]],
+  ["/index.html", ["text/html"]],
+  ["/manifest.json", ["application/json", "application/manifest+json"]],
+  ["/icons/favicon-32.png", ["image/png"]],
+  ["/icons/icon-192.png", ["image/png"]],
+  ["/icons/icon-512.png", ["image/png"]],
+  ["/icons/icon-512-maskable.png", ["image/png"]],
+  ["/fonts/plus-jakarta-sans-variable.ttf", ["font/ttf"]],
+  ["/fonts/plus-jakarta-sans-italic-variable.ttf", ["font/ttf"]],
+  ["/fonts/bricolage-grotesque-variable.ttf", ["font/ttf"]],
+]);
 
-const SHELL_CACHE = "recipe-drawer-shell-v2";
-const API_CACHE = "recipe-drawer-api-v2";
-
-// Paths whose response is the same for every caller — no auth, no
-// per-account entitlement variation. Keep this list small and deliberate;
-// don't add a path here just because it "looks public".
-const PUBLIC_API_ALLOWLIST = [
-  /^\/api\/glossary(\/|$)/, // glossary lookup/definitions
-  /^\/api\/dishes$/, // anonymous dish list/filter call (not /dishes/<slug>)
-  /^\/api\/filters$/, // discovery filter chips
-];
-
-function isPublicApiPath(pathname) {
-  return PUBLIC_API_ALLOWLIST.some((re) => re.test(pathname));
+function shellTypes(url) {
+  if (url.search) return undefined;
+  if (SHELL_TYPES.has(url.pathname)) return SHELL_TYPES.get(url.pathname);
+  // Vite's default entry naming; do not cache arbitrary /assets/* responses.
+  const entry = /^\/assets\/index-[A-Za-z0-9_-]{8,}\.(js|css)$/.exec(url.pathname);
+  if (!entry) return undefined;
+  return entry[1] === "css"
+    ? ["text/css"]
+    : ["text/javascript", "application/javascript"];
 }
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
-});
+function forbidsStorage(headers) {
+  const directives = (headers.get("Cache-Control") || "")
+    .split(",").map((part) => part.trim().split("=")[0].toLowerCase());
+  // no-cache requires revalidation; this worker cannot satisfy that offline.
+  return directives.some((name) => ["private", "no-store", "no-cache"].includes(name))
+    || /\bno-cache\b/i.test(headers.get("Pragma") || "");
+}
 
+function cacheable(response, request, types) {
+  const mime = (response.headers.get("Content-Type") || "").split(";")[0].trim().toLowerCase();
+  const vary = (response.headers.get("Vary") || "").split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
+  return response.status === 200
+    && response.type === "basic"
+    && !response.redirected
+    && response.url === request.url
+    && !forbidsStorage(response.headers)
+    // Compression changes representation, not account identity. Cache API
+    // still performs its normal Vary match; any other variation is rejected.
+    && vary.every((header) => header === "accept-encoding")
+    && !response.headers.has("Set-Cookie")
+    && types.includes(mime);
+}
+
+function offline() {
+  return new Response("Offline: this resource is unavailable.", {
+    status: 503,
+    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+  });
+}
+
+async function networkOnly(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    return offline();
+  }
+}
+
+async function shellResponse(request, types) {
+  let response;
+  try {
+    response = await fetch(request);
+  } catch {
+    try {
+      const cache = await caches.open(SHELL_CACHE);
+      const cached = await cache.match(request);
+      if (cached && cacheable(cached, request, types)) return cached;
+    } catch {
+      // Disabled/evicted storage is equivalent to a cache miss.
+    }
+    return offline();
+  }
+
+  try {
+    const cache = await caches.open(SHELL_CACHE);
+    if (cacheable(response, request, types)) {
+      await cache.put(request, response.clone());
+    } else if (response.status < 500) {
+      // A redirect/private/no-store/not-found response invalidates an older
+      // fallback. Transient server errors must not overwrite a good shell.
+      await cache.delete(request);
+    }
+  } catch {
+    // Storage failures must not turn a successful fetch into an offline error.
+  }
+  return response;
+}
+
+// Use the standard waiting lifecycle. Existing controlled tabs must close
+// before activation; this alone does not solve old-client release recovery.
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== SHELL_CACHE && k !== API_CACHE).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys
+        .filter((key) => key.startsWith(CACHE_PREFIX) && key !== SHELL_CACHE)
+        .map(async (key) => {
+          try { await caches.delete(key); } catch { /* Best-effort cleanup. */ }
+        }));
+    } catch { /* Storage may be unavailable during activation. */ }
+  })());
 });
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
-
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  if (url.pathname.startsWith("/api/")) {
-    // Any authenticated request is private by definition — never read it
-    // from, or write it into, the cache. Go straight to the network.
-    if (request.headers.has("Authorization")) {
-      event.respondWith(fetch(request));
-      return;
-    }
-    // Anonymous requests: only the small public allowlist gets the
-    // cache-fallback treatment. Everything else (including anonymous
-    // /api/dishes/<slug> calls) is network-only too, since the same path
-    // can later be requested by a different, authenticated caller on this
-    // device and must never be answered from someone else's cached entry.
-    if (!isPublicApiPath(url.pathname)) {
-      event.respondWith(fetch(request));
-      return;
-    }
-    event.respondWith(
-      fetch(request)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(API_CACHE).then((cache) => cache.put(request, copy));
-          return res;
-        })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
+  const types = shellTypes(url);
+  const bypass = ["Authorization", "Proxy-Authorization", "Cookie", "Range"]
+    .some((header) => request.headers.has(header))
+    || ["no-store", "no-cache", "reload"].includes(request.cache)
+    || forbidsStorage(request.headers);
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(SHELL_CACHE).then((cache) => cache.put(request, copy));
-          return res;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
-  );
+  // respondWith owns the entire async lifetime, including awaited storage
+  // writes. There are no detached refresh/write promises to be terminated.
+  event.respondWith(types && !bypass
+    ? shellResponse(request, types)
+    : networkOnly(request));
 });

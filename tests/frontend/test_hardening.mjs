@@ -46,3 +46,36 @@ await initializing;
 assert.equal(auth.getState().user, null);
 assert.equal(auth.getState().initialized, true);
 console.log("hardening: legacy adoption, start-over, pin immutability, save-resume, stale requests and auth-init checks passed");
+
+// Exercise the REAL Zustand cooking-state subscriber: temporary verification
+// must not be mistaken for an account boundary that deletes saved attempts.
+auth.setState({ user: { id: 7 }, token: "account-seven", initialized: true });
+localStorage.setItem("token", "account-seven");
+const retainedAttempt = sessions.getOrStartSession(7, { ...args, forceNew: true });
+const pendingReflectionKey = "reflection_pending:7:regression";
+localStorage.setItem(pendingReflectionKey, "synthetic-pending-mutation");
+const retainedEpoch = auth.getState().epoch;
+api.post = async () => { throw Object.assign(Error("invalid credentials"), { response: { status: 401 } }); };
+await assert.rejects(auth.getState().login("invalid@example.test", "synthetic"));
+assert.equal(auth.getState().user.id, 7);
+assert.equal(auth.getState().epoch, retainedEpoch);
+assert.ok(sessions.getSessionRecord(7, retainedAttempt));
+assert.equal(localStorage.getItem(pendingReflectionKey), "synthetic-pending-mutation");
+api.get = async () => { throw Object.assign(Error("outage"), { response: { status: 503 } }); };
+await auth.getState().init();
+assert.equal(auth.getState().initialized, false);
+assert.equal(auth.getState().user.id, 7);
+assert.ok(sessions.getSessionRecord(7, retainedAttempt));
+assert.equal(localStorage.getItem(pendingReflectionKey), "synthetic-pending-mutation");
+api.get = async () => ({ data: { id: 7 } });
+await auth.getState().init();
+assert.equal(auth.getState().initialized, true);
+assert.ok(sessions.getSessionRecord(7, retainedAttempt));
+api.post = async () => ({ data: { token: "account-eight", user: { id: 8 } } });
+assert.equal(await auth.getState().login("next@example.test", "synthetic"), true);
+assert.equal(sessions.getSessionRecord(7, retainedAttempt), null);
+assert.equal(localStorage.getItem(pendingReflectionKey), null);
+const nextAccountAttempt = sessions.getOrStartSession(8, args);
+auth.getState().logout();
+assert.equal(sessions.getSessionRecord(8, nextAccountAttempt), null);
+console.log("auth integration: failed switch/reverification preserve attempts and pending reflections; committed switch/logout clear old owner");

@@ -11,9 +11,16 @@
   <link rel="stylesheet" href="welcoming-kitchen.css">
   <link rel="stylesheet" href="welcoming-network.css">
   <link rel="stylesheet" href="welcoming-tomato.css?v=clean3">
+  <link rel="stylesheet" href="welcoming-planning.css?v=planning2">
+  <link rel="stylesheet" href="welcoming-shopping.css?v=dish-coverage1">
+  <link rel="stylesheet" href="welcoming-planning-editor.css?v=cards1">
   <script src="welcoming-network.js" defer></script>
   <script src="welcoming-tomato.js?v=clean3" defer></script>
-  <script src="welcoming-kitchen.js?v=clean3" defer></script>
+  <script src="welcoming-planning-core.js?v=edit1" defer></script>
+  <script src="welcoming-planning.js?v=cards1" defer></script>
+  <script src="welcoming-shopping.js?v=dish-coverage1" defer></script>
+  <script src="welcoming-planning-editor.js?v=cards1" defer></script>
+  <script src="welcoming-kitchen.js?v=edit1" defer></script>
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
@@ -27,6 +34,7 @@
   <div id="app"></div>
   <dialog id="ingredient-dialog" aria-labelledby="dialog-title"><div class="dialog-head"><h2 id="dialog-title"></h2><button id="close-dialog" type="button"></button></div><div id="dialog-content"></div></dialog>
   <dialog id="ai-dialog" aria-labelledby="ai-title"><div class="dialog-head"><h2 id="ai-title"></h2><button id="close-ai" type="button"></button></div><div id="ai-content" class="ai-copy"></div></dialog>
+  <dialog id="planning-dialog" aria-labelledby="planning-dialog-title"><div class="dialog-head"><h2 id="planning-dialog-title"></h2><button id="planning-close" type="button"></button></div><div id="planning-dialog-body"></div></dialog>
   <p id="announcement" class="sr-only" role="status"></p>
 </body>
 </html>
