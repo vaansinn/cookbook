@@ -4,6 +4,7 @@ import useAuthStore from "./store/useAuthStore";
 import useSettingsStore from "./store/useSettingsStore";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import AccountRecoveryPage from "./pages/AccountRecoveryPage";
 import Home from "./pages/Home";
 import RecipePage from "./pages/RecipePage";
 import CookMode from "./pages/CookMode";
@@ -64,6 +65,7 @@ export default function App() {
       <Routes key={epoch}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/account/recovery" element={<AccountRecoveryPage />} />
         <Route path="/planning/*" element={<RequireAuth><PrivatePlanningPage /></RequireAuth>} />
         <Route path="/shopping" element={<RequireAuth><PrivateShoppingPage /></RequireAuth>} />
         <Route path="/" element={<Home />} />

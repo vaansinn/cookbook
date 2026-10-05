@@ -206,6 +206,9 @@ def assert_history(sa, engine, before):
         actual = [row for row in actual if row["id"] in ids]
         if name == "cook_reflections":
             require(all(row.pop("revision") == 1 for row in actual), "Old reflection revision was not initialized to 1.")
+        if name == "users":
+            require(all(row.pop("email_verified") is False and row.pop("legacy_tokens_valid_after") is None
+                        for row in actual), "Migration invented verification or revoked an old account.")
         require(actual == expected, f"Synthetic old history changed in {name}.")
     require(not rows(sa, engine, "reflection_mutations"), "Unexpected mutation receipts for old history.")
 

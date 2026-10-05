@@ -8,6 +8,7 @@ import { fetchDishes, fetchFilters, discoveryIdentity, startDiscoveryRead } from
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
 import BottomNav from "../components/BottomNav";
+import { useSignOut } from "../components/AccountSecurity";
 import "../styles/library.css";
 
 const EMPTY_FILTERS = { cuisines: [], meal_types: [], methods: [] };
@@ -36,7 +37,8 @@ export default function Home() {
   const t = useT();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+  const signOut = useSignOut();
+  const authLoading = useAuthStore((s) => s.loading);
   const identity = useAuthStore(discoveryIdentity);
   const language = useSettingsStore((s) => s.language);
 
@@ -117,8 +119,8 @@ export default function Home() {
                 <Link to="/settings" className="library-icon-button" aria-label={t("settings_title")}>
                   <LibraryIcon kind="settings" />
                 </Link>
-                <button onClick={logout} className="btn-ghost text-sm py-2 px-4">
-                  {t("auth_logout")}
+                <button onClick={() => signOut.run()} disabled={signOut.pending || authLoading} aria-busy={signOut.pending} className="btn-ghost text-sm py-2 px-4">
+                  {t(signOut.pending ? "account_signing_out" : "auth_logout")}
                 </button>
               </div>
             ) : (
@@ -127,6 +129,7 @@ export default function Home() {
               </Link>
             )}
           </div>
+          {signOut.error && <p ref={signOut.message} tabIndex={-1} role="alert" className="text-sm mt-3" style={{ color: "var(--danger)" }}>{t(signOut.error)}</p>}
         </header>
         <h1 className="library-shell font-display text-4xl font-bold mt-6">
           {t("home_greeting")}

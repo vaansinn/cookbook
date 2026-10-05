@@ -4,8 +4,8 @@ app.py — Flask application factory.
 Creates and configures the Flask app, registers API blueprints, and serves
 the compiled React frontend from /static. Pattern lifted from the Clea
 wedding-planner app (D:\\Projects\\meal-planner) — same auth/JWT/CORS shape,
-trimmed for this project's current scope (Talisman/rate-limiting/email flows
-are deferred until P5 hardening, see PIPELINE.md).
+trimmed for this project's current scope. Session authentication and local-only
+recovery are implemented; production delivery and release gates remain in PIPELINE.md.
 """
 
 from flask import Flask, Response, abort, jsonify, request, send_from_directory
@@ -43,6 +43,8 @@ def create_app(*, environment=None):
     app = Flask(__name__)
     app.config.update(config)
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=30)
+    from auth_sessions import configure_sessions
+    configure_sessions(app)
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -109,6 +111,7 @@ def create_app(*, environment=None):
 
     # ── Register API blueprints ───────────────────────────────────────────────
     from routes.auth import auth_bp
+    from routes.auth_sessions import auth_sessions_bp
     from routes.recipes import recipes_bp
     from routes.groceries import groceries_bp
     from routes.progress import progress_bp
@@ -120,6 +123,7 @@ def create_app(*, environment=None):
     from routes.reflections import reflections_bp
     from routes.planning import planning_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(auth_sessions_bp, url_prefix="/api/auth/session")
     app.register_blueprint(recipes_bp, url_prefix="/api")
     app.register_blueprint(groceries_bp, url_prefix="/api")
     app.register_blueprint(progress_bp, url_prefix="/api")

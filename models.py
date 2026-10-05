@@ -66,6 +66,9 @@ class User(db.Model):
     display_name  = db.Column(db.String(100))
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
 
+    email_verified = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    legacy_tokens_valid_after = db.Column(db.BigInteger)
+
     # Free tier is always Basic-only; paid unlocks Intermediate/Advanced.
     # Whether/when that gate actually gets enforced is still open (see blueprint P6).
     plan = db.Column(db.String(20), default="free", nullable=False)

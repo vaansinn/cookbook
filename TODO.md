@@ -1,15 +1,51 @@
 # Cookbook — current outstanding work
 
-Updated **2026-09-18**. This is the current actionable checklist for pipeline
+Updated **2026-10-05**. This is the current actionable checklist for pipeline
 **#61**, not a claim of launch readiness. Historical task IDs and delivered work
 remain in [PIPELINE.md](PIPELINE.md). Keep this checklist current instead of
 creating another competing status list.
 
+Execution order, bounded Sol assignments and user checkpoints:
+[dispatch plan](docs/councils/launch-readiness/dispatch-plan-2026-09-27.md).
+Machine-readable task packets: [manifest](docs/councils/launch-readiness/dispatch-manifest-2026-09-27.json).
+These organize L01–L17; they do not independently mark work complete or authorize
+implementation/deployment. Five-seat planning review and cross-review are recorded
+in the [council record](docs/councils/launch-readiness/dispatch-council-2026-09-27.md).
+
+Phase 1 artifacts and fresh diagnostic evidence:
+[October 5 handoff](docs/councils/launch-readiness/phase-1-handoff-2026-10-05.md).
+D01/D02/D04 now have source-grounded contracts, all 20 parity rows and a recovery
+test design. These documentation deliverables do not close L01/L04/L15 or approve
+their proposed policies. October 5's priority clarification puts the connected
+core app first: D03 can proceed using existing authorized APIs and unchanged cook
+contracts. L18/N0 gates native-specific session/packaging/alarm choices, not this
+platform-independent UI work. Locked-phone alarms remain required for release.
+
 ## Release boundary and current foundation
 
-First release: a phone-first website/installable web app, with real private
+**Android milestone update, October 5:** the user chose a personal Google Play
+account (not registered yet) and authorised separate project-local Android/JDK
+tools and SDK licence acceptance. The original `com.cookbook.localdev` harness
+was paired wirelessly, installed and confirmed working by the user. `mobile/`
+now builds the separate **Cookbook Bundled Dev** (`com.cookbook.bundleddev`) with
+the real React assets inside the APK and only its API using local port 5100.
+Both apps/data are preserved independently. Native device checks passed for
+packaged startup without an API mapping and real guest recipe loading with an
+API-only mapping. Build/lint, four Android unit tests, 26 mobile checks and 353
+frontend/prototype tests passed (one existing skip). Release builds stay disabled.
+Authenticated SQL save/reopen and interrupted-write acceptance remain open;
+this is not production native authentication or completion of L18.
+[Build and device handoff](mobile/README.md). UI/API integration can continue
+independently. No public backend or Play account is needed for this local test.
+Personal-account verification/testing is a later release gate.
+
+First release: **Android app first**, with Galaxy S25 as the initial test device;
+**iOS later, public web/desktop deferred**, confirmed October 5. Retain real private
 PostgreSQL accounts and the **implemented** approved planning/event/shopping
-prototype behavior. Desktop must also work. Preserve the creator's existing
+prototype behavior. Reuse existing UI/backend where feasible; native framework
+choice for production remains provisional; Capacitor is being evaluated through
+the development harness above. Audible timers must work while the phone is locked.
+Preserve the creator's existing
 records. Local development is authorized; paid infrastructure, deployment,
 public content activation and participant recruitment are not.
 
@@ -29,12 +65,53 @@ That does **not** authorize deployment or change the unanswered product decision
 Every unchecked item needs recorded evidence before closure. Owner labels are
 specialist roles, not an assertion that another agent is currently assigned.
 
+**Current priority (user clarification, October 5):** the missing connection
+between approved design and features is the immediate concern, not a reported
+login/loading defect. Keep the alarm feasibility check bounded; do not make full
+alarm implementation the first milestone. Next: L02/D03 real recipe journey, then
+connected planning/shopping gaps and core account work. Native-specific contracts
+still require review before implementing them; alarm acceptance stays a launch gate.
+
+**Bounded alarm/tooling check, October 5:** deadline-based timer state already
+exists in `frontend/src/utils/cookTimer.mjs`; sound is a Web Audio beep in
+`frontend/src/utils/timer.js`, not a scheduled Android alarm. Android SDK directory,
+ADB and emulator binaries exist locally; platform directories 32/33 and build-tools
+30.0.3/33.0.1 were found. Tools were not on this shell's PATH; no packaged Android
+project existed at that initial inspection; the later development harness above
+supersedes that tooling status. Android documents a system exact/wakeup
+alarm route with permission constraints ([official guide](https://developer.android.com/develop/background-work/services/alarms)).
+This establishes a plausible integration path, not a working alarm or accepted
+toolchain. No SDK installs, phone access, APK build or device alarm test performed.
+Finish that proof within the packaging track, without holding up the shared UI.
+
+- [ ] **L18 — Admit Android-first architecture and release track** (frontend,
+  backend/security, DevOps/QA; N0–N3, Q01/Q05). Alongside core app integration,
+  evaluate reuse of React in a packaged app versus alternatives; prove the alarm
+  path on S25 before accepting the native architecture. Review packaged API origin,
+  session/credential storage and logout, deep links/Back, suspend/resume,
+  permissions denied/revoked, safe-area/keyboard/accessibility, signing/build
+  tooling and release/update recovery. Revalidate the same-origin cookie ADR
+  rather than assuming it fits a native container. Preserve SQL ownership,
+  snapshots/attempts and full PX parity. Android packaging is now launch work;
+  iOS and web/desktop publishing are deferred. Check current store obligations
+  before a distribution plan; no paid enrollment, submission or deployment yet.
+  **Confidence: low until packaged-device feasibility is demonstrated.**
+
+Platform precedence: older phone/desktop browser and PWA checks below remain
+useful development/regression evidence, not proof of Android acceptance or a
+requirement to publish a website first. L11/L13/L16 must sign off the real Android
+package; a physical iPhone is not an Android launch gate. Preserve desktop code,
+but defer desktop-specific release polish. Rebaseline agent packets after N0.
+
 - [ ] **L01 — Freeze the remaining release contracts** (chairman + backend/security;
   LP00–02, X0). Reconcile the route/exposure inventory, auth/session ADR,
   legacy-data policy, content activation/recovery policy and PX01–PX20 matrix
   against the implemented slice contracts. Ask Q05–Q08 only where their answer
   changes behavior. Exit: no unresolved architecture assumption presented as
   user approval. **Confidence: low until policy-dependent decisions are settled.**
+  D01 inputs: [route inventory](docs/councils/launch-readiness/exposure-matrix.md),
+  [session ADR](docs/councils/launch-readiness/session-contract.md) and
+  [legacy/content ADR](docs/councils/launch-readiness/legacy-contract.md).
 - [ ] **L02 — Finish the welcoming discovery → recipe → cook port** (frontend;
   LP20–23, #60b–f). The compact Home port is only partial. Wire ingredient-first
   discovery/Explore to real authored data; recipe overview, AI disclosures,
@@ -57,18 +134,27 @@ specialist roles, not an assertion that another agent is currently assigned.
   review, destructive previews/undo, conflicts and refresh. Prove clean-browser
   and second-device restoration from SQL. Record intentional differences and
   fix gaps; do not reduce the agreed release scope silently.
+  D02 [evidence matrix](docs/councils/launch-readiness/parity-evidence.md) identifies
+  missing meal/item positioning, detailed destructive shopping impact and selected-
+  servings preview before save. Old household records are not private-plan aliases.
+  [Browser scenarios](docs/councils/launch-readiness/browser-scenarios.md) remain unrun.
 - [ ] **L05 — Complete public account/session security** (backend/security;
-  LP11, Q06). Authentication identity/validation guards are implemented; decide
-  and finish the launch session transport/storage, expiry/revocation and
-  cross-tab policy. Add/verify login/registration abuse throttling, enumeration
-  resistance and appropriate reauthentication. Preserve current tier access
+  LP11, Q06). [October 5 authentication batch](docs/councils/launch-readiness/authentication-batch-2026-10-05.md)
+  implements SQL session families, short-lived access, rotating renewal,
+  browser cookies/CSRF, native encrypted storage, cross-tab coordination and
+  server revocation. Local working clients remain legacy until native end-to-end
+  acceptance and controlled cutover. Finish production abuse-load validation,
+  registration enumeration policy, session retention and appropriate
+  reauthentication. Preserve current tier access
   until an explicit replacement policy is approved. Test old/invalid/deleted
   account tokens and outage/recovery across all exposed routes.
 - [ ] **L06 — Add secure account recovery and agreed email verification**
-  (backend/frontend/DevOps; LP13/23, Q06/Q11). Hashed expiring single-use tokens,
-  trusted-origin links, reset/session invalidation, non-enumerating responses,
-  throttling, concurrency, failure/retry and token-redaction tests. Use a local
-  fake mail sink first; real sender/provider/delivery testing needs authorization.
+  (backend/frontend/DevOps; LP13/23, Q06/Q11). Hashed expiring single-use codes,
+  reset/session invalidation, generic recovery responses, throttling, PostgreSQL
+  concurrency and local inbox are implemented with gated EN/DE screens. Real
+  sender/provider, trusted hosted links, asynchronous delivery/outbox, retention,
+  verification policy and delivery testing remain open and need authorization
+  where they create external services. No automatic verified-email access gate.
 - [ ] **L07 — Close legacy endpoint/data exposure** (backend/security; LP12, X9,
   #41a/#49a, Q07). Inventory old household/planner/grocery/public-link routes and
   assign preserved, adapted, read-only or retired behavior on the server. Recheck
@@ -87,8 +173,14 @@ specialist roles, not an assertion that another agent is currently assigned.
   Verify background/lock/resume, wake-lock denial/reacquisition, refresh, clock
   changes, account/attempt changes, old-worker waiting/activation and installed
   mode on physical devices. Resume timing target: within one displayed second.
-  No guaranteed locked-phone alarm or broad offline editing claim. Establish
-  an old-client/asset retention window and test active cooks across two releases.
+  Q05 now requires an audible alarm while locked. First run a bounded platform
+  feasibility check, starting with Galaxy S25: compare browser limitations with
+  OS-scheduled alarm integration, permissions and actual locked-device behavior.
+  Do not weaken the requirement to elapsed-time-on-return or claim current support;
+  Android-first packaging is now selected under Q01; its framework and physical
+  alarm verification remain open. No broad offline
+  editing claim. Establish an old-client/asset retention window and test active
+  cooks across two releases. See the Q05 decision register for official sources.
 - [ ] **L10 — Close the isolated worker-harness cleanup check** (QA).
   Re-run the revised Review/Confirm/Cancel cleanup in a real browser. Inspect
   only the synthetic `127.0.0.1:5189` test origin for the possibly retained test
@@ -109,8 +201,13 @@ specialist roles, not an assertion that another agent is currently assigned.
   diagnostic evidence, **not a production SLO**. Define targets, optimize as
   needed and prove old retries remain usable. **Confidence: low for live load.**
 - [ ] **L13 — Execute CI and candidate-specific release verification**
-  (QA/DevOps; LP10/50). Inspect the first remote workflow run after this push;
-  address platform differences and require a green candidate run. Repeat full
+  (QA/DevOps; LP10/50). Initial remote workflow **passed** for `04a414f` on
+  2026-09-18, including all five disposable PostgreSQL databases; result confirmed
+  2026-10-05 ([run](https://github.com/vaansinn/cookbook/actions/runs/35339011776)).
+  Fresh October 5 local baseline: 32/32 backend scripts, 352 frontend/prototype
+  passes with 2 optional browser skips, production build 161 modules. PostgreSQL
+  and browser acceptance were not rerun in this documentation batch.
+  This closes the initial-CI check, not L13. Require a green final candidate run. Repeat full
   automated/build/sync/migration evidence on fresh and representative populated
   disposable PostgreSQL, including invalid corrective migrations, transaction
   rollback, restored-history reads/writes and a compatible recovery artifact.
@@ -128,6 +225,10 @@ specialist roles, not an assertion that another agent is currently assigned.
   measured restore RTO/RPO, alerts/support, incident/rollback runbooks, old-origin
   redirects and explicit local-draft preservation. **Confidence: low until a
   deployment environment and operational owner are agreed.**
+  D04 [runbook](docs/councils/launch-readiness/release-runbook.md) and
+  [recovery scenarios](docs/councils/launch-readiness/recovery-test-design.md) are
+  drafted; compatible recovery-build read/write and late-sync-failure proof remain
+  to implement and execute, distinct from the existing current-build restore.
 - [ ] **L16 — Obtain independent final council and human acceptance**
   (chairman + five specialists, user/content reviewer; LP51). Review the exact
   candidate against every open item/evidence link; classify residual risk with
@@ -147,12 +248,17 @@ specialist roles, not an assertion that another agent is currently assigned.
 Full wording and answers: [Q&A register](docs/councils/launch-readiness/implementation-questions.md).
 Continue independent work while a decision is pending; do not ask everything up front.
 
-- [ ] **Q05:** online-first recovery/accurate resumed timers versus a required
-  locked-phone audible alarm; intended device/OS support.
-- [ ] **Q06:** exact free/guest/account/premium access and email-ownership policy.
-  Public sign-up and future Stripe are confirmed, not today's price/access rules.
-- [ ] **Q07:** retained shared household data/attribution and public-link policy
-  on account deletion; old merged groceries lack reconstructable provenance.
+- [x] **Q05 product requirement:** confirmed October 5: audible timer alarm while
+  the phone is locked, “like a regular alarm.” Platform feasibility/device testing
+  is still open; accurate time or an alarm only on return is not a substitute.
+- [x] **Q06 launch policy:** approved October 5: guest Basic, all curated recipes
+  free when signed in, email verification/password recovery, paid tiers later.
+  Implementation, detailed unverified-account flow and mail setup remain open.
+- [x] **Q07 deletion-retention direction:** approved October 5: delete private
+  data/revoke owned public links; retain existing shared content for remaining
+  members without attribution. New plans remain private. Actual lifecycle tests,
+  remaining invitation/public identity/export rules and retention periods are open;
+  old merged groceries lack reconstructable provenance.
 - [ ] **Q08 technical completion:** private ownership is answered; close the
   remaining contract review and demonstrate independent scope semantics.
 - [ ] **Q09/Q10:** approve the actual wired screens and finite culinary/image set.
@@ -193,8 +299,9 @@ Continue independent work while a decision is pending; do not ask everything up 
   nutrition targets and external providers. Revalidate provider/model, cost,
   privacy and throttling at implementation time; old provider mentions are not
   credentials or approval to call them.
-- [ ] Paid tiers/Stripe and Android/iOS store packaging (N0–N3) after explicit
-  scope and account/tooling approval. PWA release does not imply store readiness.
+- [ ] Paid tiers/Stripe, iOS packaging and public web/desktop release. Android
+  packaging has moved to L18/N0–N3 in the first-release track. Do not delete the
+  existing web interface or assume a full rewrite; app-first is not app-only.
 - [ ] Compatibility retirement (#57), obsolete consumer cleanup and SQLAlchemy
   legacy-query warnings after inventory/tests; preserve existing data/access.
 
@@ -206,8 +313,9 @@ Continue independent work while a decision is pending; do not ask everything up 
   rehearsal, mounted recovery and real-browser worker/SQL flows. See the
   [continuation evidence and limitations](docs/councils/launch-readiness/continuation-2026-09-13.md).
   PostgreSQL/device/browser evidence was not rerun merely to commit documentation.
-- Remote CI success, physical phones, all-screen accessibility, final content,
-  privacy and operating readiness remain unchecked; neither a passing build nor
+- Remote CI for `04a414f` succeeded on 2026-09-18; checked 2026-09-27, not rerun.
+  Final candidate CI, physical phones, all-screen accessibility, final content,
+  privacy and operating readiness remain open; neither a passing build nor
   this checklist is launch approval.
 - Parallelize frontend L02, test/CI L10–13 and provider-independent runbooks;
   one owner integrates shared state/routes and one owns migrations/contracts.

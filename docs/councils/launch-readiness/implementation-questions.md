@@ -1,8 +1,19 @@
 # Launch implementation — Q&A and decision register
 
-Status: **open decisions; full-plan/release approval remains pending**. Updated 2026-09-13. The user separately authorized the bounded [foundation batch](foundation-batch.md); earlier statements below about Q&A answers not authorizing implementation describe those answers, not the later batch instruction.
+Status: **remaining decisions open; full-plan/release approval remains pending**. Updated 2026-10-05. The user separately authorized the bounded [foundation batch](foundation-batch.md); earlier statements below about Q&A answers not authorizing implementation describe those answers, not the later batch instruction.
 
 Purpose: ask the user a small number of relevant questions immediately before a decision becomes costly to reverse. Do not ask the entire questionnaire at once. Q01–Q03 are answered; later answers on local development, private ownership and future payments are recorded below.
+
+**2026-10-05 checkpoint:** Phase 1 contract/parity/recovery documents and source
+review are recorded in the [handoff](phase-1-handoff-2026-10-05.md). Q05–Q07 are the
+next consolidated product questions; recommendations in that handoff or the new
+ADRs are not answers. No existing answer or access policy changed in this batch.
+
+**Subsequent user replies, 2026-10-05:** Q06 launch access/recovery and Q07's
+account-deletion retention proposal were approved with “sounds good.” Q05 requires
+audible timers even while the phone is locked, clarified as “like a regular alarm.”
+Platform feasibility remains unverified. These answers update the intended contracts, not the
+running application, and authorize no deployment or real deletion.
 
 ## How checkpoints work
 
@@ -17,13 +28,29 @@ Purpose: ask the user a small number of relevant questions immediately before a 
 
 ### Q01 — First distribution channel
 
+**Current decision, answered 2026-10-05:** the user approved “Android first, iOS
+later, and desktop/web deferred” with “sounds good.” This supersedes the September
+13 web/PWA-first answer below and its desktop-first-release requirement. The
+product is app-first, not permanently app-only. Start device validation with the
+Galaxy S25. Keep the existing SQL backend and reuse the interface where feasible;
+no framework or full native rewrite has been selected. Android N0–N3 is now in
+the launch track; iOS and public web/desktop release remain later work. Q05's
+locked-phone audible alarm is a mandatory requirement for the Android candidate.
+
+**Consequences:** revalidate native API origin/session storage, lifecycle, alarm
+permissions, accessibility, build/signing/update and distribution gates before
+dispatching platform-dependent work. Q02's full planning/event/shopping scope and
+Q06/Q07 answers are unchanged. Choosing Android-first does not authorize store
+submission, paid accounts/tooling, deployment, device configuration or signing
+credential access. Actual store requirements must be checked during N0/N2.
+
 **Question:** Should the first public release be a phone-first website/installable web app, Android on Google Play, or Android and iOS stores together?
 
-**Recommendation:** web/PWA first for the shortest route from the existing code. Store presence is a valid requirement, not an optionality we can decide for the user.
+**Historical recommendation, superseded:** web/PWA first for the shortest route from the existing code. Store presence is a valid requirement, not an optionality we can decide for the user.
 
-**Consequences:** stores bring native build/session/lifecycle validation, accounts/signing and beta-review lead time into the critical path. Desktop browser support remains part of all options.
+**Consequences:** stores bring native build/session/lifecycle validation, accounts/signing and beta-review lead time into the critical path. Desktop browser launch support is now deferred by the October 5 answer.
 
-**Status:** answered 2026-09-13 through the user Q&A: “Phone-first website/installable web app, then app stores (recommended for fastest launch).” **Consequence:** web/PWA is the first release; N packaging/toolchain work is deferred. Q02 also confirms full prototype functionality; Q03 data continuity and the architecture contracts still block complete plan sign-off. This answer does not authorize implementation or deployment.
+**Historical answer, superseded 2026-10-05:** on September 13 the user selected “Phone-first website/installable web app, then app stores (recommended for fastest launch).” N was deferred at that time. Use the current Android-first decision above, not this historical release order.
 
 ### Q02 — First-release feature promise
 
@@ -34,6 +61,9 @@ Purpose: ask the user a small number of relevant questions immediately before a 
 **Decision context:** bounded planning would have invoked P; the selected full prototype integration makes X mandatory and requires its own data-contract approval. It is not already production-ready. A guest-only preview would require a new user scope decision.
 
 **Status:** answered 2026-09-13 through the user Q&A: “Include the full approved planning/event/shopping prototype functionality.” **Consequence:** full prototype parity is mandatory in the first web release; X is the production integration track, not a deferrable outline. Unbuilt packs/Use the rest/batches/leftovers are not implied. P is superseded as a reduced-scope alternative. The detailed X data/API/persistence contracts still require G1 sign-off; no feature implementation is authorized by this answer.
+
+**Channel update, October 5:** this same feature scope now applies to the first
+Android release; moving away from web-first does not reduce the agreed features.
 
 ### Q03 — Existing users and saved data
 
@@ -60,6 +90,29 @@ later decisions. Local PostgreSQL is now available; see `../../local-development
 
 ### Q05 — What should cooking do when interrupted?
 
+**Answered 2026-10-05:** after requesting actual timers with an alarm, the user
+clarified: “it should work if it's locked, like a regular alarm.” A real audible
+completion alarm while the phone is locked is required; displaying an expired
+timer or sounding only on return does not satisfy Q05. Physical-device feasibility
+and the support matrix remain unverified. Reopen the PWA-only feasibility gate:
+this requirement does not itself approve a native rewrite, packaging, store
+submission or a reduced alarm promise.
+
+**Engineering follow-up:** investigate OS-scheduled alarms, starting with Android
+Galaxy S25, while preserving shared web UI/SQL backend. Browser-only timers cannot
+be accepted as proof: Chrome documents suspension of freezable task queues in
+[frozen pages](https://developer.chrome.com/docs/web-platform/page-lifecycle-api).
+[Android alarm scheduling](https://developer.android.com/develop/background-work/services/alarms)
+provides wakeup/exact-alarm mechanisms subject to permissions; Apple's
+[AlarmKit](https://developer.apple.com/videos/play/wwdc2025/230/) provides native
+timers/alarms on iOS/iPadOS 26. These official sources were checked October 5;
+they establish investigation paths, not implemented or device-tested support.
+Do not equate an ordinary notification, server push or installable PWA with a
+regular system alarm. Before selecting architecture, test locked/background
+delivery, permissions denied/revoked, cancellation/rescheduling and duplicate
+prevention; characterize battery/sound settings and network loss. No native
+toolchain, notification delivery or physical-device test ran in this decision update.
+
 **Ask:** before cooking/session persistence and channel architecture sign-off. Should timing be accurate when returning to the app, or must an audible alarm work while the phone is locked? Is online-first access with clear recovery acceptable?
 
 **Recommendation:** persistent elapsed-time/deadline correctness, deliberate pause/cancel, no silent timer cancellation when changing steps, and explicit online-first recovery. Do not promise a locked-phone alarm without evidence.
@@ -69,6 +122,15 @@ later decisions. Local PostgreSQL is now available; see `../../local-development
 **Also clarify:** which phone OS versions/devices matter to the intended users; the team proposes and tests the support matrix.
 
 ### Q06 — Accounts and access at launch
+
+**Launch policy answered 2026-10-05:** the user approved question 2 (“sounds good”):
+guest Basic cooking, all curated recipes free for signed-in users, email
+verification and password recovery, paid tiers later. This supersedes the older
+undecided launch access wording below. D05/D09 should implement and test this
+policy; existing premium gates have not yet changed. Session transport/lifetimes,
+the precise unverified-account flow and mail-provider setup still require their
+engineering/operational decisions. No Stripe integration or real email sending
+is authorized by this answer.
 
 **Partial answer 2026-09-13:** public sign-up should be available when released;
 Stripe is intended once a paid tier exists, not a request to implement payments
@@ -84,6 +146,16 @@ engineering/product checkpoint.
 ## B. Immediately before dependent implementation
 
 ### Q07 — Shared-data retention and public identity
+
+**Deletion-retention proposal answered 2026-10-05:** the user approved question 3
+(“sounds good”): remaining members may retain existing shared household content
+without the deleted member's attribution; delete that member's private data and
+remove/revoke their owned public links. New plans remain private by default.
+This authorizes the design direction for D06/D12, not deletion of real records.
+It does not approve new community sharing, public identity fields, inviter/member
+administration rules, numeric retention periods or a specific former-member
+export disclosure. Those narrower boundaries remain pending; never reconstruct
+unknown merged-item provenance or expose co-member details by assumption.
 
 **Ask:** during LP02, before G1 for the selected account/sharing scope. When someone deletes their account, may household grocery/meal content remain for other members with their attribution removed? What may a shared link disclose, and who may invite/remove members?
 

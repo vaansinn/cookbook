@@ -129,6 +129,8 @@ def _password_error(password):
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
+    if not current_app.config.get("AUTH_ALLOW_LEGACY_TOKENS", True):
+        return jsonify({"error": "Use the session authentication API", "code": "upgrade_required"}), 410
     data, error = _auth_input(registering=True)
     if error is not None:
         return error
@@ -162,6 +164,8 @@ def register():
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
+    if not current_app.config.get("AUTH_ALLOW_LEGACY_TOKENS", True):
+        return jsonify({"error": "Use the session authentication API", "code": "upgrade_required"}), 410
     data, error = _auth_input()
     if error is not None:
         return error
@@ -281,4 +285,7 @@ def delete_account():
 
     db.session.delete(user)
     db.session.commit()
-    return jsonify({"message": "Account deleted"})
+    response = jsonify({"message": "Account deleted"})
+    from flask_jwt_extended import get_jwt_request_location
+    from auth_sessions import clear_cookies
+    return clear_cookies(response) if get_jwt_request_location() == "cookies" else response

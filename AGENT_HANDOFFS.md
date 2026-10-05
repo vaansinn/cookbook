@@ -1,5 +1,33 @@
 # Agent handoffs — Recipe Drawer
 
+## Current launch work — read this first
+
+**October 5 channel decision:** Android app first (initial device S25), iOS later,
+public web/desktop deferred. Locked-phone audible alarms required. Read Q01/Q05
+and TODO L18/N0 before using old web-first agent packets; packaged auth/origin,
+alarm, build and release assumptions need revalidation. Existing SQL backend and
+full implemented planning scope remain. No framework or full rewrite selected.
+
+**Subsequent priority clarification:** connect the approved design/features first.
+Alarm feasibility was limited to source/tooling/documentation inspection (TODO).
+D03's existing-API UI slice can proceed; full alarm implementation is not its
+prerequisite. Keep native-specific architecture and real S25 alarm proof gated.
+
+For the current private SQL/PWA launch, use [TODO.md](TODO.md) plus the
+[2026-09-27 dispatch plan](docs/councils/launch-readiness/dispatch-plan-2026-09-27.md)
+and [task manifest](docs/councils/launch-readiness/dispatch-manifest-2026-09-27.json).
+They supersede the old teaching-pilot first assignments and baseline below for
+launch work. Verify current base/authority, enforce exclusive file/runtime
+ownership, and use bounded Sol delegation with independent review. No automatic
+commit/push/deploy, hook approval or unapproved policy/content decisions.
+
+Latest execution: [Phase 1 handoff, October 5](docs/councils/launch-readiness/phase-1-handoff-2026-10-05.md).
+D01/D02/D04 documents exist; consult their current findings rather than repeating
+the inventory. D03 is next, not implemented by Phase 1. Recheck the actual source
+and dirty documentation before dispatch; the manifest is not a completion ledger.
+
+## Historical teaching-pilot handoffs
+
 Pass this file **and IMPLEMENTATION_PLAN.md together**. The plan is the implementation specification; PIPELINE.md owns IDs/status. These handoffs do not launch agents or authorize the entire roadmap.
 
 ## Prepare once before dispatch

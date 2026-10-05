@@ -19,16 +19,21 @@ class MigrationTest(unittest.TestCase):
             run("-m", "flask", "db", "upgrade", "ee06718de8cd")
             run("-c", '''
 from app import app, db
-from models import User, Dish, CookLog
+from models import Dish, CookLog
 from sqlalchemy import MetaData, Table
 with app.app_context():
-    user=User(email="migration@example.test",password_hash="test-only")
+    # Seed the historical schema through its actual columns, not today's User
+    # mapper (which now includes session-era account columns).
+    users=Table("users",MetaData(),autoload_with=db.engine)
+    user_id=db.session.execute(users.insert().values(
+        email="migration@example.test",password_hash="test-only",plan="free"
+    )).inserted_primary_key[0]
     dish=Dish(slug="migration-dish")
-    db.session.add_all([user,dish]); db.session.flush()
-    cook=CookLog(user_id=user.id,dish_id=dish.id,level="basic",session_id="old-attempt")
+    db.session.add(dish); db.session.flush()
+    cook=CookLog(user_id=user_id,dish_id=dish.id,level="basic",session_id="old-attempt")
     db.session.add(cook); db.session.flush()
     old=Table("cook_reflections",MetaData(),autoload_with=db.engine)
-    db.session.execute(old.insert().values(user_id=user.id,cook_log_id=cook.id,outcome="happy"))
+    db.session.execute(old.insert().values(user_id=user_id,cook_log_id=cook.id,outcome="happy"))
     db.session.commit()
 ''')
             run("-m", "flask", "db", "upgrade")

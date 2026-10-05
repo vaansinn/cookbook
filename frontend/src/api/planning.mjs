@@ -48,6 +48,7 @@
  */
 
 import { readPlanningOwnerState } from './planningLifecycle.mjs';
+import { apiFetch } from './runtimeFetch.mjs';
 
 const ROOT = '/api/planning/v1';
 const PREFIX = 'private-planning:v1:outbox:';
@@ -146,7 +147,7 @@ function route(path) {
 }
 
 export function createPlanningClient(options = {}) {
-  const { fetchImpl = globalThis.fetch, getSession, requestTimeoutMs = 15000 } = options;
+  const { fetchImpl = apiFetch, getSession, requestTimeoutMs = 15000 } = options;
   if (typeof fetchImpl !== 'function' || typeof getSession !== 'function' ||
       !Number.isInteger(requestTimeoutMs) || requestTimeoutMs < 1 || requestTimeoutMs > 60000) fail('invalid_configuration');
   // Resolve the browser storage getter lazily: SecurityError must fail writes

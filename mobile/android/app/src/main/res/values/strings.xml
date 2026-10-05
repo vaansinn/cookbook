@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Cookbook Bundled Dev</string>
+    <string name="title_activity_main">Cookbook Bundled Dev</string>
+    <string name="package_name">com.cookbook.bundleddev</string>
+    <string name="custom_url_scheme">com.cookbook.bundleddev</string>
+</resources>

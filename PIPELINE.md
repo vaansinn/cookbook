@@ -5,6 +5,101 @@ Numbering is monotonically increasing — check the highest `#N` here before add
 
 ## Open
 
+### Account/session hardening — 2026-10-05 (#61 / L05–L06 continuation)
+
+User confirmed the same private meal plan survives reopening the bundled Android
+app and is visible in the local browser. Approved next batch: server-revocable
+sessions, protected browser cookies, Android Keystore-backed credential storage,
+autofill, recovery/verification and local-only testing. Preserve existing accounts
+and plans. No deployment, automatic commit/push, or production mail integration.
+Implementation and acceptance evidence: [authentication batch](docs/councils/launch-readiness/authentication-batch-2026-10-05.md).
+The previous cookie-only PWA recommendation is superseded for this batch by a
+shared server registry with separate browser/native credential transports.
+Current working local clients remain on legacy auth until explicit tested cutover.
+Implemented the session registry/additive migration, browser/native transports,
+encrypted Android vault, account recovery/verification controls and local mail
+sink. Disposable PostgreSQL fresh/history migrations and concurrent credential
+checks pass; the full backend suite passes 511 tests. S25 vault/tamper and Activity
+recreation checks pass with the phone unlocked. The installed development APK
+still uses legacy login: native end-to-end session cutover is **not approved** by
+these narrower checks. See the batch ledger for current acceptance and open gates.
+Final verification: 368 frontend + 90 prototype tests passed (one skip), 32 mobile
+checks, five Android unit tests, two S25 instrumentation tests; production web and
+both development APK modes build. The complete five-database PostgreSQL rehearsal
+passes, including backup/restore and populated upgrade; the auth-race CI step also
+passes after it. Candidate services are stopped and synthetic clusters retained.
+
+### Bundled Android interface — 2026-10-05 (#61 continuation)
+
+The user confirmed the first Android app worked and authorised the next milestone.
+The separate `com.cookbook.bundleddev` APK now contains the real React interface;
+no Vite server URL is configured. Restricted native HTTP is shared by Axios and
+private planning, preserving existing auth fencing, status codes and mutation
+payloads without global fetch patching or backend/CORS changes. The original app
+and its data remain untouched. On the paired S25, instrumentation passed packaged
+startup without the API mapping, then real guest recipe loading with only port
+5100 mapped. Build/lint, four native unit tests, 26 mobile tests, 353 existing
+frontend/prototype tests and the normal web build passed (one existing skip).
+SQL save/reopen for a signed-in phone account remains an acceptance gate; no
+account records were created or changed by these device tests. Native secure
+credentials/revocation, hosted HTTPS API, alarms and Play release remain open.
+[Current handoff](mobile/README.md). No commit, push or deployment.
+
+### Android development APK — 2026-10-05 (#61 continuation)
+
+User authorised the installable Android baseline, chose a future personal Play
+account, and approved project-local JDK/SDK downloads plus Android SDK licences.
+Capacitor 8.5.2 now generates a debug-only USB-connected shell of the current
+React app at `mobile/`, with SDK 36 and a separate development application ID.
+APK compilation/lint, navigation tests and release-task blocking are verified;
+the S25 install and backend-connected persistence journey are **not yet verified**.
+Existing design/feature integration remains open. No Google account, hosting,
+production native authentication, locked-phone alarm or store submission is
+implemented by this slice. [Instructions and evidence](mobile/README.md).
+No commit/push or phone modification was performed.
+
+### Android-first decision — 2026-10-05 (#61 continuation)
+
+User approved Android first, iOS later and public web/desktop deferred, following
+the locked-phone audible-alarm requirement. This supersedes the earlier PWA-first
+sequence without reducing SQL/account or planning/event/shopping scope. Current
+admission is TODO L18/Android N0: verify alarm and packaged-app architecture before
+platform-dependent dispatch. Reuse existing work where feasible; no framework,
+native rewrite, paid enrollment, submission or deployment was selected/executed.
+This checkpoint records decisions only, not a built Android app.
+
+### Phase 1 checkpoint — 2026-10-05 (#61 continuation)
+
+The authorized documentation/diagnostic batch delivered D01 account/API/legacy
+contracts, D02 PX01–PX20 evidence and browser scenarios, and D04 release/recovery
+design. [Handoff and review decisions](docs/councils/launch-readiness/phase-1-handoff-2026-10-05.md).
+Concrete parity corrections are scoped; unresolved policy, content, actual browser
+and compatible recovery-build gates remain visible in TODO. No application or
+schema changes, content activation, commit, push, deployment or hook changes.
+
+Fresh local baseline: backend **32/32 scripts**, frontend/prototype **352 passed,
+2 optional browser skips**, production build **161 modules**. GitHub main still
+matches `04a414f`; its September 18 CI remains green including five disposable
+PostgreSQL databases. That PostgreSQL run was checked, not rerun today. Next
+implementation package: D03's bounded wired recipe journey. L01–L17 stay open;
+completed documents are not completed release features.
+
+### Current dispatch update — 2026-09-27 (#61 continuation)
+
+[Execution plan](docs/councils/launch-readiness/dispatch-plan-2026-09-27.md) and
+[declarative Sol task packets](docs/councils/launch-readiness/dispatch-manifest-2026-09-27.json)
+now organize TODO L01–L17 into bounded dependency-based batches. Five independent
+Sol reviewers and one cross-review completed; the chairman retained policy,
+culinary, physical-device and release gates. First implementation batch, when
+authorized: contracts/exposure inventory, PX parity matrix and operations runbook;
+then the first wired recipe slice. No new product code or hook configuration changed.
+
+GitHub main remains `04a414f`; its [CI run](https://github.com/vaansinn/cookbook/actions/runs/35339011776)
+is successful, including the five-database PostgreSQL rehearsal. Read today;
+execution was September 18. This supersedes #61's remote-CI-pending wording below,
+not final candidate verification or launch approval. TODO remains the canonical
+completion checklist. This planning update is not committed or pushed yet.
+
 ### #61 — Launch foundation handoff and remaining work (2026-09-18)
 
 **Current actionable backlog: [TODO.md](TODO.md).** It reconciles completed local

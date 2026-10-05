@@ -65,7 +65,11 @@ async function fixture({ token = "A", storageThrows = false } = {}) {
   const axios = synthetic({ default: { create: () => api } });
   const zustand = synthetic({ create });
   const client = new vm.SourceTextModule(source("api/client.js"), { context });
-  await client.link(() => axios);
+  const session = new vm.SourceTextModule(source("api/authSession.mjs"), { context });
+  await session.link(() => { throw Error('Unexpected session import'); });
+  const runtime = new vm.SourceTextModule(source("api/runtimeFetch.mjs"), { context });
+  await runtime.link(() => session);
+  await client.link((name) => name === 'axios' ? axios : runtime);
   await client.evaluate();
   const store = new vm.SourceTextModule(source("store/useAuthStore.js"), { context });
   const lifecycle = new vm.SourceTextModule(source("api/planningLifecycle.mjs"), { context });
@@ -438,7 +442,10 @@ const dictionaries = Object.fromEntries(["en", "de"].map((lang) => [lang, JSON.p
 const i18n = f.synthetic({ useT: () => (key) => dictionaries[locale][key] });
 const compile = (path) => new vm.SourceTextModule(transformSync(source(path), { loader: "jsx", jsx: "automatic", format: "esm" }).code, { context: f.context });
 const recovery = compile("components/AuthRecovery.jsx");
-await recovery.link((name) => name === "react" ? react : name === "react/jsx-runtime" ? jsx : name.includes("useAuthStore") ? authModule : i18n);
+await recovery.link((name) => name === "react" ? react : name === "react/jsx-runtime" ? jsx : name.includes("useAuthStore") ? authModule
+  : name.includes('api/client') ? f.synthetic({ getSessionRuntime: () => undefined })
+    : name.includes('AccountSecurity') ? f.synthetic({ useSignOut: () => ({ pending: false, error: null,
+      run: (action) => f.auth.getState()[action]() }) }) : i18n);
 await recovery.evaluate();
 const flat = (node) => !node || typeof node !== "object" ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(flat)];
 f.auth.setState({ initError: "unavailable" });
@@ -529,7 +536,8 @@ for (const page of ["Login", "Register"]) {
       await formFixture.auth.getState().init();
       const navigations = [];
       const edits = [];
-      const formReact = formFixture.synthetic({ useState: (initial) => [initial, (value) => edits.push(value)] });
+      const formReact = formFixture.synthetic({ useState: (initial) => [initial, (value) => edits.push(value)],
+        useEffect: () => {}, useRef: (value) => ({ current: value }) });
       const formJsx = formFixture.synthetic({ jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) });
       const form = new vm.SourceTextModule(transformSync(source("pages/" + page + ".jsx"), { loader: "jsx", jsx: "automatic", format: "esm" }).code, { context: formFixture.context });
       await form.link((name) => {
@@ -537,13 +545,19 @@ for (const page of ["Login", "Register"]) {
         if (name === "react/jsx-runtime") return formJsx;
         if (name === "react-router-dom") return formFixture.synthetic({ Link: "Link", useNavigate: () => (destination) => navigations.push(destination) });
         if (name.includes("useAuthStore")) return formFixture.synthetic({ default: formFixture.auth });
+        if (name.includes('api/client')) return formFixture.synthetic({ getSessionRuntime: () => undefined });
         if (name.includes("i18n")) return formFixture.synthetic({ useT: () => (key) => key, apiMessage: (data, t, fallback) => data?.error || fallback });
         return formFixture.synthetic({ default: name });
       });
       await form.evaluate();
       const submit = flat(form.namespace.default()).find((node) => node.type === "form").props.onSubmit;
+      // Capture an independently mounted form's handler before either submits.
+      // It has its own pending ref, as a replacement route/form would.
+      const replacementSubmit = flat(form.namespace.default()).find((node) => node.type === "form").props.onSubmit;
       const first = submit({ preventDefault() {} });
-      const second = submit({ preventDefault() {} });
+      await submit({ preventDefault() {} });
+      assert.equal(formFixture.requests.length, 1, 'the mounted form suppresses duplicate submits');
+      const second = replacementSubmit({ preventDefault() {} });
       if (staleFailure) formFixture.requests[0].reject(401, { error: "Old rejection" });
       else formFixture.requests[0].resolve({ token: "OLD", user: { id: 1 } });
       await first;
@@ -553,11 +567,11 @@ for (const page of ["Login", "Register"]) {
       else formFixture.requests[1].resolve({ token: "NEW", user: { id: 2 } });
       await second;
       assert.deepEqual(navigations, latestFailure ? [] : ["/"]);
-      if (latestFailure) assert.equal(edits.at(-1), "Current rejection");
+      if (latestFailure) assert.equal(edits.at(-1).error, "Current rejection");
     }
   }
 }
-console.log("auth forms: stale success/failure never navigate; current success/failure controls navigation and errors");
+console.log("auth forms: duplicate submits suppressed; stale success/failure never navigate; current success/failure controls navigation and errors");
 
 // Retain the real Settings confirmation handler from owner 1's render. Invoke
 // it after sign-in/storage verification has switched owners, or after sign-out.

@@ -1,0 +1,8 @@
+{
+  "appId": "com.cookbook.bundleddev",
+  "appName": "Cookbook Bundled Dev",
+  "webDir": "dist",
+  "loggingBehavior": "none",
+  "includePlugins": [],
+  "server": { "hostname": "localhost", "androidScheme": "https" }
+}

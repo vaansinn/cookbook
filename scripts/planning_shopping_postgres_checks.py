@@ -9,7 +9,7 @@ Run: python -I -B scripts/planning_shopping_postgres_checks.py
 Pure checks: python -I -B scripts/planning_shopping_postgres_checks.py --check-guards
 
 Default mode: no DB creation, migration upgrade, sync, service control, HTTP or reset.
-Requires PostgreSQL 16, fc86a754de95 and exactly 36 public tables. Uses Flask's
+Requires PostgreSQL 16, 0d97b865efa6 and exactly 40 public tables. Uses Flask's
 actual in-process API with separate concurrent clients and real PostgreSQL locks.
 Creates two unique synthetic accounts and one v2 planning_example (no recipes or
 cooking), then removes ONLY captured run-owned IDs. Catalog cleanup deliberately
@@ -19,7 +19,7 @@ All public table rows (including head) must match their original hashes. Sequenc
 allocation is not reset or claimed unchanged. No existing row values/tokens/SQL
 are printed. A timeout/crash may leave fixtures: there is NO broad cleanup mode.
 
-The populated downgrade check invokes the current migration's refusal guard in a
+The populated downgrade check invokes fc86's shopping-data refusal guard in a
 READ ONLY transaction, always rolled back; it is not an administrative migration
 or an old-build/backup/restore rehearsal. Exact receipt roundtrips are checked in
 this process, fixtures are not retained. A later restore verifier must create its
@@ -33,7 +33,9 @@ new-empty-pre-fc86-fixture-upgrade. No existing fresh/history/restore URL is use
 This mode refuses any existing user relation in any non-system schema; it does
 not create/drop databases, reset, or clean up. It upgrades the empty DB to
 eb75f643cd84, inserts synthetic X1b records through reflected OLD tables, then
-upgrades to fc86 and compares every old table's rows (except the changed head).
+upgrades through fc86 to 0d97 and compares every old table's original columns
+(except the changed head), including users. New user defaults and empty auth
+tables are checked separately.
 It checks old receipt replay, current reads/export and a new shopping write/retry.
 The resulting populated target stays for inspection and cannot be reused. This
 proves migration preservation only when run, not execution of an old binary or
@@ -68,8 +70,9 @@ from verify_postgres import (CONFIRM_KEY, CONFIRM_VALUE, URL_PATTERN, Refused,
                              isolated_env, captured_run, require)
 from planning_repeat_postgres_checks import fingerprint
 
-EXPECTED_HEAD = "fc86a754de95"
-EXPECTED_TABLE_COUNT = 36
+EXPECTED_HEAD = "0d97b865efa6"
+SHOPPING_HEAD = "fc86a754de95"
+EXPECTED_TABLE_COUNT = 40
 URL_KEY = "COOKBOOK_TEST_DATABASE_URL"
 UPGRADE_DATABASE = "cookbook_test_shopping_upgrade"
 UPGRADE_URL_KEY = "COOKBOOK_TEST_SHOPPING_UPGRADE_URL"
@@ -85,6 +88,8 @@ planning_workspaces private_plans private_meals planning_mutations private_event
 private_event_links private_preparation_tasks planning_previews planning_undo
 planning_catalog_entries private_planned_items""".split())
 SHOPPING_TABLES = frozenset({"private_shopping_scopes", "private_planning_templates", "private_planning_preferences"})
+AUTH_TABLES = frozenset({"auth_sessions", "auth_refresh_tokens", "auth_action_tokens", "auth_throttles"})
+EXPECTED_TABLES = X1B_TABLES | SHOPPING_TABLES | AUTH_TABLES
 
 
 def guard(env):
@@ -284,6 +289,34 @@ def seed_x1b(sa, engine, tables):
             "dish_id": dish, "entry_id": entry, "receipts": receipts}
 
 
+def verify_upgrade_rows(sa, engine, old_tables, new_tables, before):
+    """Retain every old column, then check additions independently, read-only."""
+    old_names = {"public." + name for name in X1B_TABLES}
+    require({table.fullname for table in old_tables} == old_names and set(before) == old_names,
+            "Historical snapshot must include every X1b table")
+    require({table.fullname for table in new_tables} == {"public." + name for name in EXPECTED_TABLES},
+            "Unexpected upgraded table set")
+    # Reuse pre-upgrade reflection: SELECT(table) projects the original columns,
+    # including all original users fields, instead of hashing newly added fields.
+    retained = fingerprint(sa, engine, old_tables)
+    require(set(retained) == old_names and all(retained[name] == value for name, value in before.items()
+            if name != "public.alembic_version"), "Upgrade changed retained X1b rows")
+    after = fingerprint(sa, engine, new_tables)
+    require(set(after) == {"public." + name for name in EXPECTED_TABLES}, "Incomplete upgraded snapshot")
+    require(all(after["public." + name][0] == 0 for name in SHOPPING_TABLES),
+            "Upgrade unexpectedly seeded new private tables")
+    require(all(after["public." + name][0] == 0 for name in AUTH_TABLES),
+            "Upgrade unexpectedly seeded auth tables")
+    users = next(table for table in new_tables if table.name == "users")
+    with engine.connect() as connection:
+        connection.execute(sa.text("SET TRANSACTION READ ONLY"))
+        defaults = list(connection.execute(sa.select(users.c.email_verified, users.c.legacy_tokens_valid_after)).mappings())
+    require(len(defaults) == before["public.users"][0] and all(
+        row["email_verified"] is False and row["legacy_tokens_valid_after"] is None for row in defaults),
+        "Upgrade changed new user auth defaults")
+    return after
+
+
 def exercise_upgrade(sa, app, db, *, resume=False, expected_hash=None):
     from alembic.config import Config
     from alembic.script import ScriptDirectory
@@ -300,7 +333,9 @@ def exercise_upgrade(sa, app, db, *, resume=False, expected_hash=None):
             config = Config()
             config.set_main_option("script_location", str(ROOT / "migrations"))
             scripts = ScriptDirectory.from_config(config)
-            require(set(scripts.get_heads()) == {EXPECTED_HEAD} and scripts.get_revision(EXPECTED_HEAD).down_revision == PRE_SHOPPING_HEAD,
+            require(set(scripts.get_heads()) == {EXPECTED_HEAD}
+                    and scripts.get_revision(EXPECTED_HEAD).down_revision == SHOPPING_HEAD
+                    and scripts.get_revision(SHOPPING_HEAD).down_revision == PRE_SHOPPING_HEAD,
                     "Unexpected migration chain; refusing fixture writes")
             if not resume:
                 upgrade(directory=str(ROOT / "migrations"), revision=PRE_SHOPPING_HEAD)
@@ -312,7 +347,8 @@ def exercise_upgrade(sa, app, db, *, resume=False, expected_hash=None):
                     head = set(connection.execute(sa.text("SELECT version_num FROM public.alembic_version")).scalars())
                 return sorted(metadata.tables.values(), key=lambda table: table.fullname), head
             old_tables, old_head = reflect()
-            require(old_head == {PRE_SHOPPING_HEAD} and len(old_tables) == 33, "Expected exact X1b schema before seeding")
+            require(old_head == {PRE_SHOPPING_HEAD} and {table.name for table in old_tables} == X1B_TABLES,
+                    "Expected exact X1b schema before seeding")
             with engine.connect() as connection:
                 connection.execute(sa.text("SET TRANSACTION READ ONLY"))
                 print("Pre-seed X1b schema SHA-256: " + x1b_schema_hash(read_x1b_schema(sa, connection)))
@@ -320,13 +356,8 @@ def exercise_upgrade(sa, app, db, *, resume=False, expected_hash=None):
             before = fingerprint(sa, engine, old_tables)
             upgrade(directory=str(ROOT / "migrations"), revision=EXPECTED_HEAD)
             new_tables, new_head = reflect()
-            require(new_head == {EXPECTED_HEAD} and len(new_tables) == 36, "Expected shopping head after upgrade")
-            after = fingerprint(sa, engine, new_tables)
-            require(all(after.get(name) == value for name, value in before.items() if name != "public.alembic_version"),
-                    "Upgrade changed retained X1b rows")
-            added = set(after) - set(before)
-            require(added == {"public.private_shopping_scopes", "public.private_planning_templates", "public.private_planning_preferences"}
-                    and all(after[name][0] == 0 for name in added), "Upgrade unexpectedly seeded new private tables")
+            require(new_head == {EXPECTED_HEAD} and len(new_tables) == EXPECTED_TABLE_COUNT, "Expected auth head after upgrade")
+            after = verify_upgrade_rows(sa, engine, old_tables, new_tables, before)
             headers = {"Authorization": "Bearer " + create_access_token(identity=str(fixture["user_id"]))}
             with app.test_client() as client:
                 def api(method, path, envelope=None):
@@ -364,7 +395,8 @@ def exercise_upgrade(sa, app, db, *, resume=False, expected_hash=None):
                 replay = api("POST", "/api/planning/v1/commands", command)
                 require(replay.status_code == 201 and replay.json == response.json
                         and fingerprint(sa, engine, new_tables) == before_retry, "New receipt retry reapplied changes")
-            print("PASS: populated eb75 X1b -> fc86 preserved all old table rows, catalog, receipts and recovery JSON")
+            print("PASS: populated eb75 X1b -> 0d97 preserved all old columns/rows, catalog, receipts and recovery JSON")
+            print("PASS: new user auth defaults are false/NULL; all new auth and shopping tables are empty after upgrade")
             print("PASS: old receipt replay, v1 resolution/export and new shopping write/retry; upgrade target retained occupied")
             print("LIMIT: synthetic reflected-old-schema fixture, not old-binary execution or recovery compatibility")
         finally:
@@ -403,11 +435,8 @@ def validate_identity(identity, heads, table_names, code_heads):
     require(identity["address"] == "127.0.0.1" and identity["port"] == 55432, "Connected server is not the approved loopback port")
     require(int(identity["version"]) // 10000 == 16, "PostgreSQL 16 required")
     require(set(heads) == {EXPECTED_HEAD} == set(code_heads), "Schema/code head differs; no migration will be run")
-    required = {"users", "alembic_version", "planning_workspaces", "planning_catalog_entries",
-                "private_planned_items", "private_shopping_scopes", "private_planning_templates",
-                "private_planning_preferences", "planning_mutations", "planning_undo", "planning_previews"}
-    require(len(table_names) == EXPECTED_TABLE_COUNT and required <= set(table_names),
-            "Expected migrated 36-table shopping schema is missing or changed")
+    require(len(table_names) == EXPECTED_TABLE_COUNT and set(table_names) == EXPECTED_TABLES,
+            "Expected migrated 40-table auth/shopping schema is missing or changed")
 
 
 def assert_private_export(data, scope_id, template_id):
@@ -459,11 +488,11 @@ def downgrade_refusal(sa, engine):
     """Exercise actual populated guard; transaction is read-only and never committed."""
     from alembic.migration import MigrationContext
     from alembic.operations import Operations
-    path = ROOT / "migrations" / "versions" / (EXPECTED_HEAD + "_private_shopping_templates_preferences.py")
+    path = ROOT / "migrations" / "versions" / (SHOPPING_HEAD + "_private_shopping_templates_preferences.py")
     spec = importlib.util.spec_from_file_location("shopping_downgrade_guard", path)
     migration = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(migration)
-    require(migration.revision == EXPECTED_HEAD, "Unexpected downgrade module")
+    require(migration.revision == SHOPPING_HEAD, "Unexpected downgrade module")
     with engine.connect() as connection:
         transaction = connection.begin()
         try:
@@ -761,7 +790,7 @@ def exercise(sa, app, db):
                     engine.dispose()
         require(not cleanup_failures, "; ".join(cleanup_failures))
     print("PASS: PostgreSQL shopping/template/preference API, complete demand, isolation, races, exact retry, atomic rollback and composite FK")
-    print("PASS: populated downgrade refused; all 36 public table row hashes/head match baseline after scoped cleanup")
+    print("PASS: populated shopping downgrade refused; all 40 public table row hashes/head match baseline after scoped cleanup")
     print("LIMIT: no backup/restore, old-backend recovery, sequence restoration or physical-device claim")
 
 

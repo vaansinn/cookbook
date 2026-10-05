@@ -5,9 +5,30 @@ Updated 2026-09-13. Based on the [launch assessment](assessment.md), five indepe
 
 ## Executive plan
 
-Current outstanding work: [launch checklist](../../../TODO.md), updated 2026-09-18.
-Latest local execution: [continuation and evidence](continuation-2026-09-13.md),
-following the [shopping foundation council](shopping-foundation-council.md)
+**Current channel override — 2026-10-05:** Android app first, iOS later, public
+web/desktop deferred. Q01 supersedes the earlier web/PWA-first release order.
+Full X feature scope, private SQL accounts and retained creator records remain;
+Q05 requires audible alarms while locked. Android N0–N3 is now mandatory, with
+L18/N0 feasibility before platform-dependent UI/auth dispatch. Reuse the current
+stack where feasible; no framework/rewrite is approved. Same-origin cookie,
+browser lifecycle and PWA update assumptions require packaged-app review. Old
+web-first statements in the historical sections below are not current authority.
+
+**Priority clarification later October 5:** complete the connected core interface
+first; keep alarm exploration bounded. N0 gates native-specific decisions, not
+D03's use of existing authorized APIs or independent backend fixes. An alarm
+implementation/device test is still needed before Android launch, not before
+finishing the approved recipe/planning interface.
+
+Current execution sequencing: [2026-09-27 bounded Sol dispatch plan](dispatch-plan-2026-09-27.md),
+with independent [council and cross-review](dispatch-council-2026-09-27.md).
+The original LP/X requirements below remain the specification; TODO owns current
+completion. The initial remote CI run is now green, not final release acceptance.
+
+Current outstanding work: [launch checklist](../../../TODO.md), updated 2026-10-05.
+Latest local execution: [Phase 1 contracts, parity and operations handoff](phase-1-handoff-2026-10-05.md).
+Earlier implementation: [September 13 continuation](continuation-2026-09-13.md),
+[shopping foundation council](shopping-foundation-council.md)
 and [X1c contracts](../../contracts/private-planning-x1c.md). This is not approval
 to publish content or release the app; historical proposal sections remain below.
 
@@ -21,7 +42,7 @@ for implemented scope and evidence. This exception does not settle planning owne
 data migration, account policy, GDPR or deployment gates, and does not mean the full
 SQL-backed feature integration below has been implemented.
 
-**Confirmed by the user: phone-first website/installable web app, then app stores; full approved planning/event/shopping prototype functionality in the first release.** The mandatory [X production track](planning-production-track.md) specifies its parity requirements, proposed data/API contracts and parallel work packages. This is a substantial backend integration, not a cosmetic port of the older planner.
+**Confirmed by the user: Android first, iOS later, web/desktop deferred; full approved planning/event/shopping prototype functionality in the first release.** The mandatory [X production track](planning-production-track.md) specifies its parity requirements, proposed data/API contracts and parallel work packages. This is a substantial backend integration, not a cosmetic port of the older planner.
 
 Current decisions supersede the original preflight below: Q03 confirms creator-only existing use (preserve those records), Q08 confirms private new user data, and local development is authorized. Disposable PostgreSQL migration/transaction/restore rehearsals are now available. Public access/verification, shared legacy retention, culinary catalog publication, physical-device checks and deployment still have their own gates. See the current council record and Q&A register rather than treating historical baseline gaps as current blockers.
 
@@ -39,9 +60,9 @@ Previous council verification passed 45 backend tests, four frontend scripts and
 |---|---|---|
 | Core cooking and account foundations | Included; access policy at Q06 | Welcoming discovery/recipes/cooking, preserved guest access and teaching/history integrity, reliable account lifecycle |
 | Full planning/events/shopping — X | **Mandatory**, Q02 | Production-backed current prototype parity including flexible meals/events and source-level shopping; PX01–PX20 |
-| Phone-first web/installable app | **Confirmed**, Q01 | One responsive app; physical iPhone/Android browser and home-screen acceptance |
-| Desktop browser | Included | Same data, reliable management and cooking with appropriate layouts |
-| Native app stores — N | Deferred until after web release | Later feasibility/signing/platform review; no packaged desktop app in first release |
+| Android app — N | **Confirmed first**, Q01/Q05 | Packaged app, system alarm integration, physical S25 acceptance; framework and distribution approval pending |
+| iOS app | Later | Separate platform/alarm/signing and device acceptance |
+| Public web/PWA and desktop | Deferred | Preserve reusable UI/backend and useful regression checks; no first-release web publishing requirement |
 
 The earlier reduced P-track and guest-only launch options are superseded, not alternative ways to satisfy Q02. Full parity does not mean every earlier roadmap idea is already included. The [X boundary](planning-production-track.md) distinguishes implemented behavior from future additions.
 
@@ -184,7 +205,7 @@ LP00–LP02 + X0: scope, inventory, feasibility and frozen contracts
                  |
                  G4 → Q14/G5 → LP60/G6
 
-Native N follows the first web release; it is not this critical path.
+Android N0–N3 is now on the first-release critical path under October 5 Q01; iOS and public web/desktop follow later.
 ```
 
 LP10 and LP14 share `app.py` input only through backend ownership. LP22/LP23/LP24 are logical packages, not permission to run overlapping frontend writers simultaneously. Content review and test-case authoring can start early; publishing/rehearsals consume integrated code.
@@ -221,7 +242,7 @@ Freeze:
 - **ADR-D:** client/API/error/mutation contracts, old-client support horizon, feature availability and recovery behavior.
 - **ADR-E:** content prevalidation/activation, serialized release, artifact promotion, backup/deletion reconciliation.
 - **ADR-X (X0):** mandatory planning/event/shopping ownership/schema, authored catalog/configured previews, source/scope/coverage identity, revisioned commands, exact preview/confirm/inverse undo, legacy cutover and recovery. See [detailed X track](planning-production-track.md).
-Use disposable spikes only where needed to prove feasibility. Native N0 stays deferred under Q01. Do not implement a generalized framework.
+Use disposable spikes only where needed to prove feasibility. Android N0 is now required under Q01/Q05 before platform-dependent implementation. Do not implement a generalized framework.
 **Acceptance:** applicable architecture-critical R1–R8 have evidence-backed decisions or the affected track remains unsigned; R9 is deferred. G1 review lists every remaining phase-local question.
 
 ## 7. Wave 1 — trustworthy foundations
@@ -393,7 +414,7 @@ Packs/Use the rest, shared preparation, leftovers, personal recipe authoring, au
 - Measure resource/load/latency/cost and alert delivery; define actionable runbooks, not merely installed monitoring software.
 **Acceptance:** recorded restore time/data-loss window, real alert received by approved recipient, safe test-origin cutover, rollback/forward-fix evidence, no stale revoked access. No real provisioning or cutover without explicit authorization.
 
-## 12. Conditional N track — Android/iOS stores
+## 12. N track — Android first, iOS deferred
 
 **N0 — Feasibility before channel architecture sign-off.** Confirm account type/identity, required tools/devices/Mac access, minimum-functionality review risk and native session/storage model. A bounded React-container spike must cover API origin/auth, suspend/resume/timer, safe areas/Back, export/deep links and permission denial. Compare alternatives only if that spike fails or requirements demand them.
 
@@ -403,7 +424,7 @@ Packs/Use the rest, shared preparation, leftovers, personal recipe authoring, au
 
 **N3 — Submission/release only at G5.** User authorizes store submission and publishing settings. First publication and staged/phased updates are different; do not assume update rollout tools apply to initial launch. Review rejection or required changes reopens affected gates without weakening them.
 
-Web/PWA is confirmed first, so N remains deferred; do not install native tooling or enroll/purchase accounts automatically. See [dated platform requirements](platform-requirements.md) and [release guidance](release-guidance.md); recheck at submission.
+Android is confirmed first as of October 5, so Android N0–N3 is required; iOS stays deferred. This decision update installs no native tooling and authorizes no paid enrollment or store submission. See [dated platform requirements](platform-requirements.md) and [release guidance](release-guidance.md); recheck during feasibility and before submission. Browser tests alone cannot establish packaged-app alarm, session or update behavior.
 
 ## 13. Wave 4 — prove the integrated release
 

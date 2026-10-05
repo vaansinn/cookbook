@@ -144,16 +144,17 @@ class PrivatePlanningTest(unittest.TestCase):
             deleted_uid = make_user(self.db, email="deleted@example.com").id
             self.db.session.delete(self.db.session.get(User, deleted_uid))
             self.db.session.commit()
-        # Flask-JWT-Extended's existing malformed-token response is 422;
-        # absent credentials and deleted accounts use 401.
-        invalid_headers = (({}, 401), ({"Authorization": "Bearer invalid"}, 422),
+        # Centralized auth handling deliberately gives missing, malformed and
+        # deleted-account credentials the same non-enumerating response.
+        invalid_headers = (({}, 401), ({"Authorization": "Bearer invalid"}, 401),
                            (auth_header(self.app, deleted_uid), 401))
+        rejected = {"error": "Authentication required", "code": "invalid_session"}
         before = self.snapshot()
         for headers, status in invalid_headers:
             for path in paths:
                 with self.subTest(headers=headers, path=path):
-                    self.assert_response(self.get(path, headers), status)
-            self.assert_response(self.post(self.body(), headers), status)
+                    self.assertEqual(self.assert_response(self.get(path, headers), status), rejected)
+            self.assertEqual(self.assert_response(self.post(self.body(), headers), status), rejected)
         self.assertEqual(self.snapshot(), before)
 
     def test_first_command_creates_workspace_with_trimmed_unicode_and_date_bounds(self):

@@ -4,6 +4,7 @@ import useAuthStore from "../store/useAuthStore";
 import { useT } from "../i18n";
 import LangSwitch from "../components/LangSwitch";
 import ThemeSwitch from "../components/ThemeSwitch";
+import AccountSecurity from "../components/AccountSecurity";
 
 export default function SettingsPage() {
   const t = useT();
@@ -73,6 +74,8 @@ export default function SettingsPage() {
           <div className="font-semibold">{user?.display_name || user?.email}</div>
           <div className="text-sm" style={{ color: "var(--muted)" }}>{user?.email}</div>
         </div>
+
+        <AccountSecurity />
 
         <Link to="/privacy" className="block mt-4 text-sm font-semibold" style={{ color: "var(--brand)" }}>
           {t("settings_privacy_link")}

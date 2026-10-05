@@ -5,7 +5,9 @@ import importlib.util
 import io
 import os
 from pathlib import Path
+import subprocess
 import sys
+import textwrap
 from types import SimpleNamespace
 import unittest
 from unittest.mock import MagicMock, Mock, patch
@@ -27,13 +29,49 @@ def identity():
 
 
 def table_names():
-    names = ["users", "alembic_version", "planning_workspaces", "planning_catalog_entries", "private_planned_items",
-             "private_shopping_scopes", "private_planning_templates", "private_planning_preferences",
-             "planning_mutations", "planning_undo", "planning_previews"]
-    return names + ["synthetic_table_" + str(index) for index in range(36 - len(names))]
+    return sorted(runner.X1B_TABLES | runner.SHOPPING_TABLES | runner.AUTH_TABLES)
 
 
 class ShoppingPostgresSafetyTest(unittest.TestCase):
+    def assert_fresh_process_purity(self, checks):
+        # Discovery may already have imported Flask/SQLAlchemy through other
+        # tests. Check the sidecar's complete import boundary in a clean child,
+        # with forbidden imports trapped before loading even the sidecar itself.
+        source = '''
+import contextlib
+import importlib.abc
+import importlib.util
+import io
+from pathlib import Path
+import sys
+import unittest
+from unittest.mock import patch
+
+check = unittest.TestCase()
+forbidden = {"app", "sqlalchemy", "psycopg2", "flask"}
+check.assertFalse(forbidden.intersection(sys.modules))
+attempts = []
+class NoDatabaseOrApplication(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname.split(".")[0] in forbidden:
+            attempts.append(fullname)
+            raise AssertionError("Guard imported forbidden module: " + fullname)
+sys.meta_path.insert(0, NoDatabaseOrApplication())
+spec = importlib.util.spec_from_file_location("shopping_pg_sidecar", Path(sys.argv[1]))
+runner = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(runner)
+import verify_postgres as support
+check.assertFalse(forbidden.intersection(sys.modules))
+'''
+        source += textwrap.dedent(checks)
+        source += '\ncheck.assertEqual(attempts, [])\ncheck.assertFalse(forbidden.intersection(sys.modules))\n'
+        result = subprocess.run(
+            [sys.executable, "-I", "-B", "-c", source,
+             str(ROOT / "scripts" / "planning_shopping_postgres_checks.py")],
+            cwd=ROOT, capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+
     def x1b_evidence(self):
         schema = {"tables": sorted(runner.X1B_TABLES),
                   "columns": [(name, 1, "id", "integer", True, None, "", "") for name in sorted(runner.X1B_TABLES)],
@@ -102,6 +140,91 @@ class ShoppingPostgresSafetyTest(unittest.TestCase):
             with self.assertRaises(runner.Refused):
                 runner.upgrade_worker(self.upgrade_env(), resume=True)
             database.assert_not_called()
+
+    def upgrade_row_evidence(self):
+        def table(name):
+            return SimpleNamespace(name=name, fullname="public." + name,
+                c=SimpleNamespace(email_verified=object(), legacy_tokens_valid_after=object()))
+        old = [table(name) for name in sorted(runner.X1B_TABLES)]
+        new = [table(name) for name in table_names()]
+        before = {row.fullname: (1, "old-columns-hash") for row in old}
+        retained = {**before, "public.alembic_version": (1, "new-head-hash")}
+        after = {row.fullname: retained.get(row.fullname, (0, "empty-hash")) for row in new}
+        after["public.users"] = (1, "full-new-user-columns-hash")
+        defaults = [{"email_verified": False, "legacy_tokens_valid_after": None}]
+        return old, new, before, retained, after, defaults
+
+    def check_upgrade_rows(self, old, new, before, retained, after, defaults):
+        sa, engine = Mock(), MagicMock()
+        sa.text.side_effect = lambda text: text
+        connection = engine.connect.return_value.__enter__.return_value
+        connection.execute.return_value.mappings.return_value = defaults
+        with patch.object(runner, "fingerprint", side_effect=[retained, after]) as snapshot:
+            result = runner.verify_upgrade_rows(sa, engine, old, new, before)
+        self.assertIs(result, after)
+        # Identity matters: newly reflected users include additional columns.
+        self.assertIs(snapshot.call_args_list[0].args[2], old)
+        self.assertIs(snapshot.call_args_list[1].args[2], new)
+        users = next(table for table in new if table.name == "users")
+        sa.select.assert_called_once_with(users.c.email_verified, users.c.legacy_tokens_valid_after)
+        self.assertEqual(connection.execute.call_args_list[0].args, ("SET TRANSACTION READ ONLY",))
+        connection.commit.assert_not_called()
+
+    def test_upgrade_projects_all_old_columns_including_users_and_checks_new_defaults(self):
+        self.check_upgrade_rows(*self.upgrade_row_evidence())
+
+    def test_upgrade_rejects_changed_history_in_every_old_table_including_users(self):
+        for name in runner.X1B_TABLES - {"alembic_version"}:
+            old, new, before, retained, after, defaults = self.upgrade_row_evidence()
+            retained["public." + name] = (1, "changed-original-column")
+            with self.subTest(table=name), self.assertRaisesRegex(RuntimeError, "retained X1b rows"):
+                self.check_upgrade_rows(old, new, before, retained, after, defaults)
+
+    def test_upgrade_rejects_omitted_users_and_unexpected_tables(self):
+        for index, name in ((0, "users"), (1, "auth_sessions")):
+            evidence = list(self.upgrade_row_evidence())
+            evidence[index] = [table for table in evidence[index] if table.name != name]
+            with self.subTest(table=name), self.assertRaises(RuntimeError):
+                self.check_upgrade_rows(*evidence)
+        evidence = list(self.upgrade_row_evidence())
+        del evidence[2]["public.users"]
+        with self.assertRaises(RuntimeError):
+            self.check_upgrade_rows(*evidence)
+
+    def test_upgrade_requires_each_added_auth_and_shopping_table_empty(self):
+        for name in runner.AUTH_TABLES | runner.SHOPPING_TABLES:
+            evidence = list(self.upgrade_row_evidence())
+            evidence[4]["public." + name] = (1, "unexpected-row")
+            with self.subTest(table=name), self.assertRaisesRegex(RuntimeError, "unexpectedly seeded"):
+                self.check_upgrade_rows(*evidence)
+
+    def test_upgrade_rejects_incorrect_or_missing_new_user_defaults(self):
+        for defaults in ([], [{"email_verified": True, "legacy_tokens_valid_after": None}],
+                         [{"email_verified": None, "legacy_tokens_valid_after": None}],
+                         [{"email_verified": False, "legacy_tokens_valid_after": 0}]):
+            evidence = list(self.upgrade_row_evidence())
+            evidence[-1] = defaults
+            with self.subTest(defaults=defaults), self.assertRaisesRegex(RuntimeError, "new user auth defaults"):
+                self.check_upgrade_rows(*evidence)
+
+    def test_upgrade_requires_exact_two_step_chain_before_any_fixture_writes(self):
+        for auth_parent, shopping_parent, heads in (
+                (runner.PRE_SHOPPING_HEAD, runner.PRE_SHOPPING_HEAD, [runner.EXPECTED_HEAD]),
+                (runner.SHOPPING_HEAD, "wrong", [runner.EXPECTED_HEAD]),
+                (runner.SHOPPING_HEAD, runner.PRE_SHOPPING_HEAD, [runner.SHOPPING_HEAD])):
+            app, db, upgrade, scripts = MagicMock(), Mock(), Mock(), Mock()
+            scripts.get_heads.return_value = heads
+            scripts.get_revision.side_effect = lambda revision: SimpleNamespace(
+                down_revision=auth_parent if revision == runner.EXPECTED_HEAD else shopping_parent)
+            with patch.dict(sys.modules, {"alembic.config": SimpleNamespace(Config=Mock()),
+                    "alembic.script": SimpleNamespace(ScriptDirectory=SimpleNamespace(from_config=lambda _: scripts)),
+                    "flask_migrate": SimpleNamespace(upgrade=upgrade),
+                    "flask_jwt_extended": SimpleNamespace(create_access_token=Mock())}), \
+                    patch.object(runner, "upgrade_preflight"), patch.object(runner, "seed_x1b") as seed:
+                with self.assertRaisesRegex(RuntimeError, "Unexpected migration chain"):
+                    runner.exercise_upgrade(Mock(), app, db)
+                upgrade.assert_not_called()
+                seed.assert_not_called()
 
     def test_resume_refusal_prevents_all_migrations_and_seeding(self):
         app, db, upgrade = MagicMock(), Mock(), Mock()
@@ -247,9 +370,11 @@ class ShoppingPostgresSafetyTest(unittest.TestCase):
         self.assertNotIn("test_password", output.getvalue())
 
     def test_module_and_guard_do_not_import_database_or_application(self):
-        self.assertFalse({"app", "sqlalchemy", "psycopg2", "flask"}.intersection(sys.modules))
-        self.assertEqual(runner.guard(configured()), (configured()[runner.URL_KEY],))
-        self.assertFalse({"app", "sqlalchemy", "psycopg2", "flask"}.intersection(sys.modules))
+        self.assert_fresh_process_purity('''
+            configured = {runner.CONFIRM_KEY: runner.CONFIRM_VALUE,
+                          runner.URL_KEY: "postgresql://test_user:test_password@localhost:55432/cookbook_test_fresh"}
+            check.assertEqual(runner.guard(configured), (configured[runner.URL_KEY],))
+        ''')
 
     def test_single_fresh_target_requires_no_history_and_ignores_generic_urls(self):
         env = configured()
@@ -332,11 +457,13 @@ class ShoppingPostgresSafetyTest(unittest.TestCase):
         self.assertNotIn("private-row", output.getvalue())
 
     def test_check_guards_mode_is_pure_and_never_launches_worker(self):
-        with patch.object(runner, "captured_run") as process, patch.object(support, "load_database_tools") as database, \
-                contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(runner.main({}, ["--check-guards"]), 0)
-            process.assert_not_called()
-            database.assert_not_called()
+        self.assert_fresh_process_purity('''
+            with patch.object(runner, "captured_run") as process, patch.object(support, "load_database_tools") as database, \\
+                    contextlib.redirect_stdout(io.StringIO()):
+                check.assertEqual(runner.main({}, ["--check-guards"]), 0)
+                process.assert_not_called()
+                database.assert_not_called()
+        ''')
 
     def test_server_identity_and_exact_schema_head_gate(self):
         runner.validate_identity(identity(), [runner.EXPECTED_HEAD], table_names(), [runner.EXPECTED_HEAD])
@@ -348,7 +475,10 @@ class ShoppingPostgresSafetyTest(unittest.TestCase):
                              ([runner.EXPECTED_HEAD], ["future"]), ([runner.EXPECTED_HEAD, "other"], [runner.EXPECTED_HEAD])):
             with self.assertRaises(RuntimeError):
                 runner.validate_identity(identity(), actual, table_names(), code)
-        for names in (table_names()[:-1], table_names() + ["extra"], ["unrelated"] * 36):
+        self.assertEqual(runner.EXPECTED_HEAD, "0d97b865efa6")
+        self.assertEqual(len(table_names()), 40)
+        for names in (table_names()[:-1], table_names() + ["extra"], ["unrelated"] * 40,
+                      ["unrelated", *table_names()[1:]]):
             with self.assertRaises(RuntimeError):
                 runner.validate_identity(identity(), [runner.EXPECTED_HEAD], names, [runner.EXPECTED_HEAD])
 
@@ -451,17 +581,18 @@ class ShoppingPostgresSafetyTest(unittest.TestCase):
                 sa.text.side_effect = lambda text: text
                 connection = engine.connect.return_value.__enter__.return_value
                 connection.execute.return_value.scalars.return_value = [runner.EXPECTED_HEAD]
-                migration = SimpleNamespace(revision=runner.EXPECTED_HEAD, downgrade=Mock(side_effect=error))
+                migration = SimpleNamespace(revision=runner.SHOPPING_HEAD, downgrade=Mock(side_effect=error))
                 operations = SimpleNamespace(Operations=SimpleNamespace(context=lambda _context: contextlib.nullcontext()))
                 context = SimpleNamespace(MigrationContext=Mock())
                 with patch.object(runner.importlib.util, "module_from_spec", return_value=migration), \
-                        patch.object(runner.importlib.util, "spec_from_file_location", return_value=Mock()), \
+                        patch.object(runner.importlib.util, "spec_from_file_location", return_value=Mock()) as load, \
                         patch.dict(sys.modules, {"alembic.migration": context, "alembic.operations": operations}):
                     if error and str(error).startswith("Saved shopping/"):
                         runner.downgrade_refusal(sa, engine)
                     else:
                         with self.assertRaises(RuntimeError):
                             runner.downgrade_refusal(sa, engine)
+                self.assertEqual(load.call_args.args[1].name, "fc86a754de95_private_shopping_templates_preferences.py")
                 connection.begin.return_value.rollback.assert_called_once()
                 connection.commit.assert_not_called()
                 self.assertEqual(connection.execute.call_args_list[0].args, ("SET TRANSACTION READ ONLY",))

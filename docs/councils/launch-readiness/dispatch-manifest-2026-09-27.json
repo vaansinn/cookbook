@@ -1,0 +1,703 @@
+{
+  "schema_version": 1,
+  "purpose": "Declarative planning packets, not executable automation or authority to implement.",
+  "created": "2026-09-27",
+  "release_scope_update": {
+    "date": "2026-10-05",
+    "first": "Android app",
+    "later": ["iOS app", "public web/desktop release"],
+    "required": "Audible cooking alarm while phone is locked; retained SQL backend and full implemented planning/event/shopping parity",
+    "next_admission": "TODO L18 / Android N0 feasibility; framework not selected",
+    "priority_clarification": "Connect approved core design/features first; bounded alarm check only. D03 existing-API UI work may proceed without finished native alarms. Revalidation gates platform-specific assumptions, not independent UI/backend tasks.",
+    "revalidate_before_dispatch": ["D03", "D05", "D08", "D09", "D13", "D14"],
+    "authority": "Product direction approved, not store submission, paid enrollment or deployment"
+  },
+  "baseline_sha": "04a414f218c909dea3c82e720d8d5ac8ba84e228",
+  "integration_path": "D:/Projects/cookbook/.worktrees/teaching-hardening",
+  "default_worker_model": "gpt-6-sol",
+  "default_reasoning_effort": "high",
+  "implementation_authorized_by_this_file": false,
+  "max_parallel_workers": 3,
+  "max_batch_iterations": 3,
+  "initial_assignment_checkpoint_minutes": 30,
+  "first_batch": [
+    "D01",
+    "D02",
+    "D04"
+  ],
+  "queued_or_coordinator": [
+    "D03"
+  ],
+  "read_first_base": "manifest_directory",
+  "mandatory_common_brief": "Read dispatch-plan-2026-09-27.md sections 2 and 6. Revalidate actual base/cwd and authority. No commits/pushes/deployments/real email/provisioning/hook changes/recruitment/recursive delegation. Synthetic data only. Overlapping locks or unapproved decisions prevent admission. Each packet must name independent reviewer and explicit test commands before execution.",
+  "tasks": [
+    {
+      "id": "D01",
+      "role": "backend",
+      "depends_on": [],
+      "todo": [
+        "L01",
+        "L05",
+        "L07"
+      ],
+      "writes": [
+        "docs/councils/launch-readiness/exposure-matrix.md",
+        "docs/councils/launch-readiness/session-contract.md",
+        "docs/councils/launch-readiness/legacy-contract.md"
+      ],
+      "locks": [
+        "backend-contracts"
+      ],
+      "gates": [],
+      "deliverable": "Inventory exposed routes and propose session/legacy/content-activation/recovery contracts without changing behavior; coordinate operations design with D04.",
+      "acceptance": [
+        "Every actual route has principal, owner, access, data lifecycle and disposition.",
+        "Separate engineering choices from Q06/Q07 product consequences.",
+        "Security independently reviews source-linked findings.",
+        "Specify anonymous, cross-account, removed-member, deleted-owner and revoked-link tests; own the content visibility contract after late sync failure."
+      ],
+      "status": "planned",
+      "reviewer_role": "security-and-qa",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D02",
+      "role": "qa",
+      "depends_on": [],
+      "todo": [
+        "L04",
+        "L10",
+        "L13"
+      ],
+      "writes": [
+        "docs/councils/launch-readiness/parity-evidence.md",
+        "docs/councils/launch-readiness/browser-scenarios.md"
+      ],
+      "locks": [],
+      "gates": [],
+      "deliverable": "Map PX01-PX20 to production screens/APIs/tests and missing evidence.",
+      "acceptance": [
+        "All 20 rows mapped; prototype, source checks, mounted fixtures and real browser evidence distinct.",
+        "Retain green baseline CI without claiming launch.",
+        "Record exact scoped worker-cleanup test and second-device persistence scenario."
+      ],
+      "status": "planned",
+      "reviewer_role": "independent-qa",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D03",
+      "role": "frontend",
+      "depends_on": ["D01", "D02"],
+      "todo": [
+        "L02",
+        "L11"
+      ],
+      "writes": [
+        "frontend/src/pages/Home.jsx",
+        "frontend/src/pages/RecipePage.jsx",
+        "frontend/src/styles/library.css",
+        "frontend/src/styles/recipe.css",
+        "frontend/src/locales/en.json",
+        "frontend/src/locales/de.json",
+        "tests/frontend/test_recipe_layout.mjs",
+        "tests/frontend/test_discovery_recovery.mjs"
+      ],
+      "locks": [
+        "frontend-locales"
+      ],
+      "gates": [],
+      "deliverable": "One actual Home-recipe-existing-cook journey using unchanged API/content/access contracts.",
+      "acceptance": [
+        "Existing authorized real EN/DE recipe; mobile Ingredients/Method and desktop ingredients-left.",
+        "Accessible controls, equipment and honest imagery; current attempt/tier/language/servings preserved.",
+        "Both themes at 320/390/768/1280, error/loading/empty, keyboard and stale-response regressions.",
+        "Ingredient text search is explicitly search, not inferred network membership.",
+        "Present actual screenshots for Q09; no CookMode or auth-store edits."
+      ],
+      "status": "planned",
+      "reviewer_role": "qa-and-frontend-review",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D04",
+      "role": "devops",
+      "depends_on": [],
+      "todo": [
+        "L13",
+        "L14",
+        "L15"
+      ],
+      "writes": [
+        "docs/councils/launch-readiness/release-runbook.md",
+        "docs/councils/launch-readiness/recovery-test-design.md"
+      ],
+      "locks": [],
+      "gates": [],
+      "deliverable": "Provider-independent artifact, publication, recovery and old-client runbook.",
+      "acceptance": [
+        "Late sync failure and serial activation plan.",
+        "Designated recovery build must read and write candidate-created data.",
+        "No provisioning/live email/deployment; operator decisions explicit."
+      ],
+      "status": "planned",
+      "reviewer_role": "chairman-and-qa",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D05",
+      "role": "backend",
+      "depends_on": [
+        "D01"
+      ],
+      "todo": [
+        "L01",
+        "L05",
+        "L06"
+      ],
+      "writes": [
+        "app.py",
+        "auth_identity.py",
+        "routes/auth.py",
+        "models.py",
+        "runtime_config.py",
+        "tests/backend/test_auth_identity.py",
+        "tests/backend/test_auth_validation.py",
+        "tests/backend/test_account_recovery.py"
+      ],
+      "locks": [
+        "backend-core",
+        "migration-stream"
+      ],
+      "gates": [
+        "approved-session-ADR",
+        "Q06-dependent-behavior"
+      ],
+      "deliverable": "Session/revocation, abuse controls and secure reset/verification with fake mail.",
+      "acceptance": [
+        "Concurrent reset, replay/expiry, enumeration/throttle, outage tests.",
+        "No provider secrets or real mail; approved invalidation semantics.",
+        "Exact new migration path reserved by integrator before adding; legacy compatibility tested."
+      ],
+      "status": "planned",
+      "reviewer_role": "security-and-qa",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D06",
+      "role": "backend",
+      "depends_on": [
+        "D01"
+      ],
+      "todo": [
+        "L07",
+        "L08"
+      ],
+      "writes": [
+        "routes/auth.py",
+        "routes/groceries.py",
+        "routes/meal_plans.py",
+        "models.py",
+        "tests/backend/test_legacy_lifecycle.py"
+      ],
+      "locks": [
+        "backend-core",
+        "migration-stream"
+      ],
+      "gates": [
+        "Q07",
+        "approved-legacy-ADR"
+      ],
+      "deliverable": "Explicit legacy route boundary and export/delete/share continuity.",
+      "acceptance": [
+        "Former/current/last-member fixtures and unknown attribution handled truthfully.",
+        "Server access/link revocation, no accidental dual writes.",
+        "Preserve creator records; any new migration reserved and rehearsed."
+      ],
+      "status": "planned",
+      "reviewer_role": "security-and-qa",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D07",
+      "role": "backend-content",
+      "depends_on": [
+        "D01"
+      ],
+      "todo": [
+        "L03",
+        "L14"
+      ],
+      "writes": [
+        "planning_catalog.py",
+        "docs/contracts/planning-catalog-v1.md",
+        "docs/councils/launch-readiness/content-mapping.md",
+        "tests/backend/test_planning_catalog.py",
+        "tests/fixtures/planning_catalog.json"
+      ],
+      "locks": [
+        "catalog-contract"
+      ],
+      "gates": [
+        "Q10-before-activation"
+      ],
+      "deliverable": "Authored bilingual ingredient/form/options/network mapping and validator; synthetic work may precede Q10.",
+      "acceptance": [
+        "Immutable revisions and current eligibility/language tests.",
+        "Ingredient identities not display-name matches; no inferred graph truth.",
+        "Examples remain unverified/non-cooking; no actual content activation without Q10 and publication admission."
+      ],
+      "status": "planned",
+      "reviewer_role": "chairman-and-qa",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D08",
+      "role": "frontend",
+      "depends_on": [
+        "D03"
+      ],
+      "todo": [
+        "L02",
+        "L11"
+      ],
+      "writes": [
+        "frontend/src/App.jsx",
+        "frontend/src/components/BottomNav.jsx",
+        "frontend/src/index.css",
+        "frontend/src/locales/en.json",
+        "frontend/src/locales/de.json",
+        "frontend/src/pages/ProgressPage.jsx",
+        "frontend/src/pages/SettingsPage.jsx",
+        "frontend/src/pages/PrivatePlanningPage.jsx",
+        "frontend/src/pages/PrivateShoppingPage.jsx",
+        "tests/frontend/test_navigation_shell.mjs"
+      ],
+      "locks": [
+        "frontend-integration",
+        "frontend-locales"
+      ],
+      "gates": [
+        "Q09"
+      ],
+      "deliverable": "Consistent compact navigation/supporting screens and German mobile labels.",
+      "acceptance": [
+        "Deep links/back/focus/safe areas work across private and public screens.",
+        "No domain-state or auth-transport edits; agree requests with their owners.",
+        "Preserve history/reflection/confidence and per-attempt state."
+      ],
+      "status": "planned",
+      "reviewer_role": "qa-and-frontend-review",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D09",
+      "role": "frontend",
+      "depends_on": [
+        "D05",
+        "D06"
+      ],
+      "todo": [
+        "L05",
+        "L06",
+        "L08"
+      ],
+      "writes": [
+        "frontend/src/store/useAuthStore.js",
+        "frontend/src/api/client.js",
+        "frontend/src/pages/Login.jsx",
+        "frontend/src/pages/Register.jsx",
+        "frontend/src/pages/SettingsPage.jsx",
+        "frontend/src/pages/PrivacyPage.jsx",
+        "frontend/src/pages/AccountRecoveryPage.jsx",
+        "frontend/src/locales/en.json",
+        "frontend/src/locales/de.json",
+        "tests/frontend/test_auth_recovery.mjs"
+      ],
+      "locks": [
+        "frontend-integration",
+        "frontend-locales"
+      ],
+      "gates": [
+        "approved-account-API",
+        "approved-privacy-copy-before-final"
+      ],
+      "deliverable": "Wire actual recovery, session expiry and account data lifecycle.",
+      "acceptance": [
+        "No prior-account stale results; explicit pending/ambiguous/retry/conflict behavior.",
+        "Keyboard and screen-reader journeys; reset/session semantics match server.",
+        "Router integration handed to frontend owner; no automatic guest imports."
+      ],
+      "status": "planned",
+      "reviewer_role": "qa-and-frontend-review",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D10",
+      "role": "integration",
+      "depends_on": [
+        "D02",
+        "D05",
+        "D06",
+        "D07",
+        "D08",
+        "D09"
+      ],
+      "todo": [
+        "L03",
+        "L04"
+      ],
+      "writes": [],
+      "locks": [
+        "catalog-contract",
+        "frontend-integration",
+        "backend-core"
+      ],
+      "gates": [
+        "Q10",
+        "freeze-gap-specific-write-set"
+      ],
+      "deliverable": "Integrate authored catalog/Explore and close verified PX gaps, split into disjoint leaf packets.",
+      "acceptance": [
+        "Each leaf has exact paths from D02; empty write set blocks dispatch until refined.",
+        "Full PX01-PX20 real API/browser proof, clean second-device persistence.",
+        "Configured previews match shopping; no guided cook discarding options."
+      ],
+      "status": "planned",
+      "reviewer_role": "chairman-and-qa",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D11",
+      "role": "backend-performance",
+      "depends_on": [
+        "D01",
+        "D02"
+      ],
+      "todo": [
+        "L12"
+      ],
+      "writes": [
+        "scripts/benchmark_planning.py",
+        "docs/councils/launch-readiness/capacity-evidence.md",
+        "tests/backend/test_planning_capacity.py"
+      ],
+      "locks": [
+        "disposable-postgres"
+      ],
+      "gates": [
+        "exclusive-new-disposable-targets"
+      ],
+      "deliverable": "Measure PostgreSQL projection, concurrency and capacity boundary before optimizing.",
+      "acceptance": [
+        "Ordinary and max admitted cases record latency/query/memory.",
+        "Receipt exhaustion preserves existing retries; no resets of occupied targets.",
+        "Any production-code optimization becomes a separately reviewed exact-path leaf."
+      ],
+      "status": "planned",
+      "reviewer_role": "chairman-and-qa",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D12",
+      "role": "integration",
+      "depends_on": [
+        "D04",
+        "D05",
+        "D06",
+        "D07"
+      ],
+      "todo": [
+        "L08",
+        "L14",
+        "L15"
+      ],
+      "writes": [],
+      "locks": [
+        "backend-core",
+        "migration-stream",
+        "release-runner",
+        "disposable-postgres"
+      ],
+      "gates": [
+        "approved-retention-policy",
+        "Q10-for-publication",
+        "freeze-lifecycle-publication-write-set"
+      ],
+      "deliverable": "Privacy lifecycle, controlled publication and recovery implementation as sequenced leaves.",
+      "acceptance": [
+        "Exact write set, recovery build and synthetic targets declared before dispatch.",
+        "Late failure/rerun and old snapshot invariants; restored revocations/deletions preserved.",
+        "Topology work additionally waits for Q04/Q11/Q12; no deployment authority implied."
+      ],
+      "status": "planned",
+      "reviewer_role": "chairman-and-qa",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D13",
+      "role": "qa",
+      "depends_on": [
+        "D09",
+        "D10",
+        "D11",
+        "D12"
+      ],
+      "todo": [
+        "L09",
+        "L10",
+        "L11",
+        "L13"
+      ],
+      "writes": [
+        "docs/councils/launch-readiness/candidate-acceptance.md"
+      ],
+      "locks": [
+        "disposable-postgres",
+        "browser-acceptance"
+      ],
+      "gates": [
+        "Q05",
+        "physical-device-access",
+        "exact-candidate"
+      ],
+      "deliverable": "Integrated regression, two-release PWA/device/SQL/browser and accessibility acceptance.",
+      "acceptance": [
+        "Actual S25 and iPhone evidence or explicit blocked gate.",
+        "Full EN/DE themes/widths, keyboard/screen-reader/zoom; no private caching or stale writes.",
+        "Record exact candidate, executed commands, skipped/blocked cases and scoped cleanup result.",
+        "Test or app corrections dispatched separately to owners; no falsified green candidate."
+      ],
+      "status": "planned",
+      "reviewer_role": "independent-qa",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    },
+    {
+      "id": "D14",
+      "role": "chairman",
+      "depends_on": [
+        "D13"
+      ],
+      "todo": [
+        "L16",
+        "L17"
+      ],
+      "writes": [
+        "docs/councils/launch-readiness/release-decision.md"
+      ],
+      "locks": [],
+      "gates": [
+        "Q09",
+        "Q10",
+        "Q12",
+        "Q13-before-recruitment",
+        "Q14-before-deployment"
+      ],
+      "deliverable": "Independent candidate council and human sign-off, approved beginner observations, release decision.",
+      "acceptance": [
+        "No severity waiver by majority; owner and expiry on accepted residual risks.",
+        "Recruitment and exact release each require explicit approval.",
+        "Candidate identity, rollback/stop rules and aftercare evidence retained."
+      ],
+      "status": "planned",
+      "reviewer_role": "chairman-and-qa",
+      "read_first": [
+        "../../../TODO.md",
+        "dispatch-plan-2026-09-27.md"
+      ],
+      "return_fields": [
+        "base_sha",
+        "actual_checkout",
+        "changed_paths",
+        "contract_decisions",
+        "test_commands_results",
+        "browser_evidence_or_not_run",
+        "risks",
+        "questions",
+        "recommended_successor"
+      ]
+    }
+  ]
+}

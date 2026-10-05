@@ -98,7 +98,15 @@ class ConfigurationTests(RuntimeTestCase):
                 self.assertFalse(application.debug)
                 self.assertEqual(application.config["API_CORS_ORIGINS"], ())
                 self.assertEqual(application.config["JWT_ACCESS_TOKEN_EXPIRES"].days, 30)
-                self.assertEqual(tuple(application.config["JWT_TOKEN_LOCATION"]), ("headers",))
+                self.assertEqual(tuple(application.config["JWT_TOKEN_LOCATION"]), ("headers", "cookies"))
+                self.assertFalse(application.config["AUTH_ALLOW_LEGACY_TOKENS"])
+                self.assertTrue(application.config["AUTH_COOKIE_SECURE"])
+                self.assertTrue(application.config["JWT_COOKIE_SECURE"])
+                self.assertTrue(application.config["JWT_COOKIE_CSRF_PROTECT"])
+                self.assertFalse(application.config["JWT_CSRF_IN_COOKIES"])
+                self.assertEqual(application.config["JWT_COOKIE_SAMESITE"], "Lax")
+                self.assertEqual(application.config["JWT_ACCESS_COOKIE_PATH"], "/api")
+                self.assertEqual(application.config["AUTH_TRUSTED_ORIGINS"], ())
         self.connection.assert_not_called()
 
     def test_development_defaults_and_existing_sqlite_flow(self):

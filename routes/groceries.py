@@ -90,7 +90,11 @@ def get_grocery_list():
     m = _get_membership()
     if not m:
         return jsonify({"error": "Join or create a household first", "code": "no_household"}), 404
-    lst = _get_or_create_list(m.household_id)
+    # Cookie-authenticated GET must remain read-only. The first explicit item
+    # write creates the list; viewing an empty household does not mutate it.
+    lst = GroceryList.query.filter_by(household_id=m.household_id).first()
+    if lst is None:
+        return jsonify({"items": []})
     items = GroceryItem.query.filter_by(list_id=lst.id).order_by(GroceryItem.created_at).all()
     return jsonify({"items": [i.to_dict() for i in items]})
 

@@ -108,6 +108,12 @@ jobs:
         run: |
           python -I -B scripts/verify_release.py --check-guards
           python -I -B scripts/verify_release.py --run 2>&1 | tee "$RUNNER_TEMP/cookbook-verification/postgres-release.log"
+      - name: PostgreSQL session rotation and recovery races
+        env:
+          COOKBOOK_TEST_DATABASE_URL: postgresql://cookbook_ci:disposable_ci_only@localhost:55432/cookbook_test_fresh
+          COOKBOOK_TEST_HISTORY_URL: postgresql://cookbook_ci:disposable_ci_only@localhost:55432/cookbook_test_history
+          COOKBOOK_TEST_POSTGRES_CONFIRM: disposable-local-test-databases
+        run: python -I -B scripts/auth_postgres_checks.py 2>&1 | tee "$RUNNER_TEMP/cookbook-verification/postgres-auth.log"
       - name: Remove only this job's disposable cluster
         if: always() && steps.release_postgres.outputs.container != ''
         env:
